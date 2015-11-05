@@ -1320,13 +1320,16 @@ void SeasidePerson::setWebsiteDetails(const QVariantList &websiteDetails)
 
 QDateTime SeasidePerson::birthday() const
 {
-    return mContact->detail<QContactBirthday>().dateTime();
+    // Since JS has no pure date type, convert to the time value for midday on the
+    // specified date, so we have leeway in both directions for timezone-related historical
+    // offset variations without modifying the base date
+    return QDateTime(mContact->detail<QContactBirthday>().date(), QTime(12, 0), Qt::LocalTime);
 }
 
 void SeasidePerson::setBirthday(const QDateTime &bd)
 {
     QContactBirthday birthday = mContact->detail<QContactBirthday>();
-    birthday.setDateTime(bd);
+    birthday.setDate(bd.date());
     mContact->saveDetail(&birthday);
     emit birthdayChanged();
 }
@@ -1409,7 +1412,7 @@ QVariantList SeasidePerson::anniversaryDetails(const QContact &contact)
     int index = 0;
     foreach (const QContactAnniversary &detail, contact.details<QContactAnniversary>()) {
         QVariantMap item(detailProperties(detail));
-        item.insert(anniversaryDetailOriginalDate, detail.value(QContactAnniversary::FieldOriginalDate).toDateTime());
+        item.insert(anniversaryDetailOriginalDate, QDateTime(detail.value(QContactAnniversary::FieldOriginalDate).toDate(), QTime(12, 0), Qt::LocalTime));
         item.insert(detailType, AnniversaryType);
         item.insert(detailSubType, anniversarySubType(detail));
         item.insert(detailLabel, ::detailLabelType(detail));
@@ -1461,7 +1464,7 @@ void SeasidePerson::setAnniversaryDetails(const QVariantList &anniversaryDetails
             continue;
         }
 
-        updated.setValue(QContactAnniversary::FieldOriginalDate, updatedOriginalDate);
+        updated.setValue(QContactAnniversary::FieldOriginalDate, updatedOriginalDate.date());
 
         const QVariant subTypeValue = detail[detailSubType];
         ::setAnniversarySubType(updated, subTypeValue.value<int>());
