@@ -112,6 +112,7 @@ SeasidePerson::SeasidePerson(QObject *parent)
     : QObject(parent)
     , mContact(new QContact)
     , mComplete(true)
+    , mResolving(false)
     , mAttachState(Unattached)
     , mItem(0)
 {
@@ -122,6 +123,7 @@ SeasidePerson::SeasidePerson(const QContact &contact, QObject *parent)
     , mContact(new QContact(contact))
     , mDisplayLabel(generateDisplayLabel(contact))
     , mComplete(true)
+    , mResolving(false)
     , mAttachState(Unattached)
     , mItem(0)
 {
@@ -132,6 +134,7 @@ SeasidePerson::SeasidePerson(QContact *contact, bool complete, QObject *parent)
     , mContact(contact)
     , mDisplayLabel(generateDisplayLabel(*contact))
     , mComplete(complete)
+    , mResolving(false)
     , mAttachState(Attached)
     , mItem(0)
 {
@@ -1740,6 +1743,11 @@ void SeasidePerson::setMergeCandidates(const QList<int> &candidates)
     mCandidates = candidates;
 }
 
+bool SeasidePerson::resolving() const
+{
+    return mResolving;
+}
+
 QContact SeasidePerson::contact() const
 {
     return *mContact;
@@ -1998,6 +2006,9 @@ void SeasidePerson::fetchMergeCandidates()
 
 void SeasidePerson::resolvePhoneNumber(const QString &number, bool requireComplete)
 {
+    mResolving = true;
+    emit resolvingChanged();
+
     if (SeasideCache::CacheItem *item = SeasideCache::resolvePhoneNumber(this, number, requireComplete)) {
         // TODO: should this be invoked async?
         addressResolved(QString(), number, item);
@@ -2006,6 +2017,9 @@ void SeasidePerson::resolvePhoneNumber(const QString &number, bool requireComple
 
 void SeasidePerson::resolveEmailAddress(const QString &address, bool requireComplete)
 {
+    mResolving = true;
+    emit resolvingChanged();
+
     if (SeasideCache::CacheItem *item = SeasideCache::resolveEmailAddress(this, address, requireComplete)) {
         addressResolved(address, QString(), item);
     }
@@ -2013,6 +2027,9 @@ void SeasidePerson::resolveEmailAddress(const QString &address, bool requireComp
 
 void SeasidePerson::resolveOnlineAccount(const QString &localUid, const QString &remoteUid, bool requireComplete)
 {
+    mResolving = true;
+    emit resolvingChanged();
+
     if (SeasideCache::CacheItem *item = SeasideCache::resolveOnlineAccount(this, localUid, remoteUid, requireComplete)) {
         addressResolved(localUid, remoteUid, item);
     }
@@ -2198,7 +2215,10 @@ void SeasidePerson::addressResolved(const QString &, const QString &, SeasideCac
         setComplete(item->contactState == SeasideCache::ContactComplete);
     }
 
+    mResolving = false;
+
     emit addressResolved();
+    emit resolvingChanged();
 }
 
 void SeasidePerson::itemUpdated(SeasideCache::CacheItem *)
