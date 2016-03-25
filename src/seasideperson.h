@@ -293,6 +293,9 @@ public:
     QList<int> mergeCandidates() const;
     void setMergeCandidates(const QList<int> &candidates);
 
+    Q_PROPERTY(bool resolving READ resolving NOTIFY resolvingChanged)
+    bool resolving() const;
+
     QContact contact() const;
     void setContact(const QContact &contact);
 
@@ -379,6 +382,7 @@ signals:
     void accountDetailsChanged();
     void constituentsChanged();
     void mergeCandidatesChanged();
+    void resolvingChanged();
     void aggregationOperationFinished();
     void addressResolved();
     void dataChanged();
@@ -405,6 +409,7 @@ private:
     QList<int> mCandidates;
     bool mComplete;
     bool m_changesReported;
+    bool mResolving;
     AttachState mAttachState;
     SeasideCache::CacheItem *mItem;
 
