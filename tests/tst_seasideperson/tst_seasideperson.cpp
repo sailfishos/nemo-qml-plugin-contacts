@@ -664,6 +664,10 @@ void tst_SeasidePerson::birthday()
     QCOMPARE(spy.count(), 2);
     QCOMPARE(person->birthday(), QDateTime());
     QCOMPARE(person->property("birthday").toDateTime(), person->birthday());
+    person->setBirthday(QDateTime(QDate::fromString("05/01/1980", "dd/MM/yyyy")));
+    QCOMPARE(spy.count(), 3);
+    QCOMPARE(person->birthday(), QDateTime::fromString("05/01/1980 12:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
+    QCOMPARE(person->property("birthday").toDateTime(), person->birthday());
 }
 
 QVariantMap makeAnniversary(const QDateTime &timestamp, int label = SeasidePerson::NoLabel, int subType = SeasidePerson::NoSubType)
@@ -740,7 +744,12 @@ void tst_SeasidePerson::anniversaryDetails()
     for (int i=0; i<anniversaries.count(); i++) {
         QVariant &var(anniversaries[i]);
         QVariantMap anniversary(var.value<QVariantMap>());
-        QCOMPARE(anniversary.value(QString::fromLatin1("originalDate")).value<QDateTime>(), dates.at(i));
+
+        QDateTime comparisonDate(dates.at(i));
+        if (i == 2)
+            comparisonDate.setTime(QTime(12, 0));
+
+        QCOMPARE(anniversary.value(QString::fromLatin1("originalDate")).value<QDateTime>(), comparisonDate);
         QCOMPARE(anniversary.value(QString::fromLatin1("type")).toInt(), static_cast<int>(SeasidePerson::AnniversaryType));
         QCOMPARE(anniversary.value(QString::fromLatin1("subType")).toInt(), static_cast<int>(anniversarySubTypes.at(i)));
         QCOMPARE(anniversary.value(QString::fromLatin1("label")).toInt(), static_cast<int>(anniversaryLabels.at(i)));
