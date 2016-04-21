@@ -56,6 +56,7 @@
 
 #include <QCoreApplication>
 #include <QEvent>
+#include <QVector>
 #include <QtDebug>
 
 namespace {
@@ -84,10 +85,10 @@ const QByteArray accountDetailsRole("accountDetails");
 const ML10N::MLocale mLocale;
 
 template<typename T>
-void insert(QSet<T> &set, const QList<T> &list)
+void insert(QList<T> &dst, const QList<T> &src)
 {
-    foreach (const T &item, list)
-        set.insert(item);
+    foreach (const T &item, src)
+        dst.append(item);
 }
 
 QSet<QString> alphabetCharacters()
@@ -210,11 +211,14 @@ QList<const QString *> splitWords(const QString &string)
 {
     QList<const QString *> rv;
 
+    // Ignore any instances of '.' (frequently present in email addresses, but not useful)
+    const QString dot(QStringLiteral("."));
+
     ML10N::MBreakIterator it(mLocale, string, ML10N::MBreakIterator::WordIterator);
     while (it.hasNext()) {
         const int position = it.next();
         const QString word(string.mid(position, (it.peekNext() - position)).trimmed());
-        if (!word.isEmpty()) {
+        if (!word.isEmpty() && word != dot) {
             foreach (const QString *alternative, makeSearchToken(word)) {
                 rv.append(alternative);
             }
@@ -253,12 +257,44 @@ QString stringPreceding(const QString &s, const QChar &c)
     return s;
 }
 
+struct LessThanIndirect {
+    template<typename T>
+    bool operator()(T lhs, T rhs) const { return *lhs < *rhs; }
+};
+
+struct EqualIndirect {
+    template<typename T>
+    bool operator()(T lhs, T rhs) const { return *lhs == *rhs; }
+};
+
+struct FirstElementLessThanIndirect {
+    template<typename Container>
+    bool operator()(const Container *lhs, typename Container::const_iterator rhs) { return *lhs->cbegin() < *rhs; }
+
+    template<typename Container>
+    bool operator()(typename Container::const_iterator lhs, const Container *rhs) { return *lhs < *rhs->cbegin(); }
+};
+
+template<template <typename T> class Container, typename T>
+QVector<T> toSortedVector(Container<T> &src)
+{
+    QVector<T> dst;
+
+    std::sort(src.begin(), src.end(), LessThanIndirect());
+    src.erase(std::unique(src.begin(), src.end(), EqualIndirect()), src.end());
+
+    dst.reserve(src.count());
+    std::copy(src.cbegin(), src.cend(), std::back_inserter(dst));
+    return dst;
+}
+
 }
 
 struct FilterData : public SeasideCache::ItemListener
 {
     // Store additional filter keys with the cache item
-    QList<const QString *> filterKey;
+    QVector<const QString *> initialMatchKeys;
+    QVector<const QString *> matchKeys;
 
     static FilterData *getItemFilterData(SeasideCache::CacheItem *item, const SeasideFilteredModel *model)
     {
@@ -278,8 +314,9 @@ struct FilterData : public SeasideCache::ItemListener
         static const QtContactsSqliteExtensions::NormalizePhoneNumberFlags normalizeFlags(QtContactsSqliteExtensions::KeepPhoneNumberDialString |
                                                                                           QtContactsSqliteExtensions::ValidatePhoneNumber);
 
-        if (filterKey.isEmpty()) {
-            QSet<const QString *> matchTokens;
+        if (initialMatchKeys.isEmpty()) {
+            QList<const QString *> matchTokens;
+            matchTokens.reserve(100);
 
             // split the display label and filter details into words
             QContactName name = item->contact.detail<QContactName>();
@@ -292,24 +329,13 @@ struct FilterData : public SeasideCache::ItemListener
             // Include the custom label - it may contain the user's customized name for the contact
             insert(matchTokens, splitWords(name.value<QString>(QContactName__FieldCustomLabel)));
 
-            QContactNickname nickname = item->contact.detail<QContactNickname>();
-            insert(matchTokens, splitWords(nickname.nickname()));
-
-            foreach (const QContactPhoneNumber &detail, item->contact.details<QContactPhoneNumber>()) {
-                // For phone numbers, match on the normalized from (punctuation stripped)
-                // When we can extract a localized version of the number, add that also
-                QString normalized(QtContactsSqliteExtensions::normalizePhoneNumber(detail.number(), normalizeFlags));
-                if (!normalized.isEmpty()) {
-                    insert(matchTokens, makeSearchToken(normalized));
-
-                    if (normalized.startsWith(plusSymbol)) {
-                        // Also match for the number without the plus
-                        normalized = normalized.mid(1);
-                        insert(matchTokens, makeSearchToken(normalized));
-                    }
-                }
+            if (matchTokens.isEmpty()) {
+                // The contact must have some kind of identifying marks
+                insert(matchTokens, splitWords(item->displayLabel));
             }
 
+            foreach (const QContactNickname &detail, item->contact.details<QContactNickname>())
+                insert(matchTokens, splitWords(detail.nickname()));
             foreach (const QContactEmailAddress &detail, item->contact.details<QContactEmailAddress>())
                 insert(matchTokens, splitWords(stringPreceding(detail.emailAddress(), atSymbol)));
             foreach (const QContactOrganization &detail, item->contact.details<QContactOrganization>())
@@ -321,8 +347,68 @@ struct FilterData : public SeasideCache::ItemListener
             foreach (const QContactPresence &detail, item->contact.details<QContactPresence>())
                 insert(matchTokens, splitWords(detail.nickname()));
 
-            filterKey = matchTokens.toList();
+            initialMatchKeys = toSortedVector(matchTokens);
+
+            // Add phone numbers to a separate list where we will match any part of the string
+            QList<QContactPhoneNumber> phoneNumbers(item->contact.details<QContactPhoneNumber>());
+            if (!phoneNumbers.isEmpty()) {
+                matchTokens.clear();
+                matchTokens.reserve(phoneNumbers.size());
+
+                foreach (const QContactPhoneNumber &detail, phoneNumbers) {
+                    // For phone numbers, match on the normalized from (punctuation stripped)
+                    QString normalized(QtContactsSqliteExtensions::normalizePhoneNumber(detail.number(), normalizeFlags));
+                    if (!normalized.isEmpty()) {
+                        insert(matchTokens, makeSearchToken(normalized));
+                    }
+                }
+
+                matchKeys = toSortedVector(matchTokens);
+            }
             return true;
+        }
+
+        return false;
+    }
+
+    static const QChar *cbegin(const QString &s) { return s.cbegin(); }
+    static const QChar *cend(const QString &s) { return s.cend(); }
+
+    static const QChar *cbegin(const QStringRef &r) { return r.data(); }
+    static const QChar *cend(const QStringRef &r) { return r.data() + r.size(); }
+
+    template<typename KeyType>
+    bool partialMatch(const KeyType &key, const QChar * const vbegin, const QChar * const vend) const
+    {
+        // Note: both key and value must already be in normalization form D
+        const QChar *kbegin = cbegin(key), *kend = cend(key);
+
+        const QChar *vit = vbegin, *kit = kbegin;
+        while (kit != kend) {
+            if (*kit != *vit)
+                break;
+
+            // Preceding base chars match - are there any continuing diacritics?
+            QString::const_iterator vmatch = vit++, kmatch = kit++;
+            while (vit != vend && (*vit).category() == QChar::Mark_NonSpacing)
+                 ++vit;
+            while (kit != kend && (*kit).category() == QChar::Mark_NonSpacing)
+                 ++kit;
+
+            if ((vit - vmatch) > 1) {
+                // The match value contains diacritics - the key needs to match them
+                const QString subValue(QString::fromRawData(vmatch, vit - vmatch));
+                const QString subKey(QString::fromRawData(kmatch, kit - kmatch));
+                if (subValue.compare(subKey) != 0)
+                    break;
+            } else {
+                // Ignore any diacritics in our key
+            }
+
+            if (vit == vend) {
+                // We have matched to the end of the value
+                return true;
+            }
         }
 
         return false;
@@ -330,45 +416,34 @@ struct FilterData : public SeasideCache::ItemListener
 
     bool partialMatch(const QString &value) const
     {
-        QString::const_iterator vbegin = value.constBegin(), vend = value.constEnd();
+        const QChar *vbegin = value.cbegin(), *vend = value.cend();
 
-        // If any of our tokens start with the value, this is a match
-        foreach (const QString *word, filterKey) {
-            QString::const_iterator wbegin = word->constBegin(), wend = word->constEnd();
+        // Find which subset of initial-match keys the value might match
+        typedef QVector<const QString *>::const_iterator VectorIterator;
+        std::pair<VectorIterator, VectorIterator> bounds = std::equal_range(initialMatchKeys.cbegin(), initialMatchKeys.cend(), vbegin, FirstElementLessThanIndirect());
+        for ( ; bounds.first != bounds.second; ++bounds.first) {
+            const QString &key(*(*bounds.first));
+            if (partialMatch(key, vbegin, vend))
+                return true;
+        }
 
-            QString::const_iterator vit = vbegin, wit = wbegin;
-            while (wit != wend) {
-                if (*wit != *vit)
-                    break;
+        // Test to see if there is a match in any of the match-anywhere fields
+        for (QVector<const QString *>::const_iterator it = matchKeys.cbegin(), end = matchKeys.cend(); it != end; ++it) {
+            const QString &key(*(*it));
 
-                // Preceding base chars match - are there any continuing diacritics?
-                QString::const_iterator vmatch = vit++, wmatch = wit++;
-                while (vit != vend && (*vit).category() == QChar::Mark_NonSpacing)
-                     ++vit;
-                while (wit != wend && (*wit).category() == QChar::Mark_NonSpacing)
-                     ++wit;
-
-                if ((vit - vmatch) > 1) {
-                    // The match value contains diacritics - the word needs to match them
-                    QString subValue(value.mid(vmatch - vbegin, vit - vmatch));
-                    QString subWord(word->mid(wmatch - wbegin, wit - wmatch));
-                    if (subValue.compare(subWord) != 0)
-                        break;
-                } else {
-                    // Ignore any diacritics in our word
-                }
-
-                if (vit == vend) {
-                    // We have matched to the end of the value
+            // Try to match the value anywhere inside the key
+            const QChar initialChar(*value.cbegin());
+            int index = -1;
+            while ((index = key.indexOf(initialChar, index + 1)) != -1) {
+                if (partialMatch(key.midRef(index), vbegin, vend))
                     return true;
-                }
             }
         }
 
         return false;
     }
 
-    void itemUpdated(SeasideCache::CacheItem *) { filterKey.clear(); }
+    void itemUpdated(SeasideCache::CacheItem *) { initialMatchKeys.clear(); matchKeys.clear(); }
     void itemAboutToBeRemoved(SeasideCache::CacheItem *) { delete this; }
 };
 
@@ -614,9 +689,8 @@ void SeasideFilteredModel::refineIndex()
             beginRemoveRows(QModelIndex(), i, i + count - 1);
             invalidateRows(i, count);
             endRemoveRows();
-        } else {
-            ++i;
         }
+        ++i;
     }
 }
 
