@@ -334,6 +334,50 @@ void tst_SeasideFilteredModel::filterPattern()
 
     patternSpy.clear();
     removedSpy.clear();
+
+    // 1
+    model.setFilterPattern(QString("123"));
+    QCOMPARE(model.filterPattern(), QString("123"));
+    QCOMPARE(model.rowCount(), 1);
+    QCOMPARE(model.index(QModelIndex(), 0, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 1);
+    QCOMPARE(patternSpy.count(), 1);
+    QCOMPARE(insertedSpy.count(), 1);
+    QCOMPARE(insertedSpy.at(0).at(1).value<int>(), 0);
+    QCOMPARE(insertedSpy.at(0).at(2).value<int>(), 0);
+    QCOMPARE(removedSpy.count(), 0);
+
+    patternSpy.clear();
+    insertedSpy.clear();
+
+    // 1 4 5
+    model.setFilterPattern(QString("345"));
+    QCOMPARE(model.filterPattern(), QString("345"));
+    QCOMPARE(model.rowCount(), 3);
+    QCOMPARE(model.index(QModelIndex(), 0, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 1);
+    QCOMPARE(model.index(QModelIndex(), 1, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 4);
+    QCOMPARE(model.index(QModelIndex(), 2, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 5);
+    QCOMPARE(patternSpy.count(), 1);
+    QCOMPARE(insertedSpy.count(), 1);
+    QCOMPARE(insertedSpy.at(0).at(1).value<int>(), 1);
+    QCOMPARE(insertedSpy.at(0).at(2).value<int>(), 2);
+    QCOMPARE(removedSpy.count(), 0);
+
+    patternSpy.clear();
+    insertedSpy.clear();
+    removedSpy.clear();
+
+    // 7
+    model.setFilterPattern(QString("543"));
+    QCOMPARE(model.filterPattern(), QString("543"));
+    QCOMPARE(model.rowCount(), 1);
+    QCOMPARE(model.index(QModelIndex(), 0, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 7);
+    QCOMPARE(patternSpy.count(), 1);
+    QCOMPARE(insertedSpy.count(), 1);
+    QCOMPARE(insertedSpy.at(0).at(1).value<int>(), 0);
+    QCOMPARE(insertedSpy.at(0).at(2).value<int>(), 0);
+    QCOMPARE(removedSpy.count(), 1);
+    QCOMPARE(removedSpy.at(0).at(1).value<int>(), 0);
+    QCOMPARE(removedSpy.at(0).at(2).value<int>(), 2);
 }
 
 void tst_SeasideFilteredModel::filterWords()
