@@ -240,8 +240,14 @@ QList<QStringList> extractSearchTerms(const QString &string)
         const int position = it.next();
         const QString word(lowered.mid(position, (it.peekNext() - position)).trimmed());
         if (!word.isEmpty()) {
-            // Test all searches in lower case
-            rv.append(tokenize(word));
+            const bool apostrophe(word.length() == 1 && word.at(0) == QChar('\''));
+            if (apostrophe && !rv.isEmpty()) {
+                // Special case - a trailing apostrophe is not counted as a component of the
+                // previous word, although it is included in the word if there is a following character
+                rv.last().last().append(word);
+            } else {
+                rv.append(tokenize(word));
+            }
         }
     }
 
