@@ -210,16 +210,17 @@ QList<const QString *> makeSearchToken(const QString &word)
 QList<const QString *> splitWords(const QString &string)
 {
     QList<const QString *> rv;
-
-    // Ignore any instances of '.' (frequently present in email addresses, but not useful)
-    const QString dot(QStringLiteral("."));
-    ML10N::MBreakIterator it(mLocale, string, ML10N::MBreakIterator::WordIterator);
-    while (it.hasNext()) {
-        const int position = it.next();
-        const QString word(string.mid(position, (it.peekNext() - position)).trimmed());
-        if (!word.isEmpty() && word != dot) {
-            foreach (const QString *alternative, makeSearchToken(word)) {
-                rv.append(alternative);
+    if (!string.isEmpty()) {
+        // Ignore any instances of '.' (frequently present in email addresses, but not useful)
+        const QString dot(QStringLiteral("."));
+        ML10N::MBreakIterator it(mLocale, string, ML10N::MBreakIterator::WordIterator);
+        while (it.hasNext()) {
+            const int position = it.next();
+            const QString word(string.mid(position, (it.peekNext() - position)).trimmed());
+            if (!word.isEmpty() && word != dot) {
+                foreach (const QString *alternative, makeSearchToken(word)) {
+                    rv.append(alternative);
+                }
             }
         }
     }
