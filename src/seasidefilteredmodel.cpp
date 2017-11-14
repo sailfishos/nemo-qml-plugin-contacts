@@ -87,7 +87,7 @@ const ML10N::MLocale mLocale;
 template<typename T>
 void insert(QList<T> &dst, const QList<T> &src)
 {
-    foreach (const T &item, src)
+    for (const T &item : src)
         dst.append(item);
 }
 
@@ -95,7 +95,7 @@ QSet<QString> alphabetCharacters()
 {
     QSet<QString> rv;
 
-    foreach (const QString &c, mLocale.exemplarCharactersIndex()) {
+    for (const QString &c : mLocale.exemplarCharactersIndex()) {
         rv.insert(mLocale.toLower(c));
     }
 
@@ -191,7 +191,7 @@ QList<const QString *> makeSearchToken(const QString &word)
         QList<const QString *> indexed;
 
         // Index these tokens for later dereferencing
-        foreach (const QString &token, tokenize(lowered)) {
+        for (const QString &token : tokenize(lowered)) {
             uint hashValue(qHash(token));
             QMap<uint, const QString *>::const_iterator tit = indexedTokens.find(hashValue);
             if (tit == indexedTokens.end()) {
@@ -218,7 +218,7 @@ QList<const QString *> splitWords(const QString &string)
             const int position = it.next();
             const QString word(string.mid(position, (it.peekNext() - position)).trimmed());
             if (!word.isEmpty() && word != dot) {
-                foreach (const QString *alternative, makeSearchToken(word)) {
+                for (const QString *alternative : makeSearchToken(word)) {
                     rv.append(alternative);
                 }
             }
@@ -324,11 +324,11 @@ struct FilterData : public SeasideCache::ItemListener
             QList<const QString *> matchTokens;
             matchTokens.reserve(100);
 
-            foreach (const QContactOnlineAccount &detail, item->contact.details<QContactOnlineAccount>())
+            for (const QContactOnlineAccount &detail : item->contact.details<QContactOnlineAccount>())
                 insert(matchTokens, splitWords(stringPreceding(detail.accountUri(), atSymbol)));
-            foreach (const QContactGlobalPresence &detail, item->contact.details<QContactGlobalPresence>())
+            for (const QContactGlobalPresence &detail : item->contact.details<QContactGlobalPresence>())
                 insert(matchTokens, splitWords(detail.nickname()));
-            foreach (const QContactPresence &detail, item->contact.details<QContactPresence>())
+            for (const QContactPresence &detail : item->contact.details<QContactPresence>())
                 insert(matchTokens, splitWords(detail.nickname()));
 
             initialMatchKeys = toSortedVector(matchTokens);
@@ -353,20 +353,20 @@ struct FilterData : public SeasideCache::ItemListener
                 insert(matchTokens, splitWords(item->displayLabel));
             }
 
-            foreach (const QContactNickname &detail, item->contact.details<QContactNickname>()) {
+            for (const QContactNickname &detail : item->contact.details<QContactNickname>()) {
                 insert(matchTokens, splitWords(detail.nickname()));
             }
-            foreach (const QContactEmailAddress &detail, item->contact.details<QContactEmailAddress>()) {
+            for (const QContactEmailAddress &detail : item->contact.details<QContactEmailAddress>()) {
                 insert(matchTokens, splitWords(stringPreceding(detail.emailAddress(), atSymbol)));
             }
-            foreach (const QContactOrganization &detail, item->contact.details<QContactOrganization>()) {
+            for (const QContactOrganization &detail : item->contact.details<QContactOrganization>()) {
                 insert(matchTokens, splitWords(detail.name()));
             }
 
             // Add phone numbers to a separate list where we will match any part of the string
             QList<QContactPhoneNumber> phoneNumbers(item->contact.details<QContactPhoneNumber>());
             if (!phoneNumbers.isEmpty()) {
-                foreach (const QContactPhoneNumber &detail, phoneNumbers) {
+                for (const QContactPhoneNumber &detail : phoneNumbers) {
                     // For phone numbers, match on the normalized from (punctuation stripped)
                     QString normalized(QtContactsSqliteExtensions::normalizePhoneNumber(detail.number(), normalizeFlags));
                     if (!normalized.isEmpty()) {
@@ -653,9 +653,9 @@ bool SeasideFilteredModel::filterId(quint32 iid) const
 
     // search forwards over the label components for each filter word, making
     // sure to find all filter words before considering it a match.
-    foreach (const QStringList &part, m_filterParts) {
+    for (const QStringList &part : m_filterParts) {
         bool match = false;
-        foreach (const QString &alternative, part) {
+        for (const QString &alternative : part) {
             if (filterData->partialMatch(alternative)) {
                 match = true;
                 break;
@@ -894,19 +894,19 @@ QVariant SeasideFilteredModel::data(SeasideCache::CacheItem *cacheItem, int role
     } else if (role == PhoneNumbersRole || role == EmailAddressesRole || role == AccountUrisRole || role == AccountPathsRole) {
         QStringList rv;
         if (role == PhoneNumbersRole) {
-            foreach (const QContactPhoneNumber &number, contact.details<QContactPhoneNumber>()) {
+            for (const QContactPhoneNumber &number : contact.details<QContactPhoneNumber>()) {
                 rv.append(number.number());
             }
         } else if (role == EmailAddressesRole) {
-            foreach (const QContactEmailAddress &address, contact.details<QContactEmailAddress>()) {
+            for (const QContactEmailAddress &address : contact.details<QContactEmailAddress>()) {
                 rv.append(address.emailAddress());
             }
         } else if (role == AccountPathsRole){
-            foreach (const QContactOnlineAccount &account, contact.details<QContactOnlineAccount>()) {
+            for (const QContactOnlineAccount &account : contact.details<QContactOnlineAccount>()) {
                 rv.append(account.value<QString>(QContactOnlineAccount__FieldAccountPath));
             }
         } else {
-            foreach (const QContactOnlineAccount &account, contact.details<QContactOnlineAccount>()) {
+            for (const QContactOnlineAccount &account : contact.details<QContactOnlineAccount>()) {
                 rv.append(account.accountUri());
             }
         }
