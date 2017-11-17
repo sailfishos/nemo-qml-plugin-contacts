@@ -316,7 +316,6 @@ struct FilterData : public SeasideCache::ItemListener
     bool prepareFilter(SeasideCache::CacheItem *item)
     {
         static const QChar atSymbol(QChar::fromLatin1('@'));
-        static const QChar plusSymbol(QChar::fromLatin1('+'));
         static const QtContactsSqliteExtensions::NormalizePhoneNumberFlags normalizeFlags(QtContactsSqliteExtensions::KeepPhoneNumberDialString |
                                                                                           QtContactsSqliteExtensions::ValidatePhoneNumber);
 
