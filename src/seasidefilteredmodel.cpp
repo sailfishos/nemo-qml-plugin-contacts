@@ -87,7 +87,7 @@ const ML10N::MLocale mLocale;
 template<typename T>
 void insert(QList<T> &dst, const QList<T> &src)
 {
-    foreach (const T &item, src)
+    for (const T &item : src)
         dst.append(item);
 }
 
@@ -95,7 +95,7 @@ QSet<QString> alphabetCharacters()
 {
     QSet<QString> rv;
 
-    foreach (const QString &c, mLocale.exemplarCharactersIndex()) {
+    for (const QString &c : mLocale.exemplarCharactersIndex()) {
         rv.insert(mLocale.toLower(c));
     }
 
@@ -191,7 +191,7 @@ QList<const QString *> makeSearchToken(const QString &word)
         QList<const QString *> indexed;
 
         // Index these tokens for later dereferencing
-        foreach (const QString &token, tokenize(lowered)) {
+        for (const QString &token : tokenize(lowered)) {
             uint hashValue(qHash(token));
             QMap<uint, const QString *>::const_iterator tit = indexedTokens.find(hashValue);
             if (tit == indexedTokens.end()) {
@@ -210,17 +210,17 @@ QList<const QString *> makeSearchToken(const QString &word)
 QList<const QString *> splitWords(const QString &string)
 {
     QList<const QString *> rv;
-
-    // Ignore any instances of '.' (frequently present in email addresses, but not useful)
-    const QString dot(QStringLiteral("."));
-
-    ML10N::MBreakIterator it(mLocale, string, ML10N::MBreakIterator::WordIterator);
-    while (it.hasNext()) {
-        const int position = it.next();
-        const QString word(string.mid(position, (it.peekNext() - position)).trimmed());
-        if (!word.isEmpty() && word != dot) {
-            foreach (const QString *alternative, makeSearchToken(word)) {
-                rv.append(alternative);
+    if (!string.isEmpty()) {
+        // Ignore any instances of '.' (frequently present in email addresses, but not useful)
+        const QString dot(QStringLiteral("."));
+        ML10N::MBreakIterator it(mLocale, string, ML10N::MBreakIterator::WordIterator);
+        while (it.hasNext()) {
+            const int position = it.next();
+            const QString word(string.mid(position, (it.peekNext() - position)).trimmed());
+            if (!word.isEmpty() && word != dot) {
+                for (const QString *alternative : makeSearchToken(word)) {
+                    rv.append(alternative);
+                }
             }
         }
     }
@@ -300,7 +300,7 @@ struct FilterData : public SeasideCache::ItemListener
 {
     // Store additional filter keys with the cache item
     QVector<const QString *> initialMatchKeys;
-    QVector<const QString *> matchKeys;
+    QVector<const QString *> wildMatchKeys;
 
     static FilterData *getItemFilterData(SeasideCache::CacheItem *item, const SeasideFilteredModel *model)
     {
@@ -316,16 +316,28 @@ struct FilterData : public SeasideCache::ItemListener
     bool prepareFilter(SeasideCache::CacheItem *item)
     {
         static const QChar atSymbol(QChar::fromLatin1('@'));
-        static const QChar plusSymbol(QChar::fromLatin1('+'));
         static const QtContactsSqliteExtensions::NormalizePhoneNumberFlags normalizeFlags(QtContactsSqliteExtensions::KeepPhoneNumberDialString |
                                                                                           QtContactsSqliteExtensions::ValidatePhoneNumber);
 
-        if (initialMatchKeys.isEmpty()) {
+        if (wildMatchKeys.isEmpty()) {
             QList<const QString *> matchTokens;
             matchTokens.reserve(100);
 
+            for (const QContactOnlineAccount &detail : item->contact.details<QContactOnlineAccount>())
+                insert(matchTokens, splitWords(stringPreceding(detail.accountUri(), atSymbol)));
+            for (const QContactGlobalPresence &detail : item->contact.details<QContactGlobalPresence>())
+                insert(matchTokens, splitWords(detail.nickname()));
+            for (const QContactPresence &detail : item->contact.details<QContactPresence>())
+                insert(matchTokens, splitWords(detail.nickname()));
+
+            initialMatchKeys = toSortedVector(matchTokens);
+
             // split the display label and filter details into words
             QContactName name = item->contact.detail<QContactName>();
+
+            // First name, middle name, last name, prefix, suffix, custom field, nick name,
+            // email address, organization, and phone number can be matched in the middle.
+            matchTokens.clear();
             insert(matchTokens, splitWords(name.firstName()));
             insert(matchTokens, splitWords(name.middleName()));
             insert(matchTokens, splitWords(name.lastName()));
@@ -340,37 +352,28 @@ struct FilterData : public SeasideCache::ItemListener
                 insert(matchTokens, splitWords(item->displayLabel));
             }
 
-            foreach (const QContactNickname &detail, item->contact.details<QContactNickname>())
+            for (const QContactNickname &detail : item->contact.details<QContactNickname>()) {
                 insert(matchTokens, splitWords(detail.nickname()));
-            foreach (const QContactEmailAddress &detail, item->contact.details<QContactEmailAddress>())
+            }
+            for (const QContactEmailAddress &detail : item->contact.details<QContactEmailAddress>()) {
                 insert(matchTokens, splitWords(stringPreceding(detail.emailAddress(), atSymbol)));
-            foreach (const QContactOrganization &detail, item->contact.details<QContactOrganization>())
+            }
+            for (const QContactOrganization &detail : item->contact.details<QContactOrganization>()) {
                 insert(matchTokens, splitWords(detail.name()));
-            foreach (const QContactOnlineAccount &detail, item->contact.details<QContactOnlineAccount>())
-                insert(matchTokens, splitWords(stringPreceding(detail.accountUri(), atSymbol)));
-            foreach (const QContactGlobalPresence &detail, item->contact.details<QContactGlobalPresence>())
-                insert(matchTokens, splitWords(detail.nickname()));
-            foreach (const QContactPresence &detail, item->contact.details<QContactPresence>())
-                insert(matchTokens, splitWords(detail.nickname()));
-
-            initialMatchKeys = toSortedVector(matchTokens);
+            }
 
             // Add phone numbers to a separate list where we will match any part of the string
             QList<QContactPhoneNumber> phoneNumbers(item->contact.details<QContactPhoneNumber>());
             if (!phoneNumbers.isEmpty()) {
-                matchTokens.clear();
-                matchTokens.reserve(phoneNumbers.size());
-
-                foreach (const QContactPhoneNumber &detail, phoneNumbers) {
+                for (const QContactPhoneNumber &detail : phoneNumbers) {
                     // For phone numbers, match on the normalized from (punctuation stripped)
                     QString normalized(QtContactsSqliteExtensions::normalizePhoneNumber(detail.number(), normalizeFlags));
                     if (!normalized.isEmpty()) {
                         insert(matchTokens, makeSearchToken(normalized));
                     }
                 }
-
-                matchKeys = toSortedVector(matchTokens);
             }
+            wildMatchKeys = toSortedVector(matchTokens);
             return true;
         }
 
@@ -434,7 +437,7 @@ struct FilterData : public SeasideCache::ItemListener
         }
 
         // Test to see if there is a match in any of the match-anywhere fields
-        for (QVector<const QString *>::const_iterator it = matchKeys.cbegin(), end = matchKeys.cend(); it != end; ++it) {
+        for (QVector<const QString *>::const_iterator it = wildMatchKeys.cbegin(), end = wildMatchKeys.cend(); it != end; ++it) {
             const QString &key(*(*it));
 
             // Try to match the value anywhere inside the key
@@ -449,7 +452,7 @@ struct FilterData : public SeasideCache::ItemListener
         return false;
     }
 
-    void itemUpdated(SeasideCache::CacheItem *) { initialMatchKeys.clear(); matchKeys.clear(); }
+    void itemUpdated(SeasideCache::CacheItem *) { initialMatchKeys.clear(); wildMatchKeys.clear(); }
     void itemAboutToBeRemoved(SeasideCache::CacheItem *) { delete this; }
 };
 
@@ -649,9 +652,9 @@ bool SeasideFilteredModel::filterId(quint32 iid) const
 
     // search forwards over the label components for each filter word, making
     // sure to find all filter words before considering it a match.
-    foreach (const QStringList &part, m_filterParts) {
+    for (const QStringList &part : m_filterParts) {
         bool match = false;
-        foreach (const QString &alternative, part) {
+        for (const QString &alternative : part) {
             if (filterData->partialMatch(alternative)) {
                 match = true;
                 break;
@@ -890,19 +893,19 @@ QVariant SeasideFilteredModel::data(SeasideCache::CacheItem *cacheItem, int role
     } else if (role == PhoneNumbersRole || role == EmailAddressesRole || role == AccountUrisRole || role == AccountPathsRole) {
         QStringList rv;
         if (role == PhoneNumbersRole) {
-            foreach (const QContactPhoneNumber &number, contact.details<QContactPhoneNumber>()) {
+            for (const QContactPhoneNumber &number : contact.details<QContactPhoneNumber>()) {
                 rv.append(number.number());
             }
         } else if (role == EmailAddressesRole) {
-            foreach (const QContactEmailAddress &address, contact.details<QContactEmailAddress>()) {
+            for (const QContactEmailAddress &address : contact.details<QContactEmailAddress>()) {
                 rv.append(address.emailAddress());
             }
         } else if (role == AccountPathsRole){
-            foreach (const QContactOnlineAccount &account, contact.details<QContactOnlineAccount>()) {
+            for (const QContactOnlineAccount &account : contact.details<QContactOnlineAccount>()) {
                 rv.append(account.value<QString>(QContactOnlineAccount__FieldAccountPath));
             }
         } else {
-            foreach (const QContactOnlineAccount &account, contact.details<QContactOnlineAccount>()) {
+            for (const QContactOnlineAccount &account : contact.details<QContactOnlineAccount>()) {
                 rv.append(account.accountUri());
             }
         }

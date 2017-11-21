@@ -611,6 +611,11 @@ void tst_SeasideFilteredModel::filterCharacters()
     model.setFilterPattern("olviss");
     QCOMPARE(model.rowCount(), 1);
     QCOMPARE(model.index(QModelIndex(), 0, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 7);
+
+    // 5
+    model.setFilterPattern("oe"); // Joe
+    QCOMPARE(model.rowCount(), 1);
+    QCOMPARE(model.index(QModelIndex(), 0, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 6);
 }
 
 void tst_SeasideFilteredModel::rowsInserted()
@@ -638,17 +643,21 @@ void tst_SeasideFilteredModel::rowsInserted()
 
     insertedSpy.clear();
 
-    // 1
+    // 0 1 3
     model.setFilterPattern("Ar");
-    QCOMPARE(model.rowCount(), 1);
+    QCOMPARE(model.rowCount(), 3);
 
-    // 1 3
+    // 0 1 2 3 4
     cache.insert(SeasideCache::FilterAll, 3, QList<quint32>()
             << cache.idAt(3) << cache.idAt(4));
-    QCOMPARE(model.rowCount(), 2);
+    QCOMPARE(model.rowCount(), 5);
     QCOMPARE(insertedSpy.count(), 1);
-    QCOMPARE(insertedSpy.at(0).at(1).value<int>(), 1);
-    QCOMPARE(insertedSpy.at(0).at(2).value<int>(), 1);
+
+    QCOMPARE(model.index(QModelIndex(), 0, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 1);
+    QCOMPARE(model.index(QModelIndex(), 1, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 2);
+    QCOMPARE(model.index(QModelIndex(), 2, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 3);
+    QCOMPARE(model.index(QModelIndex(), 3, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 4);
+    QCOMPARE(model.index(QModelIndex(), 4, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 5);
 }
 
 void tst_SeasideFilteredModel::rowsRemoved()

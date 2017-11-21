@@ -46,6 +46,8 @@
 #include <QContactUrl>
 #include <QContactManager>
 
+#include <cacheconfiguration.h>
+
 #include "seasideperson.h"
 
 #include <algorithm>
@@ -128,6 +130,8 @@ void tst_SeasidePerson::middleName()
 
 void tst_SeasidePerson::displayLabel()
 {
+    CacheConfiguration::DisplayLabelOrder displayLabelOrder = CacheConfiguration().displayLabelOrder();
+
     QScopedPointer<SeasidePerson> person(new SeasidePerson);
     QSignalSpy spy(person.data(), SIGNAL(displayLabelChanged()));
     person->setFirstName("Test");
@@ -135,7 +139,11 @@ void tst_SeasidePerson::displayLabel()
     QCOMPARE(spy.count(), 2); // TODO: it would be nicer if this would only emit once per event loop
     QCOMPARE(person->firstName(), QString::fromLatin1("Test"));
     QCOMPARE(person->lastName(), QString::fromLatin1("Last"));
-    QCOMPARE(person->displayLabel(), QString::fromLatin1("Test Last"));
+    if (displayLabelOrder == CacheConfiguration::FirstNameFirst) {
+        QCOMPARE(person->displayLabel(), QString::fromLatin1("Test Last"));
+    } else {
+        QCOMPARE(person->displayLabel(), QString::fromLatin1("Last Test"));
+    }
 
     // TODO: test additional cases for displayLabel:
     // - email/IM id
