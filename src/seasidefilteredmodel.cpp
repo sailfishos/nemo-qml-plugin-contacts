@@ -467,6 +467,7 @@ SeasideFilteredModel::SeasideFilteredModel(QObject *parent)
     , m_searchableProperty(NoPropertySearchable)
     , m_searchByFirstNameCharacter(false)
     , m_lastItem(0)
+    , m_lastId(0)
 {
     updateRegistration();
 
