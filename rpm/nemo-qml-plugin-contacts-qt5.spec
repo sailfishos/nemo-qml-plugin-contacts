@@ -55,6 +55,7 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %{_libdir}/qt5/qml/org/nemomobile/contacts/libnemocontacts.so
+%{_libdir}/qt5/qml/org/nemomobile/contacts/plugins.qmltypes
 %{_libdir}/qt5/qml/org/nemomobile/contacts/qmldir
 
 %files tools
