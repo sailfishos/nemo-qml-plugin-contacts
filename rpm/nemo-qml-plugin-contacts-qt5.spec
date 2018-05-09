@@ -1,8 +1,5 @@
 Name:       nemo-qml-plugin-contacts-qt5
 
-# >> macros
-# << macros
-
 Summary:    Nemo QML contacts plugin
 Version:    0.0.93
 Release:    1
@@ -46,45 +43,25 @@ Requires:   %{name} = %{version}-%{release}
 %prep
 %setup -q -n %{name}-%{version}
 
-# >> setup
-# << setup
-
 %build
-# >> build pre
-# << build pre
-
 %qmake5 VERSION=%{version}
 
 make %{?_smp_mflags}
 
-# >> build post
-# << build post
-
 %install
 rm -rf %{buildroot}
-# >> install pre
-# << install pre
 %qmake5_install
-
-# >> install post
-# << install post
 
 %files
 %defattr(-,root,root,-)
 %{_libdir}/qt5/qml/org/nemomobile/contacts/libnemocontacts.so
 %{_libdir}/qt5/qml/org/nemomobile/contacts/qmldir
-# >> files
-# << files
 
 %files tools
 %defattr(-,root,root,-)
 %{_bindir}/vcardconverter
 %{_bindir}/contacts-tool
-# >> files tools
-# << files tools
 
 %files tests
 %defattr(-,root,root,-)
 /opt/tests/nemo-qml-plugins-qt5/contacts/*
-# >> files tests
-# << files tests
