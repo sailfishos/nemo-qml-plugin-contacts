@@ -5,7 +5,7 @@ Version:    0.0.93
 Release:    1
 Group:      System/Libraries
 License:    BSD
-URL:        https://github.com/nemomobile/nemo-qml-plugin-contacts
+URL:        https://git.merproject.org/mer-core/nemo-qml-plugin-contacts
 Source0:    %{name}-%{version}.tar.bz2
 Requires:   qtcontacts-sqlite-qt5 >= 0.1.37
 BuildRequires:  pkgconfig(Qt5Core)
