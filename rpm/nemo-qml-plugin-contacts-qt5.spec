@@ -10,7 +10,6 @@ Source0:    %{name}-%{version}.tar.bz2
 Requires:   qtcontacts-sqlite-qt5 >= 0.1.37
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5Qml)
-BuildRequires:  pkgconfig(Qt5Gui)
 BuildRequires:  pkgconfig(Qt5Contacts)
 BuildRequires:  pkgconfig(Qt5Versit)
 BuildRequires:  pkgconfig(Qt5Test)

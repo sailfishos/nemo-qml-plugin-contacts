@@ -6,7 +6,9 @@ PLUGIN_IMPORT_PATH = org/nemomobile/contacts
 TEMPLATE = lib
 CONFIG += qt plugin hide_symbols
 
-QT += qml
+QT = \
+    core  \
+    qml
 PKGCONFIG += contactcache-qt5 mlocale5
 
 packagesExist(mlite5) {
