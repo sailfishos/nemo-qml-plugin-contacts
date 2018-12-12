@@ -7,7 +7,7 @@ include(../../config.pri) | error("Can't load config")
 CONFIG += link_pkgconfig
 PKGCONFIG += Qt5Contacts contactcache-qt5
 
-QT += gui
+QT = core
 TARGET = $$PROJECT_NAME
 CONFIG -= app_bundle # OS X
 DEFINES *= VERSION_STRING=\"\\\"$$VERSION\\\"\"
