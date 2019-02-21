@@ -311,7 +311,7 @@ QString SeasidePerson::sectionBucket() const
 {
     if (id() != 0) {
         SeasideCache::CacheItem *cacheItem = SeasideCache::existingItem(mContact->id());
-        return SeasideCache::nameGroup(cacheItem);
+        return SeasideCache::displayLabelGroup(cacheItem);
     }
 
     if (!mDisplayLabel.isEmpty()) {

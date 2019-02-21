@@ -646,7 +646,7 @@ bool SeasideFilteredModel::filterId(quint32 iid) const
     }
 
     if (m_searchByFirstNameCharacter && !m_filterPattern.isEmpty())
-        return m_filterPattern == SeasideCache::nameGroup(item);
+        return m_filterPattern == SeasideCache::displayLabelGroup(item);
 
     FilterData *filterData = FilterData::getItemFilterData(item, this);
     filterData->prepareFilter(item);
@@ -916,7 +916,7 @@ QVariant SeasideFilteredModel::data(SeasideCache::CacheItem *cacheItem, int role
             // If we have a person instance, prefer to use that
             return role == Qt::DisplayRole ? person->displayLabel() : person->sectionBucket();
         }
-        return role == Qt::DisplayRole ? cacheItem->displayLabel : cacheItem->nameGroup;
+        return role == Qt::DisplayRole ? cacheItem->displayLabel : cacheItem->displayLabelGroup;
     } else if (role == PersonRole) {
         // Avoid creating a Person instance for as long as possible.
         SeasideCache::ensureCompletion(cacheItem);

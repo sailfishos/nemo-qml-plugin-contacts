@@ -407,9 +407,9 @@ Module {
         }
     }
     Component {
-        name: "SeasideNameGroupModel"
+        name: "SeasideDisplayLabelGroupModel"
         prototype: "QAbstractListModel"
-        exports: ["org.nemomobile.contacts/PeopleNameGroupModel 1.0"]
+        exports: ["org.nemomobile.contacts/PeopleDisplayLabelGroupModel 1.0"]
         exportMetaObjectRevisions: [0]
         Enum {
             name: "RequiredPropertyType"
