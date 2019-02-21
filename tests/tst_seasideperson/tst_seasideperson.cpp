@@ -60,7 +60,7 @@ class tst_SeasidePerson : public QObject
 
 public:
     // Ensure that the cache has been initialized
-    tst_SeasidePerson() : m_nameGroups(SeasideCache::allNameGroups()) {}
+    tst_SeasidePerson() : m_displayLabelGroups(SeasideCache::allDisplayLabelGroups()) {}
 
 private slots:
     void firstName();
@@ -92,7 +92,7 @@ private slots:
     void removeDuplicateEmailAddresses();
 
 private:
-    QStringList m_nameGroups;
+    QStringList m_displayLabelGroups;
 };
 
 void tst_SeasidePerson::firstName()

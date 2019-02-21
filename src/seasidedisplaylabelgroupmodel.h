@@ -42,11 +42,11 @@
 
 QTCONTACTS_USE_NAMESPACE
 
-class SeasideNameGroup
+class SeasideDisplayLabelGroup
 {
 public:
-    SeasideNameGroup() : count(0) {}
-    SeasideNameGroup(const QString &n, const QSet<quint32> &ids = QSet<quint32>(), int c = -1)
+    SeasideDisplayLabelGroup() : count(0) {}
+    SeasideDisplayLabelGroup(const QString &n, const QSet<quint32> &ids = QSet<quint32>(), int c = -1)
         : name(n), count(c), contactIds(ids)
     {
         if (count == -1) {
@@ -54,14 +54,14 @@ public:
         }
     }
 
-    inline bool operator==(const SeasideNameGroup &other) { return other.name == name; }
+    inline bool operator==(const SeasideDisplayLabelGroup &other) { return other.name == name; }
 
     QString name;
     int count;
     QSet<quint32> contactIds;
 };
 
-class SeasideNameGroupModel : public QAbstractListModel, public SeasideNameGroupChangeListener
+class SeasideDisplayLabelGroupModel : public QAbstractListModel, public SeasideDisplayLabelGroupChangeListener
 {
     Q_OBJECT
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
@@ -80,8 +80,8 @@ public:
         EmailAddressRequired = SeasideFilteredModel::EmailAddressRequired
     };
 
-    SeasideNameGroupModel(QObject *parent = 0);
-    ~SeasideNameGroupModel();
+    SeasideDisplayLabelGroupModel(QObject *parent = 0);
+    ~SeasideDisplayLabelGroupModel();
 
     int requiredProperty() const;
     void setRequiredProperty(int type);
@@ -89,7 +89,7 @@ public:
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     QVariant data(const QModelIndex &index, int role) const;
 
-    void nameGroupsUpdated(const QHash<QString, QSet<quint32> > &groups);
+    void displayLabelGroupsUpdated(const QHash<QString, QSet<quint32> > &groups);
 
     virtual QHash<int, QByteArray> roleNames() const;
 
@@ -100,7 +100,7 @@ signals:
 private:
     int countFilteredContacts(const QSet<quint32> &contactIds) const;
 
-    QList<SeasideNameGroup> m_groups;
+    QList<SeasideDisplayLabelGroup> m_groups;
     int m_requiredProperty;
 };
 
