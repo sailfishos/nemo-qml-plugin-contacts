@@ -450,7 +450,8 @@ Module {
                 "WebsiteType": 15,
                 "BirthdayType": 16,
                 "AnniversaryType": 17,
-                "GlobalPresenceStateType": 18
+                "GlobalPresenceStateType": 18,
+                "NoteType": 19,
             }
         }
         Enum {
@@ -544,6 +545,7 @@ Module {
         Property { name: "websiteDetails"; type: "QVariantList" }
         Property { name: "birthday"; type: "QDateTime" }
         Property { name: "anniversaryDetails"; type: "QVariantList" }
+        Property { name: "noteDetails"; type: "QVariantList" }
         Property { name: "globalPresenceState"; type: "PresenceState"; isReadonly: true }
         Property { name: "accountDetails"; type: "QVariantList" }
         Property { name: "syncTarget"; type: "string"; isReadonly: true }

@@ -105,7 +105,8 @@ public:
         NicknameDetailsRole,
         PhoneDetailsRole,
         EmailDetailsRole,
-        AccountDetailsRole
+        AccountDetailsRole,
+        NoteDetailsRole,
     };
 
     SeasideFilteredModel(QObject *parent = 0);
