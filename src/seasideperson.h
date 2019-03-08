@@ -349,6 +349,7 @@ public:
                 const QContact &mContact,
                 SeasideCache::DisplayLabelOrder order = SeasideCache::FirstNameFirst);
     static QString generateDisplayLabelFromNonNameDetails(const QContact &mContact);
+    static QString placeholderDisplayLabel();
 
     static SeasidePersonAttached *qmlAttachedProperties(QObject *object);
 

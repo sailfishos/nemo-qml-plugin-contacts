@@ -90,6 +90,48 @@ void SeasideDisplayLabelGroupModel::setRequiredProperty(int properties)
     }
 }
 
+int SeasideDisplayLabelGroupModel::indexOf(const QString &name) const
+{
+    for (int i = 0; i < m_groups.count(); ++i) {
+        if (m_groups.at(i).name == name) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+QVariantMap SeasideDisplayLabelGroupModel::get(int row) const
+{
+    if (row < 0 || row > m_groups.count()) {
+        return QVariantMap();
+    }
+
+    const SeasideDisplayLabelGroup &group = m_groups.at(row);
+
+    QVariantMap m;
+    m.insert("name", group.name);
+    m.insert("entryCount", group.count);
+    return m;
+}
+
+QVariant SeasideDisplayLabelGroupModel::get(int row, int role) const
+{
+    if (row < 0 || row > m_groups.count()) {
+        return QVariant();
+    }
+
+    const SeasideDisplayLabelGroup &group = m_groups.at(row);
+
+    switch (role) {
+    case NameRole:
+        return group.name;
+    case EntryCount:
+        return group.count;
+    }
+
+    return QVariant();
+}
+
 QHash<int, QByteArray> SeasideDisplayLabelGroupModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
