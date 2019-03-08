@@ -66,12 +66,13 @@ class SeasideDisplayLabelGroupModel : public QAbstractListModel, public SeasideD
     Q_OBJECT
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
     Q_PROPERTY(int requiredProperty READ requiredProperty WRITE setRequiredProperty NOTIFY requiredPropertyChanged)
-    Q_ENUMS(RequiredPropertyType)
+
 public:
     enum Role {
         NameRole = Qt::UserRole,
         EntryCount
     };
+    Q_ENUM(Role)
 
     enum RequiredPropertyType {
         NoPropertyRequired = SeasideFilteredModel::NoPropertyRequired,
@@ -79,12 +80,17 @@ public:
         PhoneNumberRequired = SeasideFilteredModel::PhoneNumberRequired,
         EmailAddressRequired = SeasideFilteredModel::EmailAddressRequired
     };
+    Q_ENUM(RequiredPropertyType)
 
     SeasideDisplayLabelGroupModel(QObject *parent = 0);
     ~SeasideDisplayLabelGroupModel();
 
     int requiredProperty() const;
     void setRequiredProperty(int type);
+
+    Q_INVOKABLE int indexOf(const QString &name) const;
+    Q_INVOKABLE QVariantMap get(int row) const;
+    Q_INVOKABLE QVariant get(int row, int role) const;
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     QVariant data(const QModelIndex &index, int role) const;

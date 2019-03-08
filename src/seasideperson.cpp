@@ -264,6 +264,12 @@ QString SeasidePerson::generateDisplayLabelFromNonNameDetails(const QContact &co
     return SeasideCache::generateDisplayLabelFromNonNameDetails(contact);
 }
 
+QString SeasidePerson::placeholderDisplayLabel()
+{
+    // TODO: localization?
+    return QStringLiteral("(Unnamed)");
+}
+
 void SeasidePerson::recalculateDisplayLabel(SeasideCache::DisplayLabelOrder order) const
 {
     QString oldDisplayLabel = mDisplayLabel;
@@ -282,8 +288,7 @@ void SeasidePerson::recalculateDisplayLabel(SeasideCache::DisplayLabelOrder orde
 QString SeasidePerson::displayLabel() const
 {
     if (mDisplayLabel.isEmpty()) {
-        // TODO: localization?
-        return QStringLiteral("(Unnamed)");
+        return SeasidePerson::placeholderDisplayLabel();
     }
     return mDisplayLabel;
 }
