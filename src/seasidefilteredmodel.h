@@ -55,6 +55,7 @@ class SeasideFilteredModel : public SeasideCache::ListModel
     Q_PROPERTY(int searchableProperty READ searchableProperty WRITE setSearchableProperty NOTIFY searchablePropertyChanged)
     Q_PROPERTY(bool searchByFirstNameCharacter READ searchByFirstNameCharacter WRITE setSearchByFirstNameCharacter NOTIFY searchByFirstNameCharacterChanged)
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
+    Q_PROPERTY(QString placeholderDisplayLabel READ placeholderDisplayLabel CONSTANT)
     Q_ENUMS(FilterType RequiredPropertyType SearchablePropertyType DisplayLabelOrder)
 
 public:
@@ -108,6 +109,7 @@ public:
         AccountDetailsRole,
         NoteDetailsRole,
     };
+    Q_ENUM(PeopleRoles)
 
     SeasideFilteredModel(QObject *parent = 0);
     ~SeasideFilteredModel();
@@ -135,6 +137,8 @@ public:
     QString sortProperty() const;
     QString groupProperty() const;
 
+    QString placeholderDisplayLabel() const;
+
     Q_INVOKABLE QVariantMap get(int row) const;
     Q_INVOKABLE QVariant get(int row, int role) const;
 
@@ -151,6 +155,7 @@ public:
     Q_INVOKABLE QString exportContacts();
 
     Q_INVOKABLE void prepareSearchFilters();
+    Q_INVOKABLE int firstIndexInGroup(const QString &sectionBucket);
 
     QModelIndex index(const QModelIndex &parent, int row, int column) const;
     int rowCount(const QModelIndex &parent = QModelIndex()) const;

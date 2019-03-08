@@ -537,6 +537,11 @@ QString SeasideFilteredModel::groupProperty() const
     return SeasideCache::groupProperty();
 }
 
+QString SeasideFilteredModel::placeholderDisplayLabel() const
+{
+    return SeasidePerson::placeholderDisplayLabel();
+}
+
 SeasideFilteredModel::FilterType SeasideFilteredModel::filterType() const
 {
     return m_filterType;
@@ -1057,6 +1062,58 @@ void SeasideFilteredModel::prepareSearchFilters()
 {
     m_filterUpdateIndex = 0;
     updateSearchFilters();
+}
+
+int SeasideFilteredModel::firstIndexInGroup(const QString &sectionBucket)
+{
+    if (sectionBucket.isEmpty()) {
+        qWarning() << "group name is empty!";
+        return -1;
+    }
+
+    // TODO better if cache sets this when results are received instead of searching every time.
+    QStringList allGroups = SeasideCache::allDisplayLabelGroups();
+    int matchingGroupIndex = allGroups.indexOf(sectionBucket);
+    if (matchingGroupIndex < 0) {
+        qWarning() << "Group" << sectionBucket << "not found in SeasideCache::allDisplayLabelGroups()";
+        return -1;
+    }
+
+    QString prevGroup;
+    int firstIndexOfPrevGroup = 0;
+
+    for (int i = 0; i < m_contactIds->count(); ++i) {
+        SeasideCache::CacheItem *cacheItem = SeasideCache::itemById(m_contactIds->at(i));
+        if (!cacheItem) {
+            continue;
+        }
+
+        if (prevGroup == cacheItem->displayLabelGroup) {
+            continue;
+        }
+
+        firstIndexOfPrevGroup = i;
+        if (sectionBucket == cacheItem->displayLabelGroup) {
+            return i;
+        }
+
+        int groupIndex = allGroups.indexOf(cacheItem->displayLabelGroup);
+        if (groupIndex < 0) {
+            qWarning() << "SeasideCache::allDisplayLabelGroups() is missing group:" << cacheItem->displayLabelGroup;
+            return -1;
+        }
+
+        if (groupIndex > matchingGroupIndex) {
+            // There are no words in this group, so return the index of the first word in the
+            // previous group. The contact list is sorted by section bucket, so can be sure
+            // there are no possible matches later in the list.
+            return firstIndexOfPrevGroup;
+        }
+
+        prevGroup = cacheItem->displayLabelGroup;
+    }
+
+    return -1;
 }
 
 SeasidePerson *SeasideFilteredModel::personFromItem(SeasideCache::CacheItem *item) const
