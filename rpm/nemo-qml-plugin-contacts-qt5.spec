@@ -1,7 +1,7 @@
 Name:       nemo-qml-plugin-contacts-qt5
 
 Summary:    Nemo QML contacts plugin
-Version:    0.0.93
+Version:    0.1.3
 Release:    1
 Group:      System/Libraries
 License:    BSD
