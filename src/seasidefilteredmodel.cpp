@@ -49,6 +49,7 @@
 #include <QContactPhoneNumber>
 #include <QContactGlobalPresence>
 #include <QContactPresence>
+#include <QContactNote>
 #include <QTextBoundaryFinder>
 
 #include <MLocale>
@@ -81,6 +82,7 @@ const QByteArray nicknameDetailsRole("nicknameDetails");
 const QByteArray phoneDetailsRole("phoneDetails");
 const QByteArray emailDetailsRole("emailDetails");
 const QByteArray accountDetailsRole("accountDetails");
+const QByteArray noteDetailsRole("noteDetails");
 
 const ML10N::MLocale mLocale;
 
@@ -504,6 +506,7 @@ QHash<int, QByteArray> SeasideFilteredModel::roleNames() const
     roles.insert(PhoneDetailsRole, phoneDetailsRole);
     roles.insert(EmailDetailsRole, emailDetailsRole);
     roles.insert(AccountDetailsRole, accountDetailsRole);
+    roles.insert(NoteDetailsRole, noteDetailsRole);
     return roles;
 }
 
@@ -754,6 +757,7 @@ QVariantMap SeasideFilteredModel::get(int row) const
     m.insert(phoneDetailsRole, data(cacheItem, PhoneDetailsRole));
     m.insert(emailDetailsRole, data(cacheItem, EmailDetailsRole));
     m.insert(accountDetailsRole, data(cacheItem, AccountDetailsRole));
+    m.insert(noteDetailsRole, data(cacheItem, NoteDetailsRole));
     return m;
 }
 
@@ -891,6 +895,8 @@ QVariant SeasideFilteredModel::data(SeasideCache::CacheItem *cacheItem, int role
         return SeasidePerson::emailDetails(contact);
     } else if (role == AccountDetailsRole) {
         return SeasidePerson::accountDetails(contact);
+    } else if (role == NoteDetailsRole) {
+        return SeasidePerson::noteDetails(contact);
     } else if (role == PhoneNumbersRole || role == EmailAddressesRole || role == AccountUrisRole || role == AccountPathsRole) {
         QStringList rv;
         if (role == PhoneNumbersRole) {

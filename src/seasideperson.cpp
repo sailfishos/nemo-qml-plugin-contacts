@@ -47,6 +47,7 @@
 #include <QContactPresence>
 #include <QContactOrganization>
 #include <QContactUrl>
+#include <QContactNote>
 #include <QContactSyncTarget>
 
 #include <QVersitWriter>
@@ -1516,6 +1517,87 @@ void SeasidePerson::setAnniversaryDetails(const QVariantList &anniversaryDetails
 SeasidePerson::PresenceState SeasidePerson::globalPresenceState() const
 {
     return static_cast<SeasidePerson::PresenceState>(mContact->detail<QContactGlobalPresence>().presenceState());
+}
+
+const QString noteDetailNote(QStringLiteral("note"));
+
+QVariantList SeasidePerson::noteDetails(const QContact &contact)
+{
+    QVariantList rv;
+
+    int index = 0;
+    foreach (const QContactNote &detail, contact.details<QContactNote>()) {
+        const QString note(detail.value(QContactNote::FieldNote).toString());
+        if (note.trimmed().isEmpty())
+            continue;
+
+        QVariantMap item(detailProperties(detail));
+        item.insert(noteDetailNote, note);
+        item.insert(detailType, NoteType);
+        item.insert(detailLabel, ::detailLabelType(detail));
+        item.insert(detailIndex, index++);
+        rv.append(item);
+    }
+
+    return rv;
+}
+
+QVariantList SeasidePerson::noteDetails() const
+{
+    return noteDetails(*mContact);
+}
+
+void SeasidePerson::setNoteDetails(const QVariantList &noteDetails)
+{
+    QList<QContactNote> notes(mContact->details<QContactNote>());
+
+    QList<QContactNote> updatedNotes, appendedNotes;
+    QSet<int> validIndices;
+
+    foreach (const QVariant &item, noteDetails) {
+        const QVariantMap detail(item.value<QVariantMap>());
+
+        const QVariant typeValue = detail[detailType];
+        if (typeValue.toInt() != NoteType) {
+            qWarning() << "Invalid type value for note:" << typeValue;
+            continue;
+        }
+
+        QContactNote updated;
+
+        const QVariant indexValue = detail[detailIndex];
+        const int index = indexValue.isValid() ? indexValue.value<int>() : -1;
+        if (index >= 0 && index < notes.count()) {
+            // Modify the existing detail
+            updated = notes.at(index);
+            Q_ASSERT(!validIndices.contains(index));
+        } else if (index != -1) {
+            qWarning() << "Invalid index value for note details:" << index;
+            continue;
+        }
+
+        const QVariant noteValue = detail[noteDetailNote];
+        const QString updatedNote(noteValue.value<QString>());
+        if (updatedNote.trimmed().isEmpty()) {
+            // Remove this URL from the list
+            continue;
+        }
+
+        updated.setValue(QContactNote::FieldNote, updatedNote);
+
+        const QVariant labelValue = detail[detailLabel];
+        ::setDetailLabelType(updated, labelValue.isValid() ? labelValue.toInt() : NoLabel);
+
+        if (index != -1) {
+            validIndices.insert(index);
+            updatedNotes.append(updated);
+        } else {
+            appendedNotes.append(updated);
+        }
+    }
+
+    updateDetails(notes, updatedNotes, appendedNotes, mContact, validIndices);
+    emit noteDetailsChanged();
 }
 
 namespace {

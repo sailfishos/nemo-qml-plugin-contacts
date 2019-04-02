@@ -111,7 +111,8 @@ public:
         WebsiteType,
         BirthdayType,
         AnniversaryType,
-        GlobalPresenceStateType
+        GlobalPresenceStateType,
+        NoteType
     };
 
     enum DetailSubType {
@@ -282,6 +283,10 @@ public:
     QVariantList accountDetails() const;
     void setAccountDetails(const QVariantList &accountDetails);
 
+    Q_PROPERTY(QVariantList noteDetails READ noteDetails WRITE setNoteDetails NOTIFY noteDetailsChanged)
+    QVariantList noteDetails() const;
+    void setNoteDetails(const QVariantList &noteDetails);
+
     Q_PROPERTY(QString syncTarget READ syncTarget CONSTANT)
     QString syncTarget() const;
 
@@ -344,6 +349,7 @@ public:
     static QVariantList websiteDetails(const QContact &contact);
     static QVariantList anniversaryDetails(const QContact &contact);
     static QVariantList accountDetails(const QContact &contact);
+    static QVariantList noteDetails(const QContact &contact);
 
     static QString generateDisplayLabel(
                 const QContact &mContact,
@@ -380,6 +386,7 @@ signals:
     void anniversaryDetailsChanged();
     void globalPresenceStateChanged();
     void accountDetailsChanged();
+    void noteDetailsChanged();
     void constituentsChanged();
     void mergeCandidatesChanged();
     void resolvingChanged();
