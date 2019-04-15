@@ -17,6 +17,8 @@ BuildRequires:  pkgconfig(qtcontacts-sqlite-qt5-extensions) >= 0.2.31
 BuildRequires:  pkgconfig(contactcache-qt5) >= 0.2.1
 BuildRequires:  pkgconfig(mlocale5)
 BuildRequires:  pkgconfig(mlite5)
+BuildRequires:  qt5-qttools-linguist
+BuildRequires:  qt5-qttools
 
 %description
 %{summary}.
