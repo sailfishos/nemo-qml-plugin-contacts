@@ -63,7 +63,7 @@ static const Contact contactsData[] =
 /*7*/   { "Robin",  u8"\u00D8lvi\u00DF", "Burchell", true,  false, 0,                                  "9876543", 0 }                        // 'Ølviß'
 };
 
-static QStringList getAllContactNameGroups()
+static QStringList getAllContactDisplayLabelGroups()
 {
     QStringList groups;
     for (char c = 'A'; c <= 'Z'; ++c) {
@@ -73,9 +73,28 @@ static QStringList getAllContactNameGroups()
     return groups;
 }
 
-SeasideCache *SeasideCache::instancePtr = 0;
-QStringList SeasideCache::allContactNameGroups = getAllContactNameGroups();
+static QString determineDisplayLabelGroup(const SeasideCache::CacheItem *cacheItem, const QString &preferredProperty)
+{
+    if (!cacheItem)
+        return QString();
 
+    const QContactName nameDetail = cacheItem->contact.detail<QContactName>();
+    QString group = cacheItem->contact.detail<QContactDisplayLabel>().value(QContactDisplayLabel__FieldLabelGroup).toString();
+    const QString sort(preferredProperty == QString::fromLatin1("firstName") ? nameDetail.firstName() : nameDetail.lastName());
+    if (group.isEmpty() && !sort.isEmpty()) {
+        group = QString(sort[0].toUpper());
+    } else if (group.isEmpty() && !cacheItem->displayLabel.isEmpty()) {
+        group = QString(cacheItem->displayLabel[0].toUpper());
+    }
+
+    if (group.isNull() || !SeasideCache::allContactDisplayLabelGroups.contains(group)) {
+        group = QString::fromLatin1("#");   // 'other' group
+    }
+    return group;
+}
+
+QStringList SeasideCache::allContactDisplayLabelGroups = getAllContactDisplayLabelGroups();
+SeasideCache *SeasideCache::instancePtr = 0;
 SeasideCache *SeasideCache::instance()
 {
     return instancePtr;
@@ -169,7 +188,7 @@ void SeasideCache::reset()
         QString fullName = name.firstName() + QChar::fromLatin1(' ') + name.lastName();
 
         CacheItem &cacheItem = m_cache.last();
-        cacheItem.nameGroup = determineNameGroup(&cacheItem);
+        cacheItem.displayLabelGroup = determineDisplayLabelGroup(&cacheItem, sortProperty());
         cacheItem.displayLabel = fullName;
     }
 
@@ -285,38 +304,17 @@ QContact SeasideCache::contactById(const QContactId &id)
     return instancePtr->m_cache[instancePtr->m_cacheIndices[iid]].contact;
 }
 
-QString SeasideCache::nameGroup(const CacheItem *cacheItem)
+QString SeasideCache::displayLabelGroup(const CacheItem *cacheItem)
 {
     if (!cacheItem)
         return QString();
 
-    return cacheItem->nameGroup;
+    return cacheItem->displayLabelGroup;
 }
 
-QString SeasideCache::determineNameGroup(const CacheItem *cacheItem)
+QStringList SeasideCache::allDisplayLabelGroups()
 {
-    if (!cacheItem)
-        return QString();
-
-    const QContactName nameDetail = cacheItem->contact.detail<QContactName>();
-    const QString sort(sortProperty() == QString::fromLatin1("firstName") ? nameDetail.firstName() : nameDetail.lastName());
-
-    QString group;
-    if (!sort.isEmpty()) {
-        group = QString(sort[0].toUpper());
-    } else if (!cacheItem->displayLabel.isEmpty()) {
-        group = QString(cacheItem->displayLabel[0].toUpper());
-    }
-
-    if (group.isNull() || !allContactNameGroups.contains(group)) {
-        group = QString::fromLatin1("#");   // 'other' group
-    }
-    return group;
-}
-
-QStringList SeasideCache::allNameGroups()
-{
-    return allContactNameGroups;
+    return allContactDisplayLabelGroups;
 }
 
 void SeasideCache::ensureCompletion(CacheItem *)
@@ -516,7 +514,7 @@ void SeasideCache::setFirstName(FilterType filterType, int index, const QString 
     cacheItem.contact.saveDetail(&name);
 
     QString fullName = name.firstName() + QChar::fromLatin1(' ') + name.lastName();
-    cacheItem.nameGroup = determineNameGroup(&cacheItem);
+    cacheItem.displayLabelGroup = determineDisplayLabelGroup(&cacheItem, sortProperty());
     cacheItem.displayLabel = fullName;
 
     ItemListener *listener(cacheItem.listeners);

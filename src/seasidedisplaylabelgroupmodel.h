@@ -42,11 +42,11 @@
 
 QTCONTACTS_USE_NAMESPACE
 
-class SeasideNameGroup
+class SeasideDisplayLabelGroup
 {
 public:
-    SeasideNameGroup() : count(0) {}
-    SeasideNameGroup(const QString &n, const QSet<quint32> &ids = QSet<quint32>(), int c = -1)
+    SeasideDisplayLabelGroup() : count(0) {}
+    SeasideDisplayLabelGroup(const QString &n, const QSet<quint32> &ids = QSet<quint32>(), int c = -1)
         : name(n), count(c), contactIds(ids)
     {
         if (count == -1) {
@@ -54,24 +54,25 @@ public:
         }
     }
 
-    inline bool operator==(const SeasideNameGroup &other) { return other.name == name; }
+    inline bool operator==(const SeasideDisplayLabelGroup &other) { return other.name == name; }
 
     QString name;
     int count;
     QSet<quint32> contactIds;
 };
 
-class SeasideNameGroupModel : public QAbstractListModel, public SeasideNameGroupChangeListener
+class SeasideDisplayLabelGroupModel : public QAbstractListModel, public SeasideDisplayLabelGroupChangeListener
 {
     Q_OBJECT
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
     Q_PROPERTY(int requiredProperty READ requiredProperty WRITE setRequiredProperty NOTIFY requiredPropertyChanged)
-    Q_ENUMS(RequiredPropertyType)
+
 public:
     enum Role {
         NameRole = Qt::UserRole,
         EntryCount
     };
+    Q_ENUM(Role)
 
     enum RequiredPropertyType {
         NoPropertyRequired = SeasideFilteredModel::NoPropertyRequired,
@@ -79,17 +80,22 @@ public:
         PhoneNumberRequired = SeasideFilteredModel::PhoneNumberRequired,
         EmailAddressRequired = SeasideFilteredModel::EmailAddressRequired
     };
+    Q_ENUM(RequiredPropertyType)
 
-    SeasideNameGroupModel(QObject *parent = 0);
-    ~SeasideNameGroupModel();
+    SeasideDisplayLabelGroupModel(QObject *parent = 0);
+    ~SeasideDisplayLabelGroupModel();
 
     int requiredProperty() const;
     void setRequiredProperty(int type);
 
+    Q_INVOKABLE int indexOf(const QString &name) const;
+    Q_INVOKABLE QVariantMap get(int row) const;
+    Q_INVOKABLE QVariant get(int row, int role) const;
+
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     QVariant data(const QModelIndex &index, int role) const;
 
-    void nameGroupsUpdated(const QHash<QString, QSet<quint32> > &groups);
+    void displayLabelGroupsUpdated(const QHash<QString, QSet<quint32> > &groups);
 
     virtual QHash<int, QByteArray> roleNames() const;
 
@@ -100,7 +106,7 @@ signals:
 private:
     int countFilteredContacts(const QSet<quint32> &contactIds) const;
 
-    QList<SeasideNameGroup> m_groups;
+    QList<SeasideDisplayLabelGroup> m_groups;
     int m_requiredProperty;
 };
 

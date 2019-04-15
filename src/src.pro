@@ -31,10 +31,10 @@ QMAKE_EXTRA_TARGETS += qmltypes
 SOURCES += $$PWD/plugin.cpp \
            $$PWD/seasideperson.cpp \
            $$PWD/seasidefilteredmodel.cpp \
-           $$PWD/seasidenamegroupmodel.cpp \
+           $$PWD/seasidedisplaylabelgroupmodel.cpp \
            $$PWD/seasidevcardmodel.cpp
 
 HEADERS += $$PWD/seasideperson.h \
            $$PWD/seasidefilteredmodel.h \
-           $$PWD/seasidenamegroupmodel.h \
+           $$PWD/seasidedisplaylabelgroupmodel.h \
            $$PWD/seasidevcardmodel.h

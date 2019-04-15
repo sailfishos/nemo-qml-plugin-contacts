@@ -29,7 +29,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "seasidenamegroupmodel.h"
+#include "seasidedisplaylabelgroupmodel.h"
 
 #include <QContactStatusFlags>
 
@@ -39,42 +39,42 @@
 
 #include <QDebug>
 
-SeasideNameGroupModel::SeasideNameGroupModel(QObject *parent)
+SeasideDisplayLabelGroupModel::SeasideDisplayLabelGroupModel(QObject *parent)
     : QAbstractListModel(parent)
     , m_requiredProperty(NoPropertyRequired)
 {
-    SeasideCache::registerNameGroupChangeListener(this);
+    SeasideCache::registerDisplayLabelGroupChangeListener(this);
 
-    const QStringList &allGroups = SeasideCache::allNameGroups();
-    QHash<QString, QSet<quint32> > existingGroups = SeasideCache::nameGroupMembers();
+    const QStringList &allGroups = SeasideCache::allDisplayLabelGroups();
+    QHash<QString, QSet<quint32> > existingGroups = SeasideCache::displayLabelGroupMembers();
     if (!existingGroups.isEmpty()) {
         for (int i=0; i<allGroups.count(); i++)
-            m_groups << SeasideNameGroup(allGroups[i], existingGroups.value(allGroups[i]));
+            m_groups << SeasideDisplayLabelGroup(allGroups[i], existingGroups.value(allGroups[i]));
     } else {
         for (int i=0; i<allGroups.count(); i++)
-            m_groups << SeasideNameGroup(allGroups[i]);
+            m_groups << SeasideDisplayLabelGroup(allGroups[i]);
     }
 }
 
-SeasideNameGroupModel::~SeasideNameGroupModel()
+SeasideDisplayLabelGroupModel::~SeasideDisplayLabelGroupModel()
 {
-    SeasideCache::unregisterNameGroupChangeListener(this);
+    SeasideCache::unregisterDisplayLabelGroupChangeListener(this);
 }
 
-int SeasideNameGroupModel::requiredProperty() const
+int SeasideDisplayLabelGroupModel::requiredProperty() const
 {
     return m_requiredProperty;
 }
 
-void SeasideNameGroupModel::setRequiredProperty(int properties)
+void SeasideDisplayLabelGroupModel::setRequiredProperty(int properties)
 {
     if (m_requiredProperty != properties) {
         m_requiredProperty = properties;
 
         // Update counts
-        QList<SeasideNameGroup>::iterator it = m_groups.begin(), end = m_groups.end();
+        QList<SeasideDisplayLabelGroup>::iterator it = m_groups.begin(), end = m_groups.end();
         for ( ; it != end; ++it) {
-            SeasideNameGroup &existing(*it);
+            SeasideDisplayLabelGroup &existing(*it);
 
             int newCount = countFilteredContacts(existing.contactIds);
             if (existing.count != newCount) {
@@ -90,7 +90,49 @@ void SeasideNameGroupModel::setRequiredProperty(int properties)
     }
 }
 
-QHash<int, QByteArray> SeasideNameGroupModel::roleNames() const
+int SeasideDisplayLabelGroupModel::indexOf(const QString &name) const
+{
+    for (int i = 0; i < m_groups.count(); ++i) {
+        if (m_groups.at(i).name == name) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+QVariantMap SeasideDisplayLabelGroupModel::get(int row) const
+{
+    if (row < 0 || row > m_groups.count()) {
+        return QVariantMap();
+    }
+
+    const SeasideDisplayLabelGroup &group = m_groups.at(row);
+
+    QVariantMap m;
+    m.insert("name", group.name);
+    m.insert("entryCount", group.count);
+    return m;
+}
+
+QVariant SeasideDisplayLabelGroupModel::get(int row, int role) const
+{
+    if (row < 0 || row > m_groups.count()) {
+        return QVariant();
+    }
+
+    const SeasideDisplayLabelGroup &group = m_groups.at(row);
+
+    switch (role) {
+    case NameRole:
+        return group.name;
+    case EntryCount:
+        return group.count;
+    }
+
+    return QVariant();
+}
+
+QHash<int, QByteArray> SeasideDisplayLabelGroupModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
     roles.insert(NameRole, "name");
@@ -98,12 +140,12 @@ QHash<int, QByteArray> SeasideNameGroupModel::roleNames() const
     return roles;
 }
 
-int SeasideNameGroupModel::rowCount(const QModelIndex &) const
+int SeasideDisplayLabelGroupModel::rowCount(const QModelIndex &) const
 {
     return m_groups.count();
 }
 
-QVariant SeasideNameGroupModel::data(const QModelIndex &index, int role) const
+QVariant SeasideDisplayLabelGroupModel::data(const QModelIndex &index, int role) const
 {
     switch (role) {
         case NameRole:
@@ -114,7 +156,7 @@ QVariant SeasideNameGroupModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-void SeasideNameGroupModel::nameGroupsUpdated(const QHash<QString, QSet<quint32> > &groups)
+void SeasideDisplayLabelGroupModel::displayLabelGroupsUpdated(const QHash<QString, QSet<quint32> > &groups)
 {
     if (groups.isEmpty())
         return;
@@ -123,11 +165,11 @@ void SeasideNameGroupModel::nameGroupsUpdated(const QHash<QString, QSet<quint32>
     bool insertedRows = false;
 
     if (wasEmpty) {
-        const QStringList &allGroups = SeasideCache::allNameGroups();
+        const QStringList &allGroups = SeasideCache::allDisplayLabelGroups();
         if (!allGroups.isEmpty()) {
             beginInsertRows(QModelIndex(), 0, allGroups.count() - 1);
             for (int i=0; i<allGroups.count(); i++)
-                m_groups << SeasideNameGroup(allGroups[i]);
+                m_groups << SeasideDisplayLabelGroup(allGroups[i]);
 
             insertedRows = true;
         }
@@ -137,9 +179,9 @@ void SeasideNameGroupModel::nameGroupsUpdated(const QHash<QString, QSet<quint32>
     for ( ; it != end; ++it) {
         const QString group(it.key());
 
-        QList<SeasideNameGroup>::iterator existingIt = m_groups.begin(), existingEnd = m_groups.end();
+        QList<SeasideDisplayLabelGroup>::iterator existingIt = m_groups.begin(), existingEnd = m_groups.end();
         for ( ; existingIt != existingEnd; ++existingIt) {
-            SeasideNameGroup &existing(*existingIt);
+            SeasideDisplayLabelGroup &existing(*existingIt);
             if (existing.name == group) {
                 existing.contactIds = it.value();
                 const int count = countFilteredContacts(existing.contactIds);
@@ -156,11 +198,11 @@ void SeasideNameGroupModel::nameGroupsUpdated(const QHash<QString, QSet<quint32>
         }
         if (existingIt == existingEnd) {
             // Find the index of this group in the groups list
-            const QStringList &allGroups = SeasideCache::allNameGroups();
+            const QStringList &allGroups = SeasideCache::allDisplayLabelGroups();
 
             int allIndex = 0;
             int groupIndex = 0;
-            for ( ; allGroups.at(allIndex) != group; ++allIndex) {
+            for ( ; allIndex < allGroups.size() && allGroups.at(allIndex) != group; ++allIndex) {
                 if (m_groups.at(groupIndex).name == allGroups.at(allIndex)) {
                     ++groupIndex;
                 }
@@ -168,7 +210,7 @@ void SeasideNameGroupModel::nameGroupsUpdated(const QHash<QString, QSet<quint32>
             if (allIndex < allGroups.count()) {
                 // Insert this group
                 beginInsertRows(QModelIndex(), groupIndex, groupIndex);
-                m_groups.insert(groupIndex, SeasideNameGroup(group, it.value()));
+                m_groups.insert(groupIndex, SeasideDisplayLabelGroup(group, it.value()));
                 endInsertRows();
 
                 insertedRows = true;
@@ -186,7 +228,7 @@ void SeasideNameGroupModel::nameGroupsUpdated(const QHash<QString, QSet<quint32>
     }
 }
 
-int SeasideNameGroupModel::countFilteredContacts(const QSet<quint32> &contactIds) const
+int SeasideDisplayLabelGroupModel::countFilteredContacts(const QSet<quint32> &contactIds) const
 {
     if (m_requiredProperty != NoPropertyRequired) {
         int count = 0;
@@ -200,7 +242,7 @@ int SeasideNameGroupModel::countFilteredContacts(const QSet<quint32> &contactIds
                 if (haveMatch)
                     ++count;
             } else {
-                qWarning() << "SeasideNameGroupModel: obsolete contact" << iid;
+                qWarning() << "SeasideDisplayLabelGroupModel: obsolete contact" << iid;
             }
         }
 

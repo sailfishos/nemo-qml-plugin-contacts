@@ -537,6 +537,11 @@ QString SeasideFilteredModel::groupProperty() const
     return SeasideCache::groupProperty();
 }
 
+QString SeasideFilteredModel::placeholderDisplayLabel() const
+{
+    return SeasidePerson::placeholderDisplayLabel();
+}
+
 SeasideFilteredModel::FilterType SeasideFilteredModel::filterType() const
 {
     return m_filterType;
@@ -649,7 +654,7 @@ bool SeasideFilteredModel::filterId(quint32 iid) const
     }
 
     if (m_searchByFirstNameCharacter && !m_filterPattern.isEmpty())
-        return m_filterPattern == SeasideCache::nameGroup(item);
+        return m_filterPattern == SeasideCache::displayLabelGroup(item);
 
     FilterData *filterData = FilterData::getItemFilterData(item, this);
     filterData->prepareFilter(item);
@@ -922,7 +927,7 @@ QVariant SeasideFilteredModel::data(SeasideCache::CacheItem *cacheItem, int role
             // If we have a person instance, prefer to use that
             return role == Qt::DisplayRole ? person->displayLabel() : person->sectionBucket();
         }
-        return role == Qt::DisplayRole ? cacheItem->displayLabel : cacheItem->nameGroup;
+        return role == Qt::DisplayRole ? cacheItem->displayLabel : cacheItem->displayLabelGroup;
     } else if (role == PersonRole) {
         // Avoid creating a Person instance for as long as possible.
         SeasideCache::ensureCompletion(cacheItem);
@@ -1057,6 +1062,58 @@ void SeasideFilteredModel::prepareSearchFilters()
 {
     m_filterUpdateIndex = 0;
     updateSearchFilters();
+}
+
+int SeasideFilteredModel::firstIndexInGroup(const QString &sectionBucket)
+{
+    if (sectionBucket.isEmpty()) {
+        qWarning() << "group name is empty!";
+        return -1;
+    }
+
+    // TODO better if cache sets this when results are received instead of searching every time.
+    QStringList allGroups = SeasideCache::allDisplayLabelGroups();
+    int matchingGroupIndex = allGroups.indexOf(sectionBucket);
+    if (matchingGroupIndex < 0) {
+        qWarning() << "Group" << sectionBucket << "not found in SeasideCache::allDisplayLabelGroups()";
+        return -1;
+    }
+
+    QString prevGroup;
+    int firstIndexOfPrevGroup = 0;
+
+    for (int i = 0; i < m_contactIds->count(); ++i) {
+        SeasideCache::CacheItem *cacheItem = SeasideCache::itemById(m_contactIds->at(i));
+        if (!cacheItem) {
+            continue;
+        }
+
+        if (prevGroup == cacheItem->displayLabelGroup) {
+            continue;
+        }
+
+        firstIndexOfPrevGroup = i;
+        if (sectionBucket == cacheItem->displayLabelGroup) {
+            return i;
+        }
+
+        int groupIndex = allGroups.indexOf(cacheItem->displayLabelGroup);
+        if (groupIndex < 0) {
+            qWarning() << "SeasideCache::allDisplayLabelGroups() is missing group:" << cacheItem->displayLabelGroup;
+            return -1;
+        }
+
+        if (groupIndex > matchingGroupIndex) {
+            // There are no words in this group, so return the index of the first word in the
+            // previous group. The contact list is sorted by section bucket, so can be sure
+            // there are no possible matches later in the list.
+            return firstIndexOfPrevGroup;
+        }
+
+        prevGroup = cacheItem->displayLabelGroup;
+    }
+
+    return -1;
 }
 
 SeasidePerson *SeasideFilteredModel::personFromItem(SeasideCache::CacheItem *item) const

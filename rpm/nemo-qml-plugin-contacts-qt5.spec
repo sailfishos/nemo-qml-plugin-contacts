@@ -21,6 +21,13 @@ BuildRequires:  pkgconfig(mlite5)
 %description
 %{summary}.
 
+%package ts-devel
+Summary:   Translation source for nemo-qml-plugin-contacts-qt5
+Group:     System/Libraries
+
+%description ts-devel
+Translation source for nemo-qml-plugin-contacts-qt5
+
 %package tools
 Summary:    Development tools for qmlcontacts
 License:    BSD
@@ -56,6 +63,11 @@ rm -rf %{buildroot}
 %{_libdir}/qt5/qml/org/nemomobile/contacts/libnemocontacts.so
 %{_libdir}/qt5/qml/org/nemomobile/contacts/plugins.qmltypes
 %{_libdir}/qt5/qml/org/nemomobile/contacts/qmldir
+%{_datadir}/translations/nemo-qml-plugin-contacts_eng_en.qm
+
+%files ts-devel
+%defattr(-,root,root,-)
+%{_datadir}/translations/source/nemo-qml-plugin-contacts.ts
 
 %files tools
 %defattr(-,root,root,-)
