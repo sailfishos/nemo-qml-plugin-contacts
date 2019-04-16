@@ -120,6 +120,8 @@ public:
         virtual void updateDisplayLabelOrder() = 0;
         virtual void updateSortProperty() = 0;
         virtual void updateGroupProperty() = 0;
+
+        virtual void updateSectionBucketIndexCache() = 0;
     };
 
     struct ResolveListener

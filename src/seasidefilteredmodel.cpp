@@ -578,6 +578,7 @@ void SeasideFilteredModel::setFilterType(FilterType type)
             if (!filtered) {
                 m_contactIds = m_referenceContactIds;
                 m_filteredContactIds.clear();
+                populateSectionBucketIndices();
             }
 
             if (SeasideCache::isPopulated(static_cast<SeasideCache::FilterType>(m_filterType)) != wasPopulated)
@@ -729,6 +730,7 @@ void SeasideFilteredModel::populateIndex()
         beginInsertRows(QModelIndex(), 0, m_filteredContactIds.count() - 1);
 
     m_contactIds = &m_filteredContactIds;
+    populateSectionBucketIndices();
 
     if (!m_filteredContactIds.isEmpty()) {
         endInsertRows();
@@ -1048,6 +1050,11 @@ void SeasideFilteredModel::updateGroupProperty()
     emit groupPropertyChanged();
 }
 
+void SeasideFilteredModel::updateSectionBucketIndexCache()
+{
+    populateSectionBucketIndices();
+}
+
 int SeasideFilteredModel::importContacts(const QString &path)
 {
     return SeasideCache::importContacts(path);
@@ -1064,6 +1071,51 @@ void SeasideFilteredModel::prepareSearchFilters()
     updateSearchFilters();
 }
 
+void SeasideFilteredModel::populateSectionBucketIndices()
+{
+    const QStringList allSectionBuckets = SeasideCache::allDisplayLabelGroups();
+    QMap<QString, int> firstIndexForSectionBucket;
+    for (const QString &bucket : allSectionBuckets) {
+        firstIndexForSectionBucket.insert(bucket, -1);
+    }
+
+    QString prevHandledSectionBucket;
+    for (int i = 0, j = 0; i < m_contactIds->size() && j < allSectionBuckets.size(); ++i) {
+        const QString &currSectionBucket(allSectionBuckets[j]);
+        SeasideCache::CacheItem *cacheItem = SeasideCache::itemById(m_contactIds->at(i));
+        if (!cacheItem) {
+            continue;
+        }
+        if (cacheItem->displayLabelGroup == currSectionBucket) {
+            // found the first contact for section bucket j
+            firstIndexForSectionBucket.insert(currSectionBucket, i);
+            prevHandledSectionBucket = currSectionBucket;
+            j++;
+        } else if (cacheItem->displayLabelGroup == prevHandledSectionBucket) {
+            // another contact in the most-recently-handled bucket.  skip it.
+            continue;
+        } else if (allSectionBuckets.indexOf(cacheItem->displayLabelGroup) < j) {
+            // We expect contacts to be ordered by display label group
+            // so if we hit a contact whose dlg is LESS than the currSectionBucket
+            // we know we have out-of-order data.
+            // This can happen after we have saved a contact, for example, as
+            // we then fetch the contact by id and immediately update
+            // even though the order of that contact won't have been
+            // updated according to the (potentially new) dlg sort order.
+            // So, early exit and wait for the refresh request (re-sort)
+            // to finish and trigger this method again.
+            return;
+        } else if (cacheItem->displayLabelGroup != prevHandledSectionBucket) {
+            // no contact exists which has this section bucket.
+            prevHandledSectionBucket = currSectionBucket;
+            j++;
+            i--;
+        }
+    }
+
+    m_firstIndexForSectionBucket = firstIndexForSectionBucket;
+}
+
 int SeasideFilteredModel::firstIndexInGroup(const QString &sectionBucket)
 {
     if (sectionBucket.isEmpty()) {
@@ -1071,46 +1123,22 @@ int SeasideFilteredModel::firstIndexInGroup(const QString &sectionBucket)
         return -1;
     }
 
-    // TODO better if cache sets this when results are received instead of searching every time.
-    QStringList allGroups = SeasideCache::allDisplayLabelGroups();
-    int matchingGroupIndex = allGroups.indexOf(sectionBucket);
-    if (matchingGroupIndex < 0) {
-        qWarning() << "Group" << sectionBucket << "not found in SeasideCache::allDisplayLabelGroups()";
-        return -1;
-    }
-
-    QString prevGroup;
-    int firstIndexOfPrevGroup = 0;
-
-    for (int i = 0; i < m_contactIds->count(); ++i) {
-        SeasideCache::CacheItem *cacheItem = SeasideCache::itemById(m_contactIds->at(i));
-        if (!cacheItem) {
-            continue;
+    bool returnNextValidIndex = false;
+    const QStringList sectionBuckets = m_firstIndexForSectionBucket.keys();
+    for (int i = sectionBuckets.size() - 1; i >= 0; --i) {
+        const QString &currSectionBucket(sectionBuckets[i]);
+        const int firstIndexInCurrSectionBucket = m_firstIndexForSectionBucket.value(currSectionBucket);
+        if (currSectionBucket == sectionBucket) {
+            if (firstIndexInCurrSectionBucket > 0) {
+                return firstIndexInCurrSectionBucket;
+            } else {
+                // There are no contact in this group, so return the index
+                // of the first contact in the previous (populated) group.
+                returnNextValidIndex = true;
+            }
+        } else if (firstIndexInCurrSectionBucket > 0 && returnNextValidIndex) {
+            return firstIndexInCurrSectionBucket;
         }
-
-        if (prevGroup == cacheItem->displayLabelGroup) {
-            continue;
-        }
-
-        firstIndexOfPrevGroup = i;
-        if (sectionBucket == cacheItem->displayLabelGroup) {
-            return i;
-        }
-
-        int groupIndex = allGroups.indexOf(cacheItem->displayLabelGroup);
-        if (groupIndex < 0) {
-            qWarning() << "SeasideCache::allDisplayLabelGroups() is missing group:" << cacheItem->displayLabelGroup;
-            return -1;
-        }
-
-        if (groupIndex > matchingGroupIndex) {
-            // There are no words in this group, so return the index of the first word in the
-            // previous group. The contact list is sorted by section bucket, so can be sure
-            // there are no possible matches later in the list.
-            return firstIndexOfPrevGroup;
-        }
-
-        prevGroup = cacheItem->displayLabelGroup;
     }
 
     return -1;
@@ -1189,6 +1217,7 @@ void SeasideFilteredModel::updateFilters(const QString &pattern, int property)
         m_referenceContactIds = SeasideCache::contacts(SeasideCache::FilterNone);
         m_contactIds = m_referenceContactIds;
         m_filteredContactIds.clear();
+        populateSectionBucketIndices();
 
         if (hadMatches) {
             endRemoveRows();
@@ -1196,6 +1225,7 @@ void SeasideFilteredModel::updateFilters(const QString &pattern, int property)
     } else if (!filtered) {
         m_filteredContactIds = *m_referenceContactIds;
         m_contactIds = &m_filteredContactIds;
+        populateSectionBucketIndices();
 
         refineIndex();
     } else if (refinement) {
@@ -1206,6 +1236,7 @@ void SeasideFilteredModel::updateFilters(const QString &pattern, int property)
         if (removeFilter) {
             m_contactIds = m_referenceContactIds;
             m_filteredContactIds.clear();
+            populateSectionBucketIndices();
         }
     }
 
