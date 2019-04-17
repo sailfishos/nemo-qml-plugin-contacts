@@ -1219,16 +1219,17 @@ int websiteSubType(SeasidePerson::DetailSubType subType)
 
 QVariant websiteSubType(const QContactUrl &url)
 {
+    if (!url.hasValue(QContactUrl::FieldSubType)) {
+        return SeasidePerson::NoSubType;
+    }
     return websiteSubType(static_cast<QContactUrl::SubType>(url.subType()));
 }
 
 void setWebsiteSubType(QContactUrl &website, const QVariant &type)
 {
-    // There is no possibility of NoSubType here
     int st = type.toInt();
     if (!type.isValid() || st == SeasidePerson::NoSubType) {
-        st = SeasidePerson::WebsiteSubTypeHomePage;
-        website.setSubType(QContactUrl::SubTypeHomePage);
+        website.removeValue(QContactUrl::FieldSubType);
     } else {
         website.setSubType(static_cast<QContactUrl::SubType>(websiteSubType(static_cast<SeasidePerson::DetailSubType>(st))));
     }
@@ -1407,16 +1408,17 @@ int anniversarySubType(SeasidePerson::DetailSubType subType)
 
 QVariant anniversarySubType(const QContactAnniversary &anniversary)
 {
+    if (!anniversary.hasValue(QContactAnniversary::FieldSubType)) {
+        return SeasidePerson::NoSubType;
+    }
     return anniversarySubType(static_cast<QContactAnniversary::SubType>(anniversary.subType()));
 }
 
 void setAnniversarySubType(QContactAnniversary &anniversary, const QVariant &type)
 {
-    // There is no possibility of NoSubType here
     int st = type.toInt();
     if (!type.isValid() || st == SeasidePerson::NoSubType) {
-        st = SeasidePerson::AnniversarySubTypeWedding;
-        anniversary.setSubType(QContactAnniversary::SubTypeWedding);
+        anniversary.removeValue(QContactAnniversary::FieldSubType);
     } else {
         anniversary.setSubType(static_cast<QContactAnniversary::SubType>(anniversarySubType(static_cast<SeasidePerson::DetailSubType>(st))));
     }
