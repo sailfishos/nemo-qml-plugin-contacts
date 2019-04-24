@@ -30,18 +30,22 @@
  */
 
 #include "seasidedisplaylabelgroupmodel.h"
+#include "seasidestringlistcompressor.h"
 
+#include <seasidecache.h>
+
+#include <QQmlInfo>
 #include <QContactStatusFlags>
-
 #include <QContactOnlineAccount>
 #include <QContactPhoneNumber>
 #include <QContactEmailAddress>
-
 #include <QDebug>
 
 SeasideDisplayLabelGroupModel::SeasideDisplayLabelGroupModel(QObject *parent)
     : QAbstractListModel(parent)
     , m_requiredProperty(NoPropertyRequired)
+    , m_maximumCount(std::numeric_limits<int>::max())
+    , m_complete(false)
 {
     SeasideCache::registerDisplayLabelGroupChangeListener(this);
 
@@ -71,29 +75,51 @@ void SeasideDisplayLabelGroupModel::setRequiredProperty(int properties)
     if (m_requiredProperty != properties) {
         m_requiredProperty = properties;
 
-        // Update counts
+        // Update hasContacts
+        bool needsRecompression = false;
         QList<SeasideDisplayLabelGroup>::iterator it = m_groups.begin(), end = m_groups.end();
         for ( ; it != end; ++it) {
             SeasideDisplayLabelGroup &existing(*it);
-
-            int newCount = countFilteredContacts(existing.contactIds);
-            if (existing.count != newCount) {
-                existing.count = newCount;
-
-                const int row = it - m_groups.begin();
-                const QModelIndex updateIndex(createIndex(row, 0));
-                emit dataChanged(updateIndex, updateIndex);
+            bool hasContacts = hasFilteredContacts(existing.contactIds);
+            if (existing.hasContacts != hasContacts) {
+                existing.hasContacts = hasContacts;
+                needsRecompression = true;
             }
         }
 
         emit requiredPropertyChanged();
+
+        if (needsRecompression) {
+            reloadCompressedGroups();
+        }
+    }
+}
+
+int SeasideDisplayLabelGroupModel::minimumCount() const
+{
+    return SeasideStringListCompressor::minimumCompressionInputCount();
+}
+
+int SeasideDisplayLabelGroupModel::maximumCount() const
+{
+    return m_maximumCount;
+}
+
+void SeasideDisplayLabelGroupModel::setMaximumCount(int maximumCount)
+{
+    maximumCount = qMax(minimumCount(), maximumCount);
+    if (maximumCount != m_maximumCount) {
+        m_maximumCount = maximumCount;
+        emit maximumCountChanged();
+
+        reloadCompressedGroups();
     }
 }
 
 int SeasideDisplayLabelGroupModel::indexOf(const QString &name) const
 {
-    for (int i = 0; i < m_groups.count(); ++i) {
-        if (m_groups.at(i).name == name) {
+    for (int i = 0; i < m_compressedGroups.count(); ++i) {
+        if (m_compressedGroups.at(i) == name) {
             return i;
         }
     }
@@ -102,31 +128,30 @@ int SeasideDisplayLabelGroupModel::indexOf(const QString &name) const
 
 QVariantMap SeasideDisplayLabelGroupModel::get(int row) const
 {
-    if (row < 0 || row > m_groups.count()) {
+    if (row < 0 || row > m_compressedGroups.count()) {
         return QVariantMap();
     }
 
-    const SeasideDisplayLabelGroup &group = m_groups.at(row);
-
     QVariantMap m;
-    m.insert("name", group.name);
-    m.insert("entryCount", group.count);
+    QString group = m_compressedGroups.at(row);
+    m.insert("name", group);
+    m.insert("compressed", SeasideStringListCompressor::isCompressionMarker(group));
     return m;
 }
 
 QVariant SeasideDisplayLabelGroupModel::get(int row, int role) const
 {
-    if (row < 0 || row > m_groups.count()) {
+    if (row < 0 || row >= m_compressedGroups.count()) {
         return QVariant();
     }
 
-    const SeasideDisplayLabelGroup &group = m_groups.at(row);
+    const QString &group = m_compressedGroups.at(row);
 
     switch (role) {
     case NameRole:
-        return group.name;
-    case EntryCount:
-        return group.count;
+        return group;
+    case CompressedRole:
+        return SeasideStringListCompressor::isCompressionMarker(group);
     }
 
     return QVariant();
@@ -136,22 +161,38 @@ QHash<int, QByteArray> SeasideDisplayLabelGroupModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
     roles.insert(NameRole, "name");
-    roles.insert(EntryCount, "entryCount");
+    roles.insert(CompressedRole, "compressed");
     return roles;
 }
 
 int SeasideDisplayLabelGroupModel::rowCount(const QModelIndex &) const
 {
-    return m_groups.count();
+    return m_compressedGroups.count();
+}
+
+void SeasideDisplayLabelGroupModel::classBegin()
+{
+}
+
+void SeasideDisplayLabelGroupModel::componentComplete()
+{
+    m_complete = true;
+    reloadCompressedGroups();
 }
 
 QVariant SeasideDisplayLabelGroupModel::data(const QModelIndex &index, int role) const
 {
+    if (index.row() < 0 || index.row() >= m_compressedGroups.count()) {
+        return QVariant();
+    }
+
+    const QString &group = m_compressedGroups.at(index.row());
+
     switch (role) {
-        case NameRole:
-            return QString(m_groups[index.row()].name);
-        case EntryCount:
-            return m_groups[index.row()].count;
+    case NameRole:
+        return group;
+    case CompressedRole:
+        return SeasideStringListCompressor::isCompressionMarker(group);
     }
     return QVariant();
 }
@@ -162,16 +203,15 @@ void SeasideDisplayLabelGroupModel::displayLabelGroupsUpdated(const QHash<QStrin
         return;
 
     bool wasEmpty = m_groups.isEmpty();
-    bool insertedRows = false;
+    bool needsRecompression = false;
 
     if (wasEmpty) {
         const QStringList &allGroups = SeasideCache::allDisplayLabelGroups();
         if (!allGroups.isEmpty()) {
-            beginInsertRows(QModelIndex(), 0, allGroups.count() - 1);
-            for (int i=0; i<allGroups.count(); i++)
+            for (int i=0; i<allGroups.count(); i++) {
                 m_groups << SeasideDisplayLabelGroup(allGroups[i]);
-
-            insertedRows = true;
+            }
+            needsRecompression = true;
         }
     }
 
@@ -184,14 +224,10 @@ void SeasideDisplayLabelGroupModel::displayLabelGroupsUpdated(const QHash<QStrin
             SeasideDisplayLabelGroup &existing(*existingIt);
             if (existing.name == group) {
                 existing.contactIds = it.value();
-                const int count = countFilteredContacts(existing.contactIds);
-                if (existing.count != count) {
-                    existing.count = count;
-                    if (!wasEmpty) {
-                        const int row = existingIt - m_groups.begin();
-                        const QModelIndex updateIndex(createIndex(row, 0));
-                        emit dataChanged(updateIndex, updateIndex);
-                    }
+                bool hasContacts = hasFilteredContacts(existing.contactIds);
+                if (existing.hasContacts != hasContacts) {
+                    existing.hasContacts = hasContacts;
+                    needsRecompression = true;
                 }
                 break;
             }
@@ -209,46 +245,67 @@ void SeasideDisplayLabelGroupModel::displayLabelGroupsUpdated(const QHash<QStrin
             }
             if (allIndex < allGroups.count()) {
                 // Insert this group
-                beginInsertRows(QModelIndex(), groupIndex, groupIndex);
                 m_groups.insert(groupIndex, SeasideDisplayLabelGroup(group, it.value()));
-                endInsertRows();
-
-                insertedRows = true;
+                needsRecompression = true;
             } else {
                 qWarning() << "Could not find unknown group in allGroups!" << group;
             }
         }
     }
 
-    if (wasEmpty) {
-        endInsertRows();
-    }
-    if (insertedRows) {
-        emit countChanged();
+    if (needsRecompression) {
+        reloadCompressedGroups();
     }
 }
 
-int SeasideDisplayLabelGroupModel::countFilteredContacts(const QSet<quint32> &contactIds) const
+bool SeasideDisplayLabelGroupModel::hasFilteredContacts(const QSet<quint32> &contactIds) const
 {
     if (m_requiredProperty != NoPropertyRequired) {
-        int count = 0;
-
         // Check if these contacts are included by the current filter
         foreach (quint32 iid, contactIds) {
             if (SeasideCache::CacheItem *item = SeasideCache::existingItem(iid)) {
                 bool haveMatch = (m_requiredProperty & AccountUriRequired) && (item->statusFlags & QContactStatusFlags::HasOnlineAccount);
                 haveMatch |= (m_requiredProperty & PhoneNumberRequired) && (item->statusFlags & QContactStatusFlags::HasPhoneNumber);
                 haveMatch |= (m_requiredProperty & EmailAddressRequired) && (item->statusFlags & QContactStatusFlags::HasEmailAddress);
-                if (haveMatch)
-                    ++count;
+                if (haveMatch) {
+                    return true;
+                }
             } else {
                 qWarning() << "SeasideDisplayLabelGroupModel: obsolete contact" << iid;
             }
         }
 
-        return count;
+        return false;
     }
 
-    return contactIds.count();
+    return contactIds.count() > 0;
 }
 
+void SeasideDisplayLabelGroupModel::reloadCompressedGroups()
+{
+    if (!m_complete) {
+        return;
+    }
+
+    QStringList labelGroups;
+    for (const SeasideDisplayLabelGroup &group : m_groups) {
+        if (group.hasContacts) {
+            labelGroups.append(group.name);
+        }
+    }
+
+    QStringList compressedGroups = SeasideStringListCompressor::compress(labelGroups, m_maximumCount);
+    if (compressedGroups.count() < minimumCount()) {
+        compressedGroups.clear();
+    }
+
+    if (m_compressedGroups != compressedGroups) {
+        const bool countChanging = m_compressedGroups.count() != compressedGroups.count();
+        beginResetModel();
+        m_compressedGroups = compressedGroups;
+        endResetModel();
+        if (countChanging) {
+            emit countChanged();
+        }
+    }
+}

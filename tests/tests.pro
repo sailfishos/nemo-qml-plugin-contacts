@@ -3,7 +3,8 @@ include(basename.pri)
 TEMPLATE = subdirs
 SUBDIRS = \
           tst_seasideperson \
-          tst_seasidefilteredmodel
+          tst_seasidefilteredmodel \
+          tst_seasidestringlistcompressor
 
 tests_xml.target = tests.xml
 tests_xml.depends = $$PWD/tests.xml.in
