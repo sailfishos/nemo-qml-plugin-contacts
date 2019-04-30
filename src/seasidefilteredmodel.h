@@ -187,9 +187,12 @@ public:
     void sourceItemsChanged();
 
     void makePopulated();
+
     void updateDisplayLabelOrder();
     void updateSortProperty();
     void updateGroupProperty();
+
+    void updateSectionBucketIndexCache();
 
 signals:
     void populatedChanged();
@@ -220,8 +223,11 @@ private:
 
     void updateSearchFilters();
 
+    void populateSectionBucketIndices();
+
     bool event(QEvent *);
 
+    QMap<QString, int> m_firstIndexForSectionBucket;
     QList<quint32> m_filteredContactIds;
     const QList<quint32> *m_contactIds;
     const QList<quint32> *m_referenceContactIds;
