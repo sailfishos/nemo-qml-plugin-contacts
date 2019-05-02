@@ -1129,7 +1129,7 @@ int SeasideFilteredModel::firstIndexInGroup(const QString &sectionBucket)
         const QString &currSectionBucket(sectionBuckets[i]);
         const int firstIndexInCurrSectionBucket = m_firstIndexForSectionBucket.value(currSectionBucket);
         if (currSectionBucket == sectionBucket) {
-            if (firstIndexInCurrSectionBucket > 0) {
+            if (firstIndexInCurrSectionBucket >= 0) {
                 return firstIndexInCurrSectionBucket;
             } else {
                 // There are no contact in this group, so return the index
