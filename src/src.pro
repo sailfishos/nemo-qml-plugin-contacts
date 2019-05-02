@@ -32,9 +32,11 @@ SOURCES += $$PWD/plugin.cpp \
            $$PWD/seasideperson.cpp \
            $$PWD/seasidefilteredmodel.cpp \
            $$PWD/seasidedisplaylabelgroupmodel.cpp \
+           $$PWD/seasidestringlistcompressor.cpp \
            $$PWD/seasidevcardmodel.cpp
 
 HEADERS += $$PWD/seasideperson.h \
            $$PWD/seasidefilteredmodel.h \
            $$PWD/seasidedisplaylabelgroupmodel.h \
+           $$PWD/seasidestringlistcompressor.h \
            $$PWD/seasidevcardmodel.h

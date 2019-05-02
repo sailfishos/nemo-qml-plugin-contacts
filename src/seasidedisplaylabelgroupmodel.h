@@ -32,12 +32,11 @@
 #ifndef SEASIDEPEOPLENAMEGROUPMODEL_H
 #define SEASIDEPEOPLENAMEGROUPMODEL_H
 
-#include <seasidecache.h>
 #include <seasidefilteredmodel.h>
 
+#include <QQmlParserStatus>
 #include <QAbstractListModel>
 #include <QStringList>
-
 #include <QContactId>
 
 QTCONTACTS_USE_NAMESPACE
@@ -45,32 +44,32 @@ QTCONTACTS_USE_NAMESPACE
 class SeasideDisplayLabelGroup
 {
 public:
-    SeasideDisplayLabelGroup() : count(0) {}
-    SeasideDisplayLabelGroup(const QString &n, const QSet<quint32> &ids = QSet<quint32>(), int c = -1)
-        : name(n), count(c), contactIds(ids)
+    SeasideDisplayLabelGroup() {}
+    SeasideDisplayLabelGroup(const QString &n, const QSet<quint32> &ids = QSet<quint32>())
+        : name(n), contactIds(ids)
     {
-        if (count == -1) {
-            count = contactIds.count();
-        }
+        hasContacts = contactIds.count() > 0;
     }
 
     inline bool operator==(const SeasideDisplayLabelGroup &other) { return other.name == name; }
 
     QString name;
-    int count;
+    bool hasContacts = false;
     QSet<quint32> contactIds;
 };
 
-class SeasideDisplayLabelGroupModel : public QAbstractListModel, public SeasideDisplayLabelGroupChangeListener
+class SeasideDisplayLabelGroupModel : public QAbstractListModel, public QQmlParserStatus, public SeasideDisplayLabelGroupChangeListener
 {
     Q_OBJECT
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
+    Q_PROPERTY(int minimumCount READ minimumCount CONSTANT)
+    Q_PROPERTY(int maximumCount WRITE setMaximumCount READ maximumCount NOTIFY maximumCountChanged)
     Q_PROPERTY(int requiredProperty READ requiredProperty WRITE setRequiredProperty NOTIFY requiredPropertyChanged)
 
 public:
     enum Role {
         NameRole = Qt::UserRole,
-        EntryCount
+        CompressedRole
     };
     Q_ENUM(Role)
 
@@ -88,26 +87,37 @@ public:
     int requiredProperty() const;
     void setRequiredProperty(int type);
 
+    int minimumCount() const;
+    int maximumCount() const;
+    void setMaximumCount(int maximumCount);
+
     Q_INVOKABLE int indexOf(const QString &name) const;
     Q_INVOKABLE QVariantMap get(int row) const;
     Q_INVOKABLE QVariant get(int row, int role) const;
 
-    int rowCount(const QModelIndex &parent = QModelIndex()) const;
-    QVariant data(const QModelIndex &index, int role) const;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role) const override;
 
     void displayLabelGroupsUpdated(const QHash<QString, QSet<quint32> > &groups);
 
-    virtual QHash<int, QByteArray> roleNames() const;
+    QHash<int, QByteArray> roleNames() const override;
+    void classBegin() override;
+    void componentComplete() override;
 
 signals:
     void countChanged();
+    void maximumCountChanged();
     void requiredPropertyChanged();
 
 private:
-    int countFilteredContacts(const QSet<quint32> &contactIds) const;
+    bool hasFilteredContacts(const QSet<quint32> &contactIds) const;
+    void reloadCompressedGroups();
 
     QList<SeasideDisplayLabelGroup> m_groups;
+    QStringList m_compressedGroups;
     int m_requiredProperty;
+    int m_maximumCount;
+    bool m_complete;
 };
 
 #endif
