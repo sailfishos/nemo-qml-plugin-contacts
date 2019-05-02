@@ -1136,7 +1136,7 @@ int SeasideFilteredModel::firstIndexInGroup(const QString &sectionBucket)
                 // of the first contact in the previous (populated) group.
                 returnNextValidIndex = true;
             }
-        } else if (firstIndexInCurrSectionBucket > 0 && returnNextValidIndex) {
+        } else if (firstIndexInCurrSectionBucket >= 0 && returnNextValidIndex) {
             return firstIndexInCurrSectionBucket;
         }
     }
