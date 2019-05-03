@@ -476,6 +476,7 @@ SeasideFilteredModel::SeasideFilteredModel(QObject *parent)
     m_allContactIds = SeasideCache::contacts(SeasideCache::FilterAll);
     m_referenceContactIds = m_allContactIds;
     m_contactIds = m_allContactIds;
+    updateSectionBucketIndexCache();
 }
 
 SeasideFilteredModel::~SeasideFilteredModel()
