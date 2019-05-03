@@ -274,6 +274,48 @@ Module {
     }
     Component { name: "QAbstractListModel"; prototype: "QAbstractItemModel" }
     Component {
+        name: "SeasideDisplayLabelGroupModel"
+        prototype: "QAbstractListModel"
+        exports: ["org.nemomobile.contacts/PeopleDisplayLabelGroupModel 1.0"]
+        exportMetaObjectRevisions: [0]
+        Enum {
+            name: "Role"
+            values: {
+                "NameRole": 256,
+                "CompressedRole": 257
+            }
+        }
+        Enum {
+            name: "RequiredPropertyType"
+            values: {
+                "NoPropertyRequired": 0,
+                "AccountUriRequired": 1,
+                "PhoneNumberRequired": 2,
+                "EmailAddressRequired": 4
+            }
+        }
+        Property { name: "count"; type: "int"; isReadonly: true }
+        Property { name: "minimumCount"; type: "int"; isReadonly: true }
+        Property { name: "maximumCount"; type: "int" }
+        Property { name: "requiredProperty"; type: "int" }
+        Method {
+            name: "indexOf"
+            type: "int"
+            Parameter { name: "name"; type: "string" }
+        }
+        Method {
+            name: "get"
+            type: "QVariantMap"
+            Parameter { name: "row"; type: "int" }
+        }
+        Method {
+            name: "get"
+            type: "QVariant"
+            Parameter { name: "row"; type: "int" }
+            Parameter { name: "role"; type: "int" }
+        }
+    }
+    Component {
         name: "SeasideFilteredModel"
         prototype: "QAbstractListModel"
         exports: ["org.nemomobile.contacts/PeopleModel 1.0"]
@@ -314,6 +356,31 @@ Module {
                 "LastNameFirst": 1
             }
         }
+        Enum {
+            name: "PeopleRoles"
+            values: {
+                "FirstNameRole": 256,
+                "LastNameRole": 257,
+                "FavoriteRole": 258,
+                "AvatarRole": 259,
+                "AvatarUrlRole": 260,
+                "SectionBucketRole": 261,
+                "GlobalPresenceStateRole": 262,
+                "ContactIdRole": 263,
+                "PhoneNumbersRole": 264,
+                "EmailAddressesRole": 265,
+                "AccountUrisRole": 266,
+                "AccountPathsRole": 267,
+                "PersonRole": 268,
+                "PrimaryNameRole": 269,
+                "SecondaryNameRole": 270,
+                "NicknameDetailsRole": 271,
+                "PhoneDetailsRole": 272,
+                "EmailDetailsRole": 273,
+                "AccountDetailsRole": 274,
+                "NoteDetailsRole": 275
+            }
+        }
         Property { name: "populated"; type: "bool"; isReadonly: true }
         Property { name: "filterType"; type: "FilterType" }
         Property { name: "displayLabelOrder"; type: "DisplayLabelOrder" }
@@ -324,6 +391,7 @@ Module {
         Property { name: "searchableProperty"; type: "int" }
         Property { name: "searchByFirstNameCharacter"; type: "bool" }
         Property { name: "count"; type: "int"; isReadonly: true }
+        Property { name: "placeholderDisplayLabel"; type: "string"; isReadonly: true }
         Method {
             name: "get"
             type: "QVariantMap"
@@ -398,6 +466,11 @@ Module {
         Method { name: "exportContacts"; type: "string" }
         Method { name: "prepareSearchFilters" }
         Method {
+            name: "firstIndexInGroup"
+            type: "int"
+            Parameter { name: "sectionBucket"; type: "string" }
+        }
+        Method {
             name: "setFilter"
             Parameter { name: "type"; type: "FilterType" }
         }
@@ -405,23 +478,6 @@ Module {
             name: "search"
             Parameter { name: "pattern"; type: "string" }
         }
-    }
-    Component {
-        name: "SeasideDisplayLabelGroupModel"
-        prototype: "QAbstractListModel"
-        exports: ["org.nemomobile.contacts/PeopleDisplayLabelGroupModel 1.0"]
-        exportMetaObjectRevisions: [0]
-        Enum {
-            name: "RequiredPropertyType"
-            values: {
-                "NoPropertyRequired": 0,
-                "AccountUriRequired": 1,
-                "PhoneNumberRequired": 2,
-                "EmailAddressRequired": 4
-            }
-        }
-        Property { name: "count"; type: "int"; isReadonly: true }
-        Property { name: "requiredProperty"; type: "int" }
     }
     Component {
         name: "SeasidePerson"
@@ -451,7 +507,7 @@ Module {
                 "BirthdayType": 16,
                 "AnniversaryType": 17,
                 "GlobalPresenceStateType": 18,
-                "NoteType": 19,
+                "NoteType": 19
             }
         }
         Enum {
@@ -545,9 +601,9 @@ Module {
         Property { name: "websiteDetails"; type: "QVariantList" }
         Property { name: "birthday"; type: "QDateTime" }
         Property { name: "anniversaryDetails"; type: "QVariantList" }
-        Property { name: "noteDetails"; type: "QVariantList" }
         Property { name: "globalPresenceState"; type: "PresenceState"; isReadonly: true }
         Property { name: "accountDetails"; type: "QVariantList" }
+        Property { name: "noteDetails"; type: "QVariantList" }
         Property { name: "syncTarget"; type: "string"; isReadonly: true }
         Property { name: "constituents"; type: "QList<int>"; isReadonly: true }
         Property { name: "mergeCandidates"; type: "QList<int>"; isReadonly: true }
