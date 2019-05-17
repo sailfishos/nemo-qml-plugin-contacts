@@ -579,8 +579,9 @@ void SeasideFilteredModel::setFilterType(FilterType type)
             if (!filtered) {
                 m_contactIds = m_referenceContactIds;
                 m_filteredContactIds.clear();
-                populateSectionBucketIndices();
             }
+
+            populateSectionBucketIndices();
 
             if (SeasideCache::isPopulated(static_cast<SeasideCache::FilterType>(m_filterType)) != wasPopulated)
                 emit populatedChanged();
