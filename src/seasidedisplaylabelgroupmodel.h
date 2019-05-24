@@ -69,7 +69,8 @@ class SeasideDisplayLabelGroupModel : public QAbstractListModel, public QQmlPars
 public:
     enum Role {
         NameRole = Qt::UserRole,
-        CompressedRole
+        CompressedRole,
+        CompressedContentRole
     };
     Q_ENUM(Role)
 
@@ -112,9 +113,12 @@ signals:
 private:
     bool hasFilteredContacts(const QSet<quint32> &contactIds) const;
     void reloadCompressedGroups();
+    void reloadGroupIndices();
 
     QList<SeasideDisplayLabelGroup> m_groups;
     QStringList m_compressedGroups;
+    QMap<int, QStringList> m_compressedContent;
+    QHash<QString, int> m_groupIndices;
     int m_requiredProperty;
     int m_maximumCount;
     bool m_complete;

@@ -118,12 +118,7 @@ void SeasideDisplayLabelGroupModel::setMaximumCount(int maximumCount)
 
 int SeasideDisplayLabelGroupModel::indexOf(const QString &name) const
 {
-    for (int i = 0; i < m_compressedGroups.count(); ++i) {
-        if (m_compressedGroups.at(i) == name) {
-            return i;
-        }
-    }
-    return -1;
+    return m_groupIndices.value(name);
 }
 
 QVariantMap SeasideDisplayLabelGroupModel::get(int row) const
@@ -136,6 +131,7 @@ QVariantMap SeasideDisplayLabelGroupModel::get(int row) const
     QString group = m_compressedGroups.at(row);
     m.insert("name", group);
     m.insert("compressed", SeasideStringListCompressor::isCompressionMarker(group));
+    m.insert("compressedContent", m_compressedContent.value(row));
     return m;
 }
 
@@ -152,6 +148,8 @@ QVariant SeasideDisplayLabelGroupModel::get(int row, int role) const
         return group;
     case CompressedRole:
         return SeasideStringListCompressor::isCompressionMarker(group);
+    case CompressedContentRole:
+        return m_compressedContent.value(row);
     }
 
     return QVariant();
@@ -162,6 +160,7 @@ QHash<int, QByteArray> SeasideDisplayLabelGroupModel::roleNames() const
     QHash<int, QByteArray> roles;
     roles.insert(NameRole, "name");
     roles.insert(CompressedRole, "compressed");
+    roles.insert(CompressedContentRole, "compressedContent");
     return roles;
 }
 
@@ -182,19 +181,7 @@ void SeasideDisplayLabelGroupModel::componentComplete()
 
 QVariant SeasideDisplayLabelGroupModel::data(const QModelIndex &index, int role) const
 {
-    if (index.row() < 0 || index.row() >= m_compressedGroups.count()) {
-        return QVariant();
-    }
-
-    const QString &group = m_compressedGroups.at(index.row());
-
-    switch (role) {
-    case NameRole:
-        return group;
-    case CompressedRole:
-        return SeasideStringListCompressor::isCompressionMarker(group);
-    }
-    return QVariant();
+    return get(index.row(), role);
 }
 
 void SeasideDisplayLabelGroupModel::displayLabelGroupsUpdated(const QHash<QString, QSet<quint32> > &groups)
@@ -281,6 +268,25 @@ bool SeasideDisplayLabelGroupModel::hasFilteredContacts(const QSet<quint32> &con
     return contactIds.count() > 0;
 }
 
+void SeasideDisplayLabelGroupModel::reloadGroupIndices()
+{
+    m_groupIndices.clear();
+
+    // Cache the index of each display label group for a fast lookup in indexOf(). If a group is
+    // compressed, all of its contents are inserted into the hash with the same index.
+    for (int i = 0; i < m_compressedGroups.count(); i++) {
+        const QString &group = m_compressedGroups.at(i);
+        if (SeasideStringListCompressor::isCompressionMarker(group)) {
+            const QStringList &groupContent = m_compressedContent.value(i);
+            for (const QString &groupContentEntry : groupContent) {
+                m_groupIndices.insert(groupContentEntry, i);
+            }
+        } else {
+            m_groupIndices.insert(group, i);
+        }
+    }
+}
+
 void SeasideDisplayLabelGroupModel::reloadCompressedGroups()
 {
     if (!m_complete) {
@@ -294,7 +300,8 @@ void SeasideDisplayLabelGroupModel::reloadCompressedGroups()
         }
     }
 
-    QStringList compressedGroups = SeasideStringListCompressor::compress(labelGroups, m_maximumCount);
+    QMap<int, QStringList> compressedContent;
+    QStringList compressedGroups = SeasideStringListCompressor::compress(labelGroups, m_maximumCount, &compressedContent);
     if (compressedGroups.count() < minimumCount()) {
         compressedGroups.clear();
     }
@@ -303,6 +310,8 @@ void SeasideDisplayLabelGroupModel::reloadCompressedGroups()
         const bool countChanging = m_compressedGroups.count() != compressedGroups.count();
         beginResetModel();
         m_compressedGroups = compressedGroups;
+        m_compressedContent = compressedContent;
+        reloadGroupIndices();
         endResetModel();
         if (countChanging) {
             emit countChanged();
