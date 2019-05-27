@@ -194,6 +194,8 @@ public:
 
     void updateSectionBucketIndexCache();
 
+    void saveContactComplete(int localId, int aggregateId);
+
 signals:
     void populatedChanged();
     void filterTypeChanged();
@@ -205,6 +207,8 @@ signals:
     void sortPropertyChanged();
     void groupPropertyChanged();
     void countChanged();
+    void savePersonSucceeded(int localId, int aggregateId);
+    void savePersonFailed();
 
 private:
     void populateIndex();
@@ -242,6 +246,7 @@ private:
     int m_requiredProperty;
     int m_searchableProperty;
     bool m_searchByFirstNameCharacter;
+    bool m_savePersonActive;
 
     mutable SeasideCache::CacheItem *m_lastItem;
     mutable quint32 m_lastId;
