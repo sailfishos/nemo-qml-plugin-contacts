@@ -2105,6 +2105,17 @@ QStringList SeasidePerson::avatarUrlsExcluding(const QStringList &excludeMetadat
     return urls.toList();
 }
 
+bool SeasidePerson::hasValidPhoneNumber() const
+{
+    foreach (const QContactPhoneNumber &detail, mContact->details<QContactPhoneNumber>()) {
+        const QString number(detail.value(QContactPhoneNumber::FieldNumber).toString());
+        if (SeasideCache::normalizePhoneNumber(number, true).length() > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void SeasidePerson::fetchConstituents()
 {
     if (SeasideCache::validId(SeasideCache::apiId(*mContact))) {
