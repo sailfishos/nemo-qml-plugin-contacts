@@ -52,81 +52,77 @@ SeasideStringListCompressor::~SeasideStringListCompressor()
     Returns \a strings compressed to the \a compressTargetCount.
 
     Compression works by grouping two or more neighboring entries together into a single "."
-    character. Compression begins from the centre, then moves outwards towards the edges of the
-    list, with an aim to alternate between compressed and non-compressed sets of entries. The
+    character, with an aim to alternate between compressed and non-compressed sets of entries. The
     first and last entries are never compressed.
 
     For example, if the list {"a", "b", "c", "d", "e", "f", "g"} is compressed from its count (7)
     to a target count of 5, the b/c and e/f entries are compressed together, creating a resulting
     list of {"a", ".", "d", ".", "g"}.
 
+    The compressedContent contains each set of compressed entries and the index of each
+    related marker within the returned string list. For the above example, the map would contain:
+        {
+            { 1, {"b", "c" } },
+            { 3, {"e", "f" } }
+        }
+
     Depending on the size of the list, the returned list may be one less than the target count.
 */
-QStringList SeasideStringListCompressor::compress(const QStringList &strings, int compressTargetCount)
+QStringList SeasideStringListCompressor::compress(const QStringList &strings, int compressTargetCount, CompressedContent *compressedContent)
 {
     if (strings.count() <= compressTargetCount || strings.count() < MinimumCompressionInputCount) {
         return strings;
     }
 
-    QStringList result = strings;
-
-    const bool listCountIsEven = result.count() % 2 == 0;
-    const int centreIndex = result.count() / 2;
-    int remaining = result.count();
-    int firstBackwardsIndex = -1;
-    int firstForwardsIndex = -1;
-    int backwardsIndex = -1;
-    int forwardsIndex = -1;
-
-    if (listCountIsEven) {
-        // If list is even-numbered, compress the two centre entries to begin with, before starting
-        // the loop to compress more entries on either side.
-        firstBackwardsIndex = centreIndex;
-        firstForwardsIndex = centreIndex;
-        backwardsIndex = compressAt(&result, &remaining, firstBackwardsIndex, ScanBackwards);
-
-        // Next forward scan should ignore the compressed centre entries.
-        forwardsIndex = nextCompressibleIndex(result, firstForwardsIndex, ScanForwards);
-    } else {
-        // If list is odd, keep the centre entry and start compressing entries on either side of it.
-        firstBackwardsIndex = centreIndex - 1;
-        firstForwardsIndex = centreIndex + 1;
-        backwardsIndex = firstBackwardsIndex;
-        forwardsIndex = firstForwardsIndex;
+    if (compressTargetCount % 2 != 0) {
+        compressTargetCount++;
     }
 
-    while (remaining > compressTargetCount) {
-        backwardsIndex = compressAt(&result, &remaining, backwardsIndex, ScanBackwards);
-        if (remaining <= compressTargetCount) {
-            break;
-        }
-        if (backwardsIndex == -1) {
-            backwardsIndex = nextCompressibleIndex(result, firstBackwardsIndex, ScanBackwards);
-            if (backwardsIndex == -1) {
-                break;
-            }
-        }
+    // Number of compression markers to be added. -1 to drop the first entry (since that
+    // cannot be compressed) and /2 as markers are placed at every second index.
+    const int markerCount = (compressTargetCount - 1) / 2;
 
-        forwardsIndex = compressAt(&result, &remaining, forwardsIndex, ScanForwards);
-        if (remaining <= compressTargetCount) {
-            break;
-        }
-        if (forwardsIndex == -1) {
-            forwardsIndex = nextCompressibleIndex(result, firstForwardsIndex, ScanForwards);
-            if (forwardsIndex == -1) {
-                break;
-            }
-        }
+    // Max number of list entries to be represented by each compression marker (minimum 2).
+    int maxEntriesPerMarker = 2;
+    while (((strings.count() - (maxEntriesPerMarker * markerCount)) + markerCount) >= compressTargetCount) {
+        maxEntriesPerMarker++;
     }
 
     QStringList compressedList;
-    bool previousCompressed = false;
-    for (const QString &sg : result) {
-        if (isCompressionMarker(sg) && previousCompressed) {
-            continue;
+    QStringList currentMarkerGroup;
+    int nextUncompressedIndex = 0;
+    bool firstCompression = true;
+    int entriesPerMarker = initialEntriesPerMarker(strings, markerCount, maxEntriesPerMarker, compressTargetCount);
+
+    // Add alternating sets of list entries and compression markers. For each compression marker,
+    // update compressedContent with the marker index and the strings represented by that marker.
+    for (int i = 0; i < strings.count(); ++i) {
+        if (i == nextUncompressedIndex) {
+            if (!currentMarkerGroup.isEmpty()) {
+                compressedContent->insert(compressedList.count() - 1, currentMarkerGroup);
+                currentMarkerGroup.clear();
+            }
+            compressedList.append(strings[i]);
+            compressedList.append(CompressionMarker);
+            nextUncompressedIndex = i + entriesPerMarker + 1;
+
+            if (nextUncompressedIndex >= strings.count() - 1) {
+                // The last group extends to the second-last entry in the list.
+                QStringList lastMarkerGroup = strings.mid(i + 1, strings.count() - i - 2);
+                if (!lastMarkerGroup.isEmpty()) {
+                    compressedContent->insert(compressedList.count() - 1, lastMarkerGroup);
+                }
+                compressedList.append(strings.last());
+                break;
+            }
+        } else {
+            currentMarkerGroup.append(strings[i]);
         }
-        previousCompressed = isCompressionMarker(sg);
-        compressedList.append(sg);
+
+        if (firstCompression) {
+            firstCompression = false;
+            entriesPerMarker = maxEntriesPerMarker;
+        }
     }
 
     return compressedList;
@@ -142,92 +138,18 @@ int SeasideStringListCompressor::minimumCompressionInputCount()
     return MinimumCompressionInputCount;
 }
 
-int SeasideStringListCompressor::findUncompressedNonEdgeString(const QStringList &strings, int fromIndex, ScanDirection direction)
-{
-    // Search all strings aside from first/last.
-    while (fromIndex > 0 && fromIndex < strings.count() - 1) {
-        if (!isCompressionMarker(strings.at(fromIndex))) {
-            return fromIndex;
-        }
-        fromIndex += (direction == ScanForwards ? 1 : -1);
-    }
-    return -1;
-}
-
 /*
-    Starting at \a fromIndex, search for the next index that can be compressed.
+    Returns an optimal size for the first compression marker group.
 
-    The aim is to alternate between compressed and non-compressed entries, so this scans for the
-    next non-compressed entry, skips over it, and returns the last compressed entry in the set after
-    that.
-
-    If the beginning or the end of the list is reached while scanning, the original fromIndex is
-    returned.
+    This balances the first and last marker groups so that they have the same size (+/-1).
 */
-int SeasideStringListCompressor::nextCompressibleIndex(const QStringList &strings, int fromIndex, ScanDirection direction)
+int SeasideStringListCompressor::initialEntriesPerMarker(const QStringList &strings, int markerCount, int maxEntriesPerMarker, int compressTargetCount)
 {
-    const int singleScanDelta = (direction == ScanForwards ? 1 : -1);
+    const int maxEntriesRemoved = markerCount * maxEntriesPerMarker;
+    const int actualEntriesRemoved = ((strings.count() + markerCount) - compressTargetCount) + 1;
 
-    // Scan for the next non-compressed entry, then skip over it, and find the index after that
-    // (which may or may not be compressed).
-    int nextTarget = findUncompressedNonEdgeString(strings, fromIndex + singleScanDelta, direction);
-    if (nextTarget < 0) {
-        return fromIndex;
-    }
-    nextTarget += singleScanDelta;
-    if (nextTarget <= 0 || nextTarget >= strings.count() - 1) {
-        // Next target is first or last index, so stay on original index.
-        return fromIndex;
-    }
+    const int lastMarkerGroupLength = maxEntriesPerMarker - (maxEntriesRemoved % actualEntriesRemoved);
+    const int firstAndLastMarkerGroupsTotal = maxEntriesPerMarker + lastMarkerGroupLength;
 
-    // If next target is already compressed, find the last index in this compressed set, by scanning for
-    // the next non-compressed entry then stepping back one index.
-    if (isCompressionMarker(strings.at(nextTarget))) {
-        int nextNonCompressed = findUncompressedNonEdgeString(strings, nextTarget, direction);
-        if (nextNonCompressed < 0) {
-            return fromIndex;
-        }
-        nextTarget = nextNonCompressed - singleScanDelta;
-    }
-
-    int neighborOfNextTarget = nextTarget + singleScanDelta;
-    if (neighborOfNextTarget <= 0 || neighborOfNextTarget >= strings.count() - 1) {
-        // Next target cannot be compressed as its neighbor cannot be compressed at the same time, so
-        // just stay on the original index.
-        return fromIndex;
-    } else {
-        return nextTarget;
-    }
-}
-
-/*
-    Compress the entry at \a index with its neighbor.
-*/
-int SeasideStringListCompressor::compressAt(QStringList *strings, int *remaining, int index, ScanDirection direction)
-{
-    const int scanDelta = (direction == ScanForwards ? 1 : -1);
-
-    int neighborIndex = findUncompressedNonEdgeString(*strings, index + scanDelta, direction);
-    if (neighborIndex < 0) {
-        return -1;
-    }
-
-    QString current = strings->at(index);
-    QString neighbor = strings->at(neighborIndex);
-
-    current = CompressionMarker;
-    strings->replace(index, current);
-
-    neighbor = CompressionMarker;
-    strings->replace(neighborIndex, neighbor);
-
-    *(remaining) -= 1;
-
-    // If the neighbor's neighbour is already compressed, that means two compressed sets are
-    // now merged together, so update the remaining count.
-    if (isCompressionMarker(strings->value(neighborIndex + scanDelta))) {
-        *(remaining) -= 1;
-    }
-
-    return nextCompressibleIndex(*strings, neighborIndex, direction);
+    return firstAndLastMarkerGroupsTotal / 2;
 }

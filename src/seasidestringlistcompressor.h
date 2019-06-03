@@ -33,6 +33,8 @@
 #define SEASIDESTRINGLISTCOMPRESSOR_H
 
 #include <QStringList>
+#include <QMap>
+#include <QMetaType>
 
 class SeasideStringListCompressor
 {
@@ -40,19 +42,17 @@ public:
     SeasideStringListCompressor();
     ~SeasideStringListCompressor();
 
-    static QStringList compress(const QStringList &strings, int compressTargetCount);
+    typedef QMap<int, QStringList> CompressedContent;
+
+    static QStringList compress(const QStringList &strings, int compressTargetCount, CompressedContent *compressedContent);
     static bool isCompressionMarker(const QString &s);
     static int minimumCompressionInputCount();
 
 private:
-    enum ScanDirection {
-        ScanForwards,
-        ScanBackwards
-    };
-
-    static int compressAt(QStringList *strings, int *remaining, int index, ScanDirection direction);
-    static int nextCompressibleIndex(const QStringList &strings, int fromIndex, ScanDirection direction);
-    static int findUncompressedNonEdgeString(const QStringList &strings, int fromIndex, ScanDirection direction);
+    static int initialEntriesPerMarker(const QStringList &strings, int markerCount, int maxEntriesPerMarker, int compressTargetCount);
+    static int compressionMarkerCount(int compressTargetCount);
 };
+
+Q_DECLARE_METATYPE(SeasideStringListCompressor::CompressedContent)
 
 #endif
