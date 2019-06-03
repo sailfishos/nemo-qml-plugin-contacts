@@ -468,6 +468,7 @@ SeasideFilteredModel::SeasideFilteredModel(QObject *parent)
     , m_requiredProperty(NoPropertyRequired)
     , m_searchableProperty(NoPropertySearchable)
     , m_searchByFirstNameCharacter(false)
+    , m_savePersonActive(false)
     , m_lastItem(0)
     , m_lastId(0)
 {
@@ -785,7 +786,12 @@ bool SeasideFilteredModel::savePerson(SeasidePerson *person)
         qWarning("savePerson() failed: specified person is null");
         return false;
     }
+    if (m_savePersonActive) {
+        qWarning("savePerson() is already active, completion signals may arrive out-of-order");
+    }
     if (SeasideCache::saveContact(person->contact())) {
+        // The actual save is asynchronous, even though the cache will update immediately.
+        m_savePersonActive = true;
         // Report that this Person object has changed, since the update
         // resulting from the save will not find any differences
         emit person->dataChanged();
@@ -1055,6 +1061,21 @@ void SeasideFilteredModel::updateGroupProperty()
 void SeasideFilteredModel::updateSectionBucketIndexCache()
 {
     populateSectionBucketIndices();
+}
+
+void SeasideFilteredModel::saveContactComplete(int localId, int aggregateId)
+{
+    // This assumes that only one savePerson() call is active at any time
+    // which is not guaranteed by the API but which is true in practice.
+    if (m_savePersonActive) {
+        m_savePersonActive = false;
+        if (localId != aggregateId) {
+            emit savePersonSucceeded(localId, aggregateId);
+        } else {
+            // localId = -1, aggregateId = -1 means error.
+            emit savePersonFailed();
+        }
+    }
 }
 
 int SeasideFilteredModel::importContacts(const QString &path)
