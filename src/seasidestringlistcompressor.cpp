@@ -102,10 +102,17 @@ QStringList SeasideStringListCompressor::compress(const QStringList &strings, in
                 compressedContent->insert(compressedList.count() - 1, currentMarkerGroup);
                 currentMarkerGroup.clear();
             }
+            // Append the current string entry.
             compressedList.append(strings[i]);
-            compressedList.append(CompressionMarker);
             nextUncompressedIndex = i + entriesPerMarker + 1;
 
+            // Append a compression marker if the next index is part of a compressed group and
+            // this is not the last item in the list.
+            if (nextUncompressedIndex > i+1 && i < strings.count()-1) {
+                compressedList.append(CompressionMarker);
+            }
+
+            // Check whether this is the last entry in the list.
             if (nextUncompressedIndex >= strings.count() - 1) {
                 // The last group extends to the second-last entry in the list.
                 QStringList lastMarkerGroup = strings.mid(i + 1, strings.count() - i - 2);

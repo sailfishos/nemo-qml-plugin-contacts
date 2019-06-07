@@ -178,6 +178,19 @@ void tst_SeasideStringListCompressor::tst_compress_data()
                     { 7, QStringList({"p", "q", "r", "s"}) }
                };
 
+    // Test consecutive uncompressed groups
+    QTest::newRow("Compress 18 from 26, starting with consecutive uncompressed groups")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"}) << 18
+            << QStringList({"a", "b", ".", "f", ".", "j", ".", "n", ".", "r", ".", "v", ".", "z"})
+            << SeasideStringListCompressor::CompressedContent {
+                    { 2, QStringList({"c", "d", "e"}) },
+                    { 4, QStringList({"g", "h", "i"}) },
+                    { 6, QStringList({"k", "l", "m"}) },
+                    { 8, QStringList({"o", "p", "q"}) },
+                    { 10, QStringList({"s", "t", "u"}) },
+                    { 12, QStringList({"w", "x", "y"}) }
+               };
+
     // Compress latin alphabet plus 2 symbols (e.g. #, !)
     QTest::newRow("Compress 10 from 26 + symbols")
             << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "!", "#"}) << 10
