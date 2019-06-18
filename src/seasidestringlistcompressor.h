@@ -44,12 +44,24 @@ public:
 
     typedef QMap<int, QStringList> CompressedContent;
 
-    static QStringList compress(const QStringList &strings, int compressTargetCount, CompressedContent *compressedContent);
+    static QStringList compress(const QStringList &strings, int desiredSize, CompressedContent *compressedSections);
     static bool isCompressionMarker(const QString &s);
     static int minimumCompressionInputCount();
 
 private:
-    static int initialEntriesPerMarker(const QStringList &strings, int markerCount, int maxEntriesPerMarker, int compressTargetCount);
+    struct SectionsInfo {
+        int maxSize = 0;
+        int minSize = 0;
+        int countMaxSized = 0;
+        int countMinSized = 0;
+    };
+
+    static QStringList minimalCompress(const QStringList &strings, int desiredSize, CompressedContent *compressedSections);
+    static QStringList accordionCompress(const QStringList &strings, int desiredSize, CompressedContent *compressedSections);
+    static QStringList performCompression(const QStringList &strings,
+                                          SectionsInfo uncompressedSectionsInfo,
+                                          SectionsInfo compressedSectionsInfo,
+                                          CompressedContent *compressedSections);
     static int compressionMarkerCount(int compressTargetCount);
 };
 
