@@ -62,15 +62,14 @@ void tst_SeasideStringListCompressor::tst_compress_data()
             << QStringList({"a", "b", "c", "d", "e"})
             << SeasideStringListCompressor::CompressedContent();
 
-    QTest::newRow("Compress 5 from 6, compress 1 then 2 to complete")
+    QTest::newRow("Compress 5 from 6")
             << QStringList({"a", "b", "c", "d", "e", "f"}) << 5
-            << QStringList({"a", ".", "c", ".", "f"})
+            << QStringList({"a", "b", ".", "e", "f"})
             << SeasideStringListCompressor::CompressedContent {
-                    { 1, QStringList({"b"}) },
-                    { 3, QStringList({"d", "e"}) }
+                    { 2, QStringList({"c", "d"}) },
                };
 
-    QTest::newRow("Compress 5 from 7, keep 'd' centre symbol and compress 2 sets on either side")
+    QTest::newRow("Compress 5 from 7")
             << QStringList({"a", "b", "c", "d", "e", "f", "g"}) << 5
             << QStringList({"a", ".", "d", ".", "g"})
             << SeasideStringListCompressor::CompressedContent {
@@ -78,7 +77,7 @@ void tst_SeasideStringListCompressor::tst_compress_data()
                     { 3, QStringList({"e", "f"}) }
                };
 
-    QTest::newRow("Compress 5 from 8, compress 2 before 'd', then 3 after")
+    QTest::newRow("Compress 5 from 8")
             << QStringList({"a", "b", "c", "d", "e", "f", "g", "h"}) << 5
             << QStringList({"a", ".", "d", ".", "h"})
             << SeasideStringListCompressor::CompressedContent {
@@ -86,7 +85,7 @@ void tst_SeasideStringListCompressor::tst_compress_data()
                     { 3, QStringList({"e", "f", "g"}) }
                };
 
-    QTest::newRow("Compress 5 from 9, compress 3 before e, then 3 after")
+    QTest::newRow("Compress 5 from 9")
             << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i"}) << 5
             << QStringList({"a", ".", "e", ".", "i"})
             << SeasideStringListCompressor::CompressedContent {
@@ -128,9 +127,9 @@ void tst_SeasideStringListCompressor::tst_compress_data()
                     { 7, QStringList({"m", "n"}) }
                };
 
-    QTest::newRow("Compress 10 from 16, results in count=9")
+    QTest::newRow("Compress 10 from 16")
             << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"}) << 10
-            << QStringList({"a", ".", "d", ".", "h", ".", "l", ".", "p"})
+            << QStringList({"a", ".", "d", ".", "h", ".", "l", ".", "p"}) // note: expectedCount = 9, not 10.
             << SeasideStringListCompressor::CompressedContent {
                     { 1, QStringList({"b", "c"}) },
                     { 3, QStringList({"e", "f", "g"}) },
@@ -148,19 +147,19 @@ void tst_SeasideStringListCompressor::tst_compress_data()
                     { 7, QStringList({"n", "o", "p"}) }
                };
 
-    QTest::newRow("Compress 10 from 18, results in count=9")
+    QTest::newRow("Compress 10 from 18")
             << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r"}) << 10
-            << QStringList({"a", ".", "d", ".", "i", ".", "n", ".", "r"})
+            << QStringList({"a", ".", "e", ".", "i", ".", "n", ".", "r"}) // note: expectedCount = 9, not 10.
             << SeasideStringListCompressor::CompressedContent {
-                    { 1, QStringList({"b", "c"}) },
-                    { 3, QStringList({"e", "f", "g", "h"}) },
+                    { 1, QStringList({"b", "c", "d"}) },
+                    { 3, QStringList({"f", "g", "h"}) },
                     { 5, QStringList({"j", "k", "l", "m"}) },
                     { 7, QStringList({"o", "p", "q"}) }
                };
 
-    QTest::newRow("Compress 10 from 19, results in count=9. First and last groups are balanced.")
+    QTest::newRow("Compress 10 from 19")
             << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s"}) << 10
-            << QStringList({"a", ".", "e", ".", "j", ".", "o", ".", "s"})
+            << QStringList({"a", ".", "e", ".", "j", ".", "o", ".", "s"}) // note: expectedCount = 9, not 10.  first+last groups are balanced.
             << SeasideStringListCompressor::CompressedContent {
                     { 1, QStringList({"b", "c", "d"}) },
                     { 3, QStringList({"f", "g", "h", "i"}) },
@@ -178,17 +177,16 @@ void tst_SeasideStringListCompressor::tst_compress_data()
                     { 7, QStringList({"p", "q", "r", "s"}) }
                };
 
-    // Test consecutive uncompressed groups
-    QTest::newRow("Compress 18 from 26, starting with consecutive uncompressed groups")
-            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"}) << 18
-            << QStringList({"a", "b", ".", "f", ".", "j", ".", "n", ".", "r", ".", "v", ".", "z"})
+    QTest::newRow("Compress 14 from 26")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"}) << 14
+            << QStringList({"a", ".", "e", ".", "i", ".", "m", ".", "r", ".", "v", ".", "z"})
             << SeasideStringListCompressor::CompressedContent {
-                    { 2, QStringList({"c", "d", "e"}) },
-                    { 4, QStringList({"g", "h", "i"}) },
-                    { 6, QStringList({"k", "l", "m"}) },
-                    { 8, QStringList({"o", "p", "q"}) },
-                    { 10, QStringList({"s", "t", "u"}) },
-                    { 12, QStringList({"w", "x", "y"}) }
+                    { 1,  QStringList({"b", "c", "d"}) },
+                    { 3,  QStringList({"f", "g", "h"}) },
+                    { 5,  QStringList({"j", "k", "l"}) },
+                    { 7,  QStringList({"n", "o", "p", "q"}) },
+                    { 9,  QStringList({"s", "t", "u"}) },
+                    { 11, QStringList({"w", "x", "y"}) }
                };
 
     // Compress latin alphabet plus 2 symbols (e.g. #, !)
@@ -201,6 +199,116 @@ void tst_SeasideStringListCompressor::tst_compress_data()
                     { 5, QStringList({"o", "p", "q", "r", "s", "t"}) },
                     { 7, QStringList({"v", "w", "x", "y", "z", "!"}) }
                };
+
+    // 15->14: abcdefghijklmno -> abcdefg.jklmno
+    QTest::newRow("Compress 14 from 15")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"}) << 14
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", ".", "j", "k", "l", "m", "n", "o"})
+            << SeasideStringListCompressor::CompressedContent {
+                    { 7,  QStringList({"h", "i"}) },
+               };
+
+    // 15->13: abcdefghijklmno -> abcd.ghi.lmno
+    QTest::newRow("Compress 13 from 15")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"}) << 13
+            << QStringList({"a", "b", "c", "d", ".", "g", "h", "i", ".", "l", "m", "n", "o"})
+            << SeasideStringListCompressor::CompressedContent {
+                    { 4,  QStringList({"e", "f"}) },
+                    { 8,  QStringList({"j", "k"}) },
+               };
+
+    // 15->12: abcdefghijklmno -> ab.ef.ijk.no
+    QTest::newRow("Compress 12 from 15")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"}) << 12
+            << QStringList({"a", "b", "c", ".", "f", "g", ".", "j", "k", ".", "n", "o"})
+            << SeasideStringListCompressor::CompressedContent {
+                    { 3,  QStringList({"d", "e"}) },
+                    { 6,  QStringList({"h", "i"}) },
+                    { 9,  QStringList({"l", "m"}) },
+               };
+
+    // 15->11: abcdefghijklmno -> ab.e.h.k.no
+    QTest::newRow("Compress 11 from 15")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"}) << 11
+            << QStringList({"a", "b", ".", "e", ".", "h", ".", "k", ".", "n", "o"})
+            << SeasideStringListCompressor::CompressedContent {
+                    { 2,  QStringList({"c", "d"}) },
+                    { 4,  QStringList({"f", "g"}) },
+                    { 6,  QStringList({"i", "j"}) },
+                    { 8,  QStringList({"l", "m"}) },
+               };
+
+    // 18->17: abcdefghijklmnopqr -> abcdefgh.klmnopqr
+    QTest::newRow("Compress 17 from 18")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r"}) << 17
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", ".", "k", "l", "m", "n", "o", "p", "q", "r"})
+            << SeasideStringListCompressor::CompressedContent {
+                    { 8,  QStringList({"i", "j"}) },
+               };
+
+    // 18->16: abcdefghijklmnopqr -> abcde.hijk.nopqr
+    QTest::newRow("Compress 16 from 18")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r"}) << 16
+            << QStringList({"a", "b", "c", "d", "e", ".", "h", "i", "j", "k", ".", "n", "o", "p", "q", "r"})
+            << SeasideStringListCompressor::CompressedContent {
+                    { 5,  QStringList({"f", "g"}) },
+                    { 10, QStringList({"l", "m"}) },
+               };
+
+    // 18->15: abcdefghijklmnopqr -> abc.fgh.klm.pqr
+    QTest::newRow("Compress 15 from 18")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r"}) << 15
+            << QStringList({"a", "b", "c", ".", "f", "g", "h", ".", "k", "l", "m", ".", "p", "q", "r"})
+            << SeasideStringListCompressor::CompressedContent {
+                    { 3,  QStringList({"d", "e"}) },
+                    { 7,  QStringList({"i", "j"}) },
+                    { 11, QStringList({"n", "o"}) },
+               };
+
+    // 18->14: abcdefghijklmnopqr -> ab.ef.ij.mn.qr
+    QTest::newRow("Compress 14 from 18")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r"}) << 14
+            << QStringList({"a", "b", ".", "e", "f", ".", "i", "j", ".", "m", "n", ".", "q", "r"})
+            << SeasideStringListCompressor::CompressedContent {
+                    { 2,  QStringList({"c", "d"}) },
+                    { 5,  QStringList({"g", "h"}) },
+                    { 8,  QStringList({"k", "l"}) },
+                    { 11, QStringList({"o", "p"}) },
+               };
+
+    // 18->13: abcdefghijklmnopqr -> ab.e.h.k.n.qr
+    QTest::newRow("Compress 13 from 18")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r"}) << 13
+            << QStringList({"a", "b", ".", "e", ".", "h", ".", "k", ".", "n", ".", "q", "r"})
+            << SeasideStringListCompressor::CompressedContent {
+                    { 2,  QStringList({"c", "d"}) },
+                    { 4,  QStringList({"f", "g"}) },
+                    { 6,  QStringList({"i", "j"}) },
+                    { 8,  QStringList({"l", "m"}) },
+                    { 10, QStringList({"o", "p"}) },
+               };
+
+    // 13->7: abcdefghijklm -> a.e.i.m accordion compression
+    QTest::newRow("Compress 7 from 13")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"}) << 7
+            << QStringList({"a", ".", "e", ".", "i", ".", "m"})
+            << SeasideStringListCompressor::CompressedContent {
+                    { 1,  QStringList({"b", "c", "d"}) },
+                    { 3,  QStringList({"f", "g", "h"}) },
+                    { 5,  QStringList({"j", "k", "l"}) },
+               };
+
+    // 18->12: abcdefghijklmnopqr -> a.d.g.k.o.r accordion compression
+    QTest::newRow("Compress 12 from 18")
+            << QStringList({"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r"}) << 12
+            << QStringList({"a", ".", "d", ".", "g", ".", "k", ".", "o", ".", "r"}) // expected size is 11 not 12
+            << SeasideStringListCompressor::CompressedContent {
+                    { 1,  QStringList({"b", "c"}) },
+                    { 3,  QStringList({"e", "f"}) },
+                    { 5,  QStringList({"h", "i", "j"}) },
+                    { 7,  QStringList({"l", "m", "n"}) },
+                    { 9,  QStringList({"p", "q"}) },
+               };
 }
 
 void tst_SeasideStringListCompressor::tst_compress()
@@ -211,8 +319,17 @@ void tst_SeasideStringListCompressor::tst_compress()
     QFETCH(SeasideStringListCompressor::CompressedContent, expectedCompressedContents);
 
     SeasideStringListCompressor::CompressedContent compressedContents;
-    QCOMPARE(SeasideStringListCompressor::compress(inputList, compressTargetSize, &compressedContents), expected);
+    const QStringList result = SeasideStringListCompressor::compress(inputList, compressTargetSize, &compressedContents);
 
+    if (result != expected || compressedContents != expectedCompressedContents) {
+        qWarning() << " input:" << inputList;
+        qWarning() << "actual:" << result;
+        qWarning() << "expect:" << expected;
+        qWarning() << "  a.cc:" << compressedContents;
+        qWarning() << "  e.cc:" << expectedCompressedContents;
+    }
+
+    QCOMPARE(result, expected);
     QCOMPARE(compressedContents, expectedCompressedContents);
 }
 

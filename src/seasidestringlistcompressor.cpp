@@ -49,90 +49,265 @@ SeasideStringListCompressor::~SeasideStringListCompressor()
 }
 
 /*
-    Returns \a strings compressed to the \a compressTargetCount.
+    Returns \a strings compressed to the \a desiredSize.
 
-    Compression works by grouping two or more neighboring entries together into a single "."
-    character, with an aim to alternate between compressed and non-compressed sets of entries. The
-    first and last entries are never compressed.
+    Compression works by replacing a section of two or more neighboring entries with a single "."
+    character, with an aim to alternate between compressed and non-compressed sections of entries.
+    The first and last entries are never compressed.
 
-    For example, if the list {"a", "b", "c", "d", "e", "f", "g"} is compressed from its count (7)
-    to a target count of 5, the b/c and e/f entries are compressed together, creating a resulting
-    list of {"a", ".", "d", ".", "g"}.
+    For example, if the list {"a", "b", "c", "d", "e", "f", "g"} is compressed from its current
+    size (7) to a desired size of 5, the b/c and e/f entries are compressed together, creating
+    a resulting list of {"a", ".", "d", ".", "g"}.
 
-    The compressedContent contains each set of compressed entries and the index of each
+    The compressedSections contains each set of compressed entries and the index of each
     related marker within the returned string list. For the above example, the map would contain:
         {
             { 1, {"b", "c" } },
             { 3, {"e", "f" } }
         }
 
-    Depending on the size of the list, the returned list may be one less than the target count.
+    Depending on the size of the list, the size of the returned list may be one less than the
+    desiredSize.
 */
-QStringList SeasideStringListCompressor::compress(const QStringList &strings, int compressTargetCount, CompressedContent *compressedContent)
+QStringList SeasideStringListCompressor::compress(const QStringList &strings, int desiredSize, CompressedContent *compressedSections)
 {
-    if (strings.count() <= compressTargetCount || strings.count() < MinimumCompressionInputCount) {
+    if (strings.count() <= desiredSize || strings.count() < MinimumCompressionInputCount) {
         return strings;
     }
 
-    if (compressTargetCount % 2 != 0) {
-        compressTargetCount++;
+    QStringList ret = minimalCompress(strings, desiredSize, compressedSections);
+    if (ret.isEmpty()) {
+        ret = accordionCompress(strings, desiredSize, compressedSections);
+    }
+    return ret;
+}
+
+QStringList SeasideStringListCompressor::minimalCompress(const QStringList &strings, int desiredSize, CompressedContent *compressedSections)
+{
+    // First, determine whether we can use minimal compression (i.e. exactly 2 entries per compression marker).
+    // To do this, determine the number of compression markers and uncompressed entries that we would need.
+    // To support this minimal compression, we always need at least 1 more entry than compression markers.
+    // e.g. ABCDEFGHIJ -> A.D.G.J etc, we will always have 1 more entry (4) than compression markers (3).
+    int numCompressionMarkers = strings.size() - desiredSize;
+    const int minNumUncompressedEntries = numCompressionMarkers + 1;
+    bool canFitInDesiredSize = desiredSize >= (numCompressionMarkers + minNumUncompressedEntries);
+    bool haveEnoughStrings = strings.size() >= (2*numCompressionMarkers + minNumUncompressedEntries);
+    if (!canFitInDesiredSize || !haveEnoughStrings) {
+        return QStringList();
     }
 
-    // Number of compression markers to be added. -1 to drop the first entry (since that
-    // cannot be compressed) and /2 as markers are placed at every second index.
-    const int markerCount = (compressTargetCount - 1) / 2;
+    // If we need 2 compression markers, then the compressed result will have 3 separate
+    // uncompressed sections of contiguous entries.  e.g. ABCDEFGHIJ -> AB.EF.IJ
+    // This is equal to the minimum number of uncompressed entries required,
+    // but notionally is a distinct concept.
+    const int numUncompressedSections = minNumUncompressedEntries;
 
-    // Max number of list entries to be represented by each compression marker (minimum 2).
-    int maxEntriesPerMarker = 2;
-    while (((strings.count() - (maxEntriesPerMarker * markerCount)) + markerCount) >= compressTargetCount) {
-        maxEntriesPerMarker++;
+    // Specify the size of our compressed sections.
+    // We know that each compressed section will consist of exactly two entries.
+    SectionsInfo compressedSectionsInfo;
+    compressedSectionsInfo.minSize = 2;
+    compressedSectionsInfo.maxSize = 2;
+    compressedSectionsInfo.countMinSized = numCompressionMarkers;
+    compressedSectionsInfo.countMaxSized = 0;
+
+    // Calculate the sizes of our uncompressed sections.
+    // We would LIKE to have equally sized uncompressed sections:
+    // e.g. 18->15: ABCDEFGHIJKLMNOPQR -> ABC.FGH.KLM.PQR, each section is size 3.
+    // but often we cannot:
+    // e.g. 18->16: ABCDEFGHIJKLMNOPQR -> ABCDE.HIJK.NOPQR, some sections are 4, some are 5.
+    SectionsInfo uncompressedSectionsInfo;
+    uncompressedSectionsInfo.minSize = (desiredSize - numCompressionMarkers) / numUncompressedSections;
+    uncompressedSectionsInfo.maxSize = (((desiredSize - numCompressionMarkers) % numUncompressedSections) == 0)
+                                     ? uncompressedSectionsInfo.minSize
+                                     : (uncompressedSectionsInfo.minSize+1);
+
+    // Now calculate how many of each sized uncompressed section we need, in order to fulfill
+    // the desired size, given that the number of compression markers is fixed.
+    uncompressedSectionsInfo.countMinSized = numUncompressedSections;
+    uncompressedSectionsInfo.countMaxSized = 0;
+    while ((numCompressionMarkers
+            + (uncompressedSectionsInfo.minSize * uncompressedSectionsInfo.countMinSized)
+            + (uncompressedSectionsInfo.maxSize * uncompressedSectionsInfo.countMaxSized))
+                    < desiredSize) {
+        uncompressedSectionsInfo.countMaxSized++;
+        uncompressedSectionsInfo.countMinSized--;
+        if (uncompressedSectionsInfo.countMaxSized > numUncompressedSections) {
+            // Something went wrong, we cannot satisfy the contraints.
+            return QStringList();
+        }
     }
 
-    QStringList compressedList;
-    QStringList currentMarkerGroup;
-    int nextUncompressedIndex = 0;
-    bool firstCompression = true;
-    int entriesPerMarker = initialEntriesPerMarker(strings, markerCount, maxEntriesPerMarker, compressTargetCount);
+    return performCompression(strings,
+                              uncompressedSectionsInfo,
+                              compressedSectionsInfo,
+                              compressedSections);
+}
 
-    // Add alternating sets of list entries and compression markers. For each compression marker,
-    // update compressedContent with the marker index and the strings represented by that marker.
-    for (int i = 0; i < strings.count(); ++i) {
-        if (i == nextUncompressedIndex) {
-            if (!currentMarkerGroup.isEmpty()) {
-                compressedContent->insert(compressedList.count() - 1, currentMarkerGroup);
-                currentMarkerGroup.clear();
-            }
-            // Append the current string entry.
-            compressedList.append(strings[i]);
-            nextUncompressedIndex = i + entriesPerMarker + 1;
+QStringList SeasideStringListCompressor::accordionCompress(const QStringList &strings, int desiredSize, CompressedContent *compressedSections)
+{
+    // Accordion compression is required (every second entry in the returned list
+    // will be a compression marker, accounting for a section of at least 2
+    // but probably more actual entries).
+    // We MUST return less than or equal to desiredSize or we will break the bounds.
+    // If we have N compressed sections, then we will need N+1 uncompressed sections
+    // each containing a single entry.
+    // Thus, we will return an odd sized compressedList, to ensure we have alternating.
+    // e.g. if desiredSize = 7, ABCDEFGHIJKLM -> A.E.I.M
+    int possibleSize = ((desiredSize % 2) != 0) ? desiredSize : (desiredSize - 1);
+    int numCompressionMarkers = possibleSize / 2;  // e.g. 3 out of 7 entries will be compressed section markers.
+    int numUncompressedSections = numCompressionMarkers + 1; // e.g. the other 4 will be uncompressed sections.
 
-            // Append a compression marker if the next index is part of a compressed group and
-            // this is not the last item in the list.
-            if (nextUncompressedIndex > i+1 && i < strings.count()-1) {
-                compressedList.append(CompressionMarker);
-            }
+    // Specify the size of our uncompressed sections.
+    // We know that each uncompressed section will consist of a single entry.
+    SectionsInfo uncompressedSectionsInfo;
+    uncompressedSectionsInfo.minSize = 1;
+    uncompressedSectionsInfo.maxSize = 1;
+    uncompressedSectionsInfo.countMinSized = numUncompressedSections;
+    uncompressedSectionsInfo.countMaxSized = 0;
 
-            // Check whether this is the last entry in the list.
-            if (nextUncompressedIndex >= strings.count() - 1) {
-                // The last group extends to the second-last entry in the list.
-                QStringList lastMarkerGroup = strings.mid(i + 1, strings.count() - i - 2);
-                if (!lastMarkerGroup.isEmpty()) {
-                    compressedContent->insert(compressedList.count() - 1, lastMarkerGroup);
-                }
-                compressedList.append(strings.last());
+    // Now determine the required sizes of our compressed sections, starting from
+    // an initial assumption that each compressed section will contain either
+    // two or three contiguous entries from the original list.
+    // (Since it might not divide evenly, we may have some which are smaller and some larger.)
+    // Also calculate how many compressed sections of each size we need.
+    SectionsInfo compressedSectionsInfo;
+    compressedSectionsInfo.minSize = 2;
+    compressedSectionsInfo.maxSize = 3;
+
+    bool foundSolution = false;
+    while (!foundSolution) {
+        // with the current compression section max+min sizes, try all combinations of section sizes.
+        foundSolution = true;
+        compressedSectionsInfo.countMinSized = numCompressionMarkers;
+        compressedSectionsInfo.countMaxSized = 0;
+        while ((numUncompressedSections
+                + (compressedSectionsInfo.minSize * compressedSectionsInfo.countMinSized)
+                + (compressedSectionsInfo.maxSize * compressedSectionsInfo.countMaxSized))
+                        < strings.size()) {
+            compressedSectionsInfo.countMinSized--;
+            compressedSectionsInfo.countMaxSized++;
+            if (compressedSectionsInfo.countMaxSized > numCompressionMarkers) {
+                // no possible solutions with the current compression group sizes.
+                foundSolution = false;
                 break;
             }
-        } else {
-            currentMarkerGroup.append(strings[i]);
         }
 
-        if (firstCompression) {
-            firstCompression = false;
-            entriesPerMarker = maxEntriesPerMarker;
+        if (!foundSolution) {
+            compressedSectionsInfo.minSize++;
+            compressedSectionsInfo.maxSize++;
+        }
+
+        if (compressedSectionsInfo.maxSize > strings.size()) {
+            // This should never be reached.
+            // A solution should always be possible.
+            // But in case there's some edge case I haven't considered,
+            // let's return an empty list instead of hanging.
+            return QStringList();
         }
     }
 
-    return compressedList;
+    return performCompression(strings,
+                              uncompressedSectionsInfo,
+                              compressedSectionsInfo,
+                              compressedSections);
+}
+
+QStringList SeasideStringListCompressor::performCompression(
+        const QStringList &strings,
+        SectionsInfo uncompressedSectionsInfo,
+        SectionsInfo compressedSectionsInfo,
+        CompressedContent *compressedSections)
+{
+    QStringList reversedStrings = strings;
+    std::reverse(reversedStrings.begin(), reversedStrings.end());
+
+    QList<QStringList> frontSections, backSections;
+    QList<QStringList> frontCompressedSections, backCompressedSections;
+
+    bool front = false;
+    int frontPosition = 0, backPosition = 0;
+    int remainingCompressedSections = compressedSectionsInfo.countMaxSized
+                                    + compressedSectionsInfo.countMinSized;
+    while (remainingCompressedSections > 0) {
+        // Use sections of the appropriate size, based on the calculated
+        // number of sections of each size we need to compress properly.
+        const int uncompressedSectionSize = uncompressedSectionsInfo.countMaxSized-- > 0
+                                          ? uncompressedSectionsInfo.maxSize
+                                          : uncompressedSectionsInfo.minSize;
+        const int compressedSectionSize = compressedSectionsInfo.countMinSized-- > 0
+                                        ? compressedSectionsInfo.minSize
+                                        : compressedSectionsInfo.maxSize;
+
+        // Alternative between processing entries from the
+        // front and back of the list, to ensure maximal symmetry.
+        front = !front;
+
+        // Deal with a single uncompressed section of entries
+        if (front) {
+            const QStringList uncompressedSection = strings.mid(
+                    frontPosition, uncompressedSectionSize);
+            frontSections.append(uncompressedSection);
+            frontPosition += uncompressedSectionSize;
+        } else {
+            const QStringList uncompressedSection = reversedStrings.mid(
+                    backPosition, uncompressedSectionSize);
+            backSections.append(uncompressedSection);
+            backPosition += uncompressedSectionSize;
+        }
+
+        // Deal with a single compressed section of entries
+        if (front) {
+            const QStringList compressedSection = strings.mid(
+                    frontPosition, compressedSectionSize);
+            frontSections.append(QStringList(QString(CompressionMarker)));
+            frontCompressedSections.append(compressedSection);
+            frontPosition += compressedSectionSize;
+        } else {
+            const QStringList compressedSection = reversedStrings.mid(
+                    backPosition, compressedSectionSize);
+            backSections.append(QStringList(QString(CompressionMarker)));
+            backCompressedSections.append(compressedSection);
+            backPosition += compressedSectionSize;
+        }
+
+        remainingCompressedSections--;
+    }
+
+    // Ensure that every entry in the original strings list is accounted for.
+    // If not, add those entries (as a "middle" section might not have been included,
+    // due to reaching the required compressed section count).
+    const int sizeDelta = strings.size() - (frontPosition + backPosition);
+    const QStringList middleSection = sizeDelta > 0
+                                    ? strings.mid(frontPosition, sizeDelta)
+                                    : QStringList();
+
+    // Now build the complete compressed list we will return.
+    QStringList orderedSections;
+    for (int i = 0; i < frontSections.size(); ++i) {
+        orderedSections.append(frontSections[i]);
+    }
+    orderedSections.append(middleSection);
+    std::reverse(backSections.begin(), backSections.end());
+    for (int i = 0; i < backSections.size(); ++i) {
+        std::reverse(backSections[i].begin(), backSections[i].end());
+        orderedSections.append(backSections[i]);
+    }
+
+    // And fill out the compressed sections out-parameter.
+    std::reverse(backCompressedSections.begin(), backCompressedSections.end());
+    for (int i = 0; i < backCompressedSections.size(); ++i) {
+        std::reverse(backCompressedSections[i].begin(), backCompressedSections[i].end());
+    }
+    const QList<QStringList> allCompressedSections = frontCompressedSections + backCompressedSections;
+    int compressedSectionsIndex = 0;
+    for (int i = 0; i < orderedSections.size(); ++i) {
+        if (orderedSections[i] == CompressionMarker) {
+            compressedSections->insert(i, allCompressedSections[compressedSectionsIndex++]);
+        }
+    }
+
+    return orderedSections;
 }
 
 bool SeasideStringListCompressor::isCompressionMarker(const QString &s)
@@ -145,18 +320,3 @@ int SeasideStringListCompressor::minimumCompressionInputCount()
     return MinimumCompressionInputCount;
 }
 
-/*
-    Returns an optimal size for the first compression marker group.
-
-    This balances the first and last marker groups so that they have the same size (+/-1).
-*/
-int SeasideStringListCompressor::initialEntriesPerMarker(const QStringList &strings, int markerCount, int maxEntriesPerMarker, int compressTargetCount)
-{
-    const int maxEntriesRemoved = markerCount * maxEntriesPerMarker;
-    const int actualEntriesRemoved = ((strings.count() + markerCount) - compressTargetCount) + 1;
-
-    const int lastMarkerGroupLength = maxEntriesPerMarker - (maxEntriesRemoved % actualEntriesRemoved);
-    const int firstAndLastMarkerGroupsTotal = maxEntriesPerMarker + lastMarkerGroupLength;
-
-    return firstAndLastMarkerGroupsTotal / 2;
-}
