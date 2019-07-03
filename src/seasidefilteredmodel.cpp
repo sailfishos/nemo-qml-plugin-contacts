@@ -839,6 +839,18 @@ void SeasideFilteredModel::removePerson(SeasidePerson *person)
     SeasideCache::removeContact(person->contact());
 }
 
+void SeasideFilteredModel::removePeople(const QVariantList &people)
+{
+    QList<QContact> contacts;
+    for (const QVariant &variant : people) {
+        SeasidePerson *person = variant.value<SeasidePerson*>();
+        if (person) {
+            contacts.append(person->contact());
+        }
+    }
+    SeasideCache::removeContacts(contacts);
+}
+
 QModelIndex SeasideFilteredModel::index(const QModelIndex &parent, int row, int column) const
 {
     return !parent.isValid() && column == 0 && row >= 0 && row < m_contactIds->count()

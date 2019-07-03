@@ -150,6 +150,7 @@ public:
     Q_INVOKABLE SeasidePerson *personByOnlineAccount(const QString &localUid, const QString &remoteUid, bool requireComplete = true) const;
     Q_INVOKABLE SeasidePerson *selfPerson() const;
     Q_INVOKABLE void removePerson(SeasidePerson *person);
+    Q_INVOKABLE void removePeople(const QVariantList &people);
 
     Q_INVOKABLE int importContacts(const QString &path);
     Q_INVOKABLE QString exportContacts();
