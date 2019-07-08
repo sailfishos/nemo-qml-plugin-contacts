@@ -1168,4 +1168,4 @@ void tst_SeasidePerson::removeDuplicateEmailAddresses()
 // - account URIs/paths (or let contactsd do that?)
 
 #include "tst_seasideperson.moc"
-QTEST_APPLESS_MAIN(tst_SeasidePerson)
+QTEST_MAIN(tst_SeasidePerson)
