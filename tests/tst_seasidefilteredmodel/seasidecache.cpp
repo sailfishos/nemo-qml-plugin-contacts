@@ -370,6 +370,10 @@ void SeasideCache::removeContact(const QContact &)
 {
 }
 
+void SeasideCache::removeContacts(const QList<QContact> &)
+{
+}
+
 void SeasideCache::aggregateContacts(const QContact &, const QContact &)
 {
 }

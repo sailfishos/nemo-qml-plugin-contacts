@@ -1050,4 +1050,4 @@ void tst_SeasideFilteredModel::mixedFilters()
 }
 
 #include "tst_seasidefilteredmodel.moc"
-QTEST_APPLESS_MAIN(tst_SeasideFilteredModel)
+QTEST_MAIN(tst_SeasideFilteredModel)

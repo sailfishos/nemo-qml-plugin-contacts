@@ -156,7 +156,7 @@ void tst_SeasidePerson::sectionBucket()
 {
     QScopedPointer<SeasidePerson> person(new SeasidePerson);
     QSignalSpy spy(person.data(), SIGNAL(displayLabelChanged()));
-    QCOMPARE(person->displayLabel(), QString("(Unnamed)"));
+    QCOMPARE(person->displayLabel(), SeasidePerson::placeholderDisplayLabel());
     QCOMPARE(spy.count(), 0);
     QCOMPARE(person->sectionBucket(), QString());
 
@@ -532,7 +532,7 @@ void tst_SeasidePerson::websiteDetails()
         QVariantMap website(var.value<QVariantMap>());
         QCOMPARE(website.value(QString::fromLatin1("url")).toString(), urls.at(i));
         QCOMPARE(website.value(QString::fromLatin1("type")).toInt(), static_cast<int>(SeasidePerson::WebsiteType));
-        QCOMPARE(website.value(QString::fromLatin1("subType")).toInt(), static_cast<int>(SeasidePerson::WebsiteSubTypeHomePage));
+        QCOMPARE(website.value(QString::fromLatin1("subType")).toInt(), static_cast<int>(SeasidePerson::NoSubType));
         QCOMPARE(website.value(QString::fromLatin1("label")), QVariant());
 
         // Modify the subType of this detail
@@ -729,7 +729,7 @@ void tst_SeasidePerson::anniversaryDetails()
         QVariantMap anniversary(var.value<QVariantMap>());
         QCOMPARE(anniversary.value(QString::fromLatin1("originalDate")).value<QDateTime>(), dates.at(i));
         QCOMPARE(anniversary.value(QString::fromLatin1("type")).toInt(), static_cast<int>(SeasidePerson::AnniversaryType));
-        QCOMPARE(anniversary.value(QString::fromLatin1("subType")).toInt(), static_cast<int>(SeasidePerson::AnniversarySubTypeWedding));
+        QCOMPARE(anniversary.value(QString::fromLatin1("subType")).toInt(), static_cast<int>(SeasidePerson::NoSubType));
         QCOMPARE(anniversary.value(QString::fromLatin1("label")), QVariant());
 
         // Modify the subType of this detail
@@ -1168,4 +1168,4 @@ void tst_SeasidePerson::removeDuplicateEmailAddresses()
 // - account URIs/paths (or let contactsd do that?)
 
 #include "tst_seasideperson.moc"
-QTEST_APPLESS_MAIN(tst_SeasidePerson)
+QTEST_MAIN(tst_SeasidePerson)
