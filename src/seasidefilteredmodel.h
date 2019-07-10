@@ -108,6 +108,9 @@ public:
         EmailDetailsRole,
         AccountDetailsRole,
         NoteDetailsRole,
+        CompanyNameRole,
+        TitleRole,
+        RoleRole,
     };
     Q_ENUM(PeopleRoles)
 

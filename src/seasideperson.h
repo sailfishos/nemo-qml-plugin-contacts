@@ -343,6 +343,9 @@ public:
     void mergeCandidatesFetched(const QList<int> &ids);
     void aggregationOperationCompleted();
 
+    static QString companyName(const QContact &contact);
+    static QString title(const QContact &contact);
+    static QString role(const QContact &contact);
     static QVariantList nicknameDetails(const QContact &contact);
     static QVariantList phoneDetails(const QContact &contact);
     static QVariantList emailDetails(const QContact &contact);
