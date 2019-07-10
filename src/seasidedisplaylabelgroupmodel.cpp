@@ -277,7 +277,9 @@ void SeasideDisplayLabelGroupModel::reloadGroupIndices()
     for (int i = 0; i < m_compressedGroups.count(); i++) {
         const QString &group = m_compressedGroups.at(i);
         if (SeasideStringListCompressor::isCompressionMarker(group)) {
-            const QStringList &groupContent = m_compressedContent.value(i);
+            // An empty default must be passed in, otherwise if the key doesn't exist
+            // the reference to the returned default-constructed value can become invalid
+            const QStringList &groupContent = m_compressedContent.value(i, QStringList());
             for (const QString &groupContentEntry : groupContent) {
                 m_groupIndices.insert(groupContentEntry, i);
             }
