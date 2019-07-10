@@ -83,6 +83,9 @@ const QByteArray phoneDetailsRole("phoneDetails");
 const QByteArray emailDetailsRole("emailDetails");
 const QByteArray accountDetailsRole("accountDetails");
 const QByteArray noteDetailsRole("noteDetails");
+const QByteArray companyNameRole("companyName");
+const QByteArray titleRole("title");
+const QByteArray roleRole("role");
 
 const ML10N::MLocale mLocale;
 
@@ -509,6 +512,9 @@ QHash<int, QByteArray> SeasideFilteredModel::roleNames() const
     roles.insert(EmailDetailsRole, emailDetailsRole);
     roles.insert(AccountDetailsRole, accountDetailsRole);
     roles.insert(NoteDetailsRole, noteDetailsRole);
+    roles.insert(CompanyNameRole, companyNameRole);
+    roles.insert(TitleRole, titleRole);
+    roles.insert(RoleRole, roleRole);
     return roles;
 }
 
@@ -768,6 +774,9 @@ QVariantMap SeasideFilteredModel::get(int row) const
     m.insert(emailDetailsRole, data(cacheItem, EmailDetailsRole));
     m.insert(accountDetailsRole, data(cacheItem, AccountDetailsRole));
     m.insert(noteDetailsRole, data(cacheItem, NoteDetailsRole));
+    m.insert(companyNameRole, data(cacheItem, CompanyNameRole));
+    m.insert(titleRole, data(cacheItem, TitleRole));
+    m.insert(roleRole, data(cacheItem, RoleRole));
     return m;
 }
 
@@ -932,6 +941,12 @@ QVariant SeasideFilteredModel::data(SeasideCache::CacheItem *cacheItem, int role
             }
         }
         return rv;
+    } else if (role == CompanyNameRole) {
+        return SeasidePerson::companyName(contact);
+    } else if (role == TitleRole) {
+        return SeasidePerson::title(contact);
+    } else if (role == RoleRole) {
+        return SeasidePerson::role(contact);
     } else if (role == Qt::DisplayRole || role == SectionBucketRole) {
         if (SeasidePerson *person = static_cast<SeasidePerson *>(cacheItem->itemData)) {
             // If we have a person instance, prefer to use that
