@@ -328,10 +328,15 @@ QString SeasidePerson::sectionBucket() const
     return QString();
 }
 
+QString SeasidePerson::companyName(const QContact &contact)
+{
+    QContactOrganization company = contact.detail<QContactOrganization>();
+    return company.name();
+}
+
 QString SeasidePerson::companyName() const
 {
-    QContactOrganization company = mContact->detail<QContactOrganization>();
-    return company.name();
+    return companyName(*mContact);
 }
 
 void SeasidePerson::setCompanyName(const QString &name)
@@ -342,10 +347,15 @@ void SeasidePerson::setCompanyName(const QString &name)
     emit companyNameChanged();
 }
 
+QString SeasidePerson::title(const QContact &contact)
+{
+    QContactOrganization company = contact.detail<QContactOrganization>();
+    return company.title();
+}
+
 QString SeasidePerson::title() const
 {
-    QContactOrganization company = mContact->detail<QContactOrganization>();
-    return company.title();
+    return title(*mContact);
 }
 
 void SeasidePerson::setTitle(const QString &title)
@@ -356,10 +366,15 @@ void SeasidePerson::setTitle(const QString &title)
     emit titleChanged();
 }
 
+QString SeasidePerson::role(const QContact &contact)
+{
+    QContactOrganization company = contact.detail<QContactOrganization>();
+    return company.role();
+}
+
 QString SeasidePerson::role() const
 {
-    QContactOrganization company = mContact->detail<QContactOrganization>();
-    return company.role();
+    return role(*mContact);
 }
 
 void SeasidePerson::setRole(const QString &role)
