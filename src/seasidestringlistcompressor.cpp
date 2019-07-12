@@ -35,7 +35,11 @@
 
 namespace {
 
-const QChar CompressionMarker = QChar('.');
+// The implementaiton requires the CompressionMarker to be distinct from any
+// group display labels. Most labels are single character so won't conflict,
+// but that's not a requirement and so display label grouper plugins must avoid
+// using ".." as a label.
+const QString CompressionMarker = QStringLiteral("..");
 const int MinimumCompressionInputCount = 5;
 
 }
