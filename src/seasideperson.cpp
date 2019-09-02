@@ -2148,10 +2148,17 @@ void SeasidePerson::fetchMergeCandidates()
 
 void SeasidePerson::resolvePhoneNumber(const QString &number, bool requireComplete)
 {
+    qWarning() << Q_FUNC_INFO << "calling this function without a region code is deprecated";
+
+    resolvePhoneNumber(number, QString(), requireComplete);
+}
+
+void SeasidePerson::resolvePhoneNumber(const QString &number, const QString &regionCode, bool requireComplete)
+{
     mResolving = true;
     emit resolvingChanged();
 
-    if (SeasideCache::CacheItem *item = SeasideCache::resolvePhoneNumber(this, number, requireComplete)) {
+    if (SeasideCache::CacheItem *item = SeasideCache::resolvePhoneNumber(this, number, regionCode, requireComplete)) {
         // TODO: should this be invoked async?
         addressResolved(QString(), number, item);
     }

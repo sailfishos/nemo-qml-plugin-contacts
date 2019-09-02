@@ -825,7 +825,14 @@ SeasidePerson *SeasideFilteredModel::personById(int id) const
 
 SeasidePerson *SeasideFilteredModel::personByPhoneNumber(const QString &number, bool requireComplete) const
 {
-    return personFromItem(SeasideCache::itemByPhoneNumber(number, requireComplete));
+    qWarning() << Q_FUNC_INFO << "calling this function without a region code is deprecated";
+
+    return personByPhoneNumber(number, QString(), requireComplete);
+}
+
+SeasidePerson *SeasideFilteredModel::personByPhoneNumber(const QString &number, const QString &regionCode, bool requireComplete) const
+{
+    return personFromItem(SeasideCache::itemByPhoneNumber(number, regionCode, requireComplete));
 }
 
 SeasidePerson *SeasideFilteredModel::personByEmailAddress(const QString &email, bool requireComplete) const

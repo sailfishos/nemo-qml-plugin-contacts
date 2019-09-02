@@ -325,7 +325,7 @@ void SeasideCache::refreshContact(CacheItem *)
 {
 }
 
-SeasideCache::CacheItem *SeasideCache::itemByPhoneNumber(const QString &, bool)
+SeasideCache::CacheItem *SeasideCache::itemByPhoneNumber(const QString &, const QString &, bool)
 {
     return 0;
 }
@@ -340,7 +340,7 @@ SeasideCache::CacheItem *SeasideCache::itemByOnlineAccount(const QString &, cons
     return 0;
 }
 
-SeasideCache::CacheItem *SeasideCache::resolvePhoneNumber(ResolveListener *, const QString &, bool)
+SeasideCache::CacheItem *SeasideCache::resolvePhoneNumber(ResolveListener *, const QString &, const QString &, bool)
 {
     // TODO: implement and test these functions
     return 0;

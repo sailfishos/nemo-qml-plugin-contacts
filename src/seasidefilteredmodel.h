@@ -149,6 +149,7 @@ public:
     Q_INVOKABLE SeasidePerson *personByRow(int row) const;
     Q_INVOKABLE SeasidePerson *personById(int id) const;
     Q_INVOKABLE SeasidePerson *personByPhoneNumber(const QString &number, bool requireComplete = true) const;
+    Q_INVOKABLE SeasidePerson *personByPhoneNumber(const QString &number, const QString &regionCode, bool requireComplete = true) const;
     Q_INVOKABLE SeasidePerson *personByEmailAddress(const QString &email, bool requireComplete = true) const;
     Q_INVOKABLE SeasidePerson *personByOnlineAccount(const QString &localUid, const QString &remoteUid, bool requireComplete = true) const;
     Q_INVOKABLE SeasidePerson *selfPerson() const;

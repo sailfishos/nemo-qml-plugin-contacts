@@ -181,11 +181,11 @@ public:
     static void ensureCompletion(CacheItem *cacheItem);
     static void refreshContact(CacheItem *cacheItem);
 
-    static CacheItem *itemByPhoneNumber(const QString &number, bool requireComplete = true);
+    static CacheItem *itemByPhoneNumber(const QString &number, const QString &regionCode, bool requireComplete = true);
     static CacheItem *itemByEmailAddress(const QString &email, bool requireComplete = true);
     static CacheItem *itemByOnlineAccount(const QString &localUid, const QString &remoteUid, bool requireComplete = true);
 
-    static CacheItem *resolvePhoneNumber(ResolveListener *listener, const QString &msisdn, bool requireComplete = true);
+    static CacheItem *resolvePhoneNumber(ResolveListener *listener, const QString &msisdn, const QString &regionCode, bool requireComplete = true);
     static CacheItem *resolveEmailAddress(ResolveListener *listener, const QString &email, bool requireComplete = true);
     static CacheItem *resolveOnlineAccount(ResolveListener *listener, const QString &localUid, const QString &remoteUid, bool requireComplete = true);
 
