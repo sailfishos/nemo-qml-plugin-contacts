@@ -114,7 +114,10 @@ Module {
                 "PhoneDetailsRole": 272,
                 "EmailDetailsRole": 273,
                 "AccountDetailsRole": 274,
-                "NoteDetailsRole": 275
+                "NoteDetailsRole": 275,
+                "CompanyNameRole": 276,
+                "TitleRole": 277,
+                "RoleRole": 278
             }
         }
         Property { name: "populated"; type: "bool"; isReadonly: true }
