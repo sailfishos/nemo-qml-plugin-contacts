@@ -80,10 +80,11 @@ public:
 
     struct CacheItem
     {
-        CacheItem() : itemData(0), iid(0), statusFlags(0), contactState(ContactAbsent), listeners(0) {}
+        CacheItem() : itemData(0), iid(0), statusFlags(0), contactState(ContactAbsent), listeners(0), filterMatchRole(-1) {}
         CacheItem(const QContact &contact)
             : contact(contact), itemData(0), iid(internalId(contact)),
-              statusFlags(contact.detail<QContactStatusFlags>().flagsValue()), contactState(ContactComplete), listeners(0) {}
+              statusFlags(contact.detail<QContactStatusFlags>().flagsValue()), contactState(ContactComplete), listeners(0),
+              filterMatchRole(-1) {}
 
         ItemListener *listener(void *) { return 0; }
 
@@ -98,6 +99,7 @@ public:
         ItemListener *listeners;
         QString displayLabelGroup;
         QString displayLabel;
+        int filterMatchRole;
     };
 
     class ListModel : public QAbstractListModel
