@@ -113,6 +113,7 @@ public:
         TitleRole,
         RoleRole,
         NameDetailsRole,
+        FilterMatchDataRole,
     };
     Q_ENUM(PeopleRoles)
 

@@ -85,6 +85,8 @@ const QByteArray noteDetailsRole("noteDetails");
 const QByteArray companyNameRole("companyName");
 const QByteArray titleRole("title");
 const QByteArray roleRole("role");
+const QByteArray nameDetailsRole("nameDetails");
+const QByteArray filterMatchDataRole("filterMatchData");
 
 const ML10N::MLocale mLocale;
 
@@ -658,6 +660,8 @@ QHash<int, QByteArray> SeasideFilteredModel::roleNames() const
     roles.insert(CompanyNameRole, companyNameRole);
     roles.insert(TitleRole, titleRole);
     roles.insert(RoleRole, roleRole);
+    roles.insert(NameDetailsRole, nameDetailsRole);
+    roles.insert(FilterMatchDataRole, filterMatchDataRole);
     return roles;
 }
 
@@ -832,6 +836,7 @@ int SeasideFilteredModel::filterId(quint32 iid) const
         }
     }
 
+    item->filterMatchRole = FilterData::sortPriorities(filterData->sortLastNameFirst)[bestMatchPriority].field;
     return bestMatchPriority;
 }
 
@@ -857,8 +862,9 @@ void SeasideFilteredModel::populateIndex()
     // which match the filter, and then return a list of matching
     // contacts' ids, sorted by match priority.
     const bool noFilterSet = m_filterParts.isEmpty() && m_requiredProperty == NoPropertyRequired;
+    const bool sortLastNameFirst = sortProperty().compare(QStringLiteral("lastName"), Qt::CaseInsensitive) == 0;
     QVector<QVector<quint32> > priorityBucketedContacts;
-    priorityBucketedContacts.fill(QVector<quint32>(), FilterData::sortPriorities().size());
+    priorityBucketedContacts.fill(QVector<quint32>(), FilterData::sortPriorities(sortLastNameFirst).size());
     for (int i = 0; i < m_referenceContactIds->count(); ++i) {
         const quint32 &currContactId(m_referenceContactIds->at(i));
         if (noFilterSet) {
@@ -974,6 +980,8 @@ QVariantMap SeasideFilteredModel::get(int row) const
     m.insert(companyNameRole, data(cacheItem, CompanyNameRole));
     m.insert(titleRole, data(cacheItem, TitleRole));
     m.insert(roleRole, data(cacheItem, RoleRole));
+    m.insert(nameDetailsRole, data(cacheItem, NameDetailsRole));
+    m.insert(filterMatchDataRole, data(cacheItem, FilterMatchDataRole));
     return m;
 }
 
@@ -1156,6 +1164,24 @@ QVariant SeasideFilteredModel::data(SeasideCache::CacheItem *cacheItem, int role
         return SeasidePerson::title(contact);
     } else if (role == RoleRole) {
         return SeasidePerson::role(contact);
+    } else if (role == NameDetailsRole) {
+        return QVariant();
+    } else if (role == FilterMatchDataRole) {
+        // Return the data which matched the filter pattern.
+        // If it was name data, don't return it, as the
+        // name of the contact will already be visible in
+        // the search result delegate.
+        const int matchRole = cacheItem->filterMatchRole;
+        if (matchRole >= FirstNameRole
+                && matchRole < FilterMatchDataRole
+                && matchRole != NameDetailsRole
+                && matchRole != PrimaryNameRole
+                && matchRole != SecondaryNameRole
+                && matchRole != FirstNameRole
+                && matchRole != LastNameRole) {
+            return data(cacheItem, matchRole);
+        }
+        return QVariant(QString());
     } else if (role == Qt::DisplayRole || role == SectionBucketRole) {
         if (SeasidePerson *person = static_cast<SeasidePerson *>(cacheItem->itemData)) {
             // If we have a person instance, prefer to use that
