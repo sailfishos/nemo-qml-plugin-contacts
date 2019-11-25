@@ -71,7 +71,8 @@ public:
         NoPropertyRequired = 0,
         AccountUriRequired = SeasideCache::FetchAccountUri,
         PhoneNumberRequired = SeasideCache::FetchPhoneNumber,
-        EmailAddressRequired = SeasideCache::FetchEmailAddress
+        EmailAddressRequired = SeasideCache::FetchEmailAddress,
+        OrganizationRequired = SeasideCache::FetchOrganization
     };
 
     enum SearchablePropertyType {
@@ -111,6 +112,7 @@ public:
         CompanyNameRole,
         TitleRole,
         RoleRole,
+        NameDetailsRole,
     };
     Q_ENUM(PeopleRoles)
 
@@ -170,12 +172,7 @@ public:
     Q_INVOKABLE void setFilter(FilterType type) { setFilterType(type); }
     Q_INVOKABLE void search(const QString &pattern) { setFilterPattern(pattern); }
 
-    bool filterId(quint32 contactId) const;
-
-    // For synchronizeLists()
-    bool filterValue(quint32 contactId) const { return filterId(contactId); }
-    void insertRange(int index, int count, const QList<quint32> &source, int sourceIndex);
-    void removeRange(int index, int count);
+    int filterId(quint32 contactId) const;
 
     virtual QHash<int, QByteArray> roleNames() const;
 
@@ -242,8 +239,6 @@ private:
     const QList<quint32> *m_allContactIds;
     QList<QStringList> m_filterParts;
     QString m_filterPattern;
-    int m_filterIndex;
-    int m_referenceIndex;
     int m_filterUpdateIndex;
     FilterType m_filterType;
     FilterType m_effectiveFilterType;

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 Jolla Mobile <andrew.den.exter@jollamobile.com>
+ * Copyright (C) 2019 Open Mobile Platform LLC
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -31,8 +32,6 @@
 
 #include "seasidefilteredmodel.h"
 #include "seasideperson.h"
-
-#include <synchronizelists.h>
 
 #include <qtcontacts-extensions.h>
 #include <qtcontacts-extensions_impl.h>
@@ -299,13 +298,68 @@ QVector<T> toSortedVector(Container<T> &src)
     return dst;
 }
 
+QList<quint32> sortedContactIds(const QVector<QVector<quint32> > &priorityBucketContacts)
+{
+    QList<quint32> retn;
+    for (const QVector<quint32> &contacts : priorityBucketContacts) {
+        for (const quint32 contactId : contacts) {
+            retn.append(contactId);
+        }
+    }
+    return retn;
+}
+
 }
 
 struct FilterData : public SeasideCache::ItemListener
 {
     // Store additional filter keys with the cache item
-    QVector<const QString *> initialMatchKeys;
-    QVector<const QString *> wildMatchKeys;
+    QVector<const QString *> presenceMatchKeys;
+    QHash<SeasideFilteredModel::PeopleRoles, QVector<QVector<const QString *> > > wildMatchKeys;
+    bool sortLastNameFirst = false;
+
+    enum MatchOperation {
+        StartsWith = 0,
+        Contains
+    };
+    struct FieldMatchOperationSortPriority {
+        SeasideFilteredModel::PeopleRoles field;
+        MatchOperation matchOperation;
+        int sortPriority;
+    };
+
+    static QVector<FieldMatchOperationSortPriority> sortPriorities(bool sortLastNameFirst = false)
+    {
+        static QVector<FieldMatchOperationSortPriority> firstNameFirst {
+            { SeasideFilteredModel::FirstNameRole,          StartsWith,     0 },
+            { SeasideFilteredModel::LastNameRole,           StartsWith,     1 },
+            { SeasideFilteredModel::FirstNameRole,          Contains,       2 },
+            { SeasideFilteredModel::LastNameRole,           Contains,       3 },
+            { SeasideFilteredModel::NicknameDetailsRole,    StartsWith,     4 },
+            { SeasideFilteredModel::EmailAddressesRole,     StartsWith,     5 },
+            { SeasideFilteredModel::CompanyNameRole,        StartsWith,     6 },
+            { SeasideFilteredModel::NameDetailsRole,        Contains,       7 },
+            { SeasideFilteredModel::NicknameDetailsRole,    Contains,       8 },
+            { SeasideFilteredModel::EmailAddressesRole,     Contains,       9 },
+            { SeasideFilteredModel::CompanyNameRole,        Contains,      10 },
+            { SeasideFilteredModel::PhoneNumbersRole,       Contains,      11 }
+        };
+        static QVector<FieldMatchOperationSortPriority> lastNameFirst {
+            { SeasideFilteredModel::LastNameRole,           StartsWith,     0 },
+            { SeasideFilteredModel::FirstNameRole,          StartsWith,     1 },
+            { SeasideFilteredModel::LastNameRole,           Contains,       2 },
+            { SeasideFilteredModel::FirstNameRole,          Contains,       3 },
+            { SeasideFilteredModel::NicknameDetailsRole,    StartsWith,     4 },
+            { SeasideFilteredModel::EmailAddressesRole,     StartsWith,     5 },
+            { SeasideFilteredModel::CompanyNameRole,        StartsWith,     6 },
+            { SeasideFilteredModel::NameDetailsRole,        Contains,       7 },
+            { SeasideFilteredModel::NicknameDetailsRole,    Contains,       8 },
+            { SeasideFilteredModel::EmailAddressesRole,     Contains,       9 },
+            { SeasideFilteredModel::CompanyNameRole,        Contains,      10 },
+            { SeasideFilteredModel::PhoneNumbersRole,       Contains,      11 }
+        };
+        return sortLastNameFirst ? lastNameFirst : firstNameFirst;
+    }
 
     static FilterData *getItemFilterData(SeasideCache::CacheItem *item, const SeasideFilteredModel *model)
     {
@@ -318,67 +372,114 @@ struct FilterData : public SeasideCache::ItemListener
         return static_cast<FilterData *>(listener);
     }
 
-    bool prepareFilter(SeasideCache::CacheItem *item)
+    bool prepareFilter(SeasideCache::CacheItem *item, const QString &sortProperty = QString())
     {
         static const QChar atSymbol(QChar::fromLatin1('@'));
         static const QtContactsSqliteExtensions::NormalizePhoneNumberFlags normalizeFlags(QtContactsSqliteExtensions::KeepPhoneNumberDialString |
                                                                                           QtContactsSqliteExtensions::ValidatePhoneNumber);
 
+        const bool sortByLastNameFirst = sortProperty.compare(QStringLiteral("lastName"), Qt::CaseInsensitive) == 0;
+        if (sortLastNameFirst != sortByLastNameFirst) {
+            sortLastNameFirst = sortByLastNameFirst;
+            wildMatchKeys.clear();
+        }
+
         if (wildMatchKeys.isEmpty()) {
             QList<const QString *> matchTokens;
             matchTokens.reserve(100);
 
+            // initialise presenceMatchKeys for this contact
             for (const QContactOnlineAccount &detail : item->contact.details<QContactOnlineAccount>())
                 insert(matchTokens, splitWords(stringPreceding(detail.accountUri(), atSymbol)));
             for (const QContactGlobalPresence &detail : item->contact.details<QContactGlobalPresence>())
                 insert(matchTokens, splitWords(detail.nickname()));
             for (const QContactPresence &detail : item->contact.details<QContactPresence>())
                 insert(matchTokens, splitWords(detail.nickname()));
+            presenceMatchKeys = toSortedVector(matchTokens);
 
-            initialMatchKeys = toSortedVector(matchTokens);
+            // initialise the wildMatchKeys for this contact
+            const QVector<FieldMatchOperationSortPriority> &priorities(sortPriorities(sortLastNameFirst));
+            for (const FieldMatchOperationSortPriority &sortPriority : priorities) {
+                if (!wildMatchKeys.contains(sortPriority.field)) {
+                    wildMatchKeys.insert(sortPriority.field, QVector<QVector<const QString *> >());
+                }
+            }
 
-            // split the display label and filter details into words
+            // populate the wildMatchKeys for this contact
             QContactName name = item->contact.detail<QContactName>();
 
-            // First name, middle name, last name, prefix, suffix, custom field, nick name,
-            // email address, organization, and phone number can be matched in the middle.
-            matchTokens.clear();
-            insert(matchTokens, splitWords(name.firstName()));
-            insert(matchTokens, splitWords(name.middleName()));
-            insert(matchTokens, splitWords(name.lastName()));
-            insert(matchTokens, splitWords(name.prefix()));
-            insert(matchTokens, splitWords(name.suffix()));
+            matchTokens = splitWords(sortByLastNameFirst ? name.lastName() : name.firstName());
+            if (!matchTokens.isEmpty()) {
+                wildMatchKeys[sortByLastNameFirst
+                            ? SeasideFilteredModel::LastNameRole
+                            : SeasideFilteredModel::FirstNameRole].append(matchTokens.toVector());
+            }
 
-            // Include the custom label - it may contain the user's customized name for the contact
-            insert(matchTokens, splitWords(name.value<QString>(QContactName__FieldCustomLabel)));
+            matchTokens = splitWords(sortByLastNameFirst ? name.firstName() : name.lastName());
+            if (!matchTokens.isEmpty()) {
+                wildMatchKeys[sortByLastNameFirst
+                            ? SeasideFilteredModel::FirstNameRole
+                            : SeasideFilteredModel::LastNameRole].append(matchTokens.toVector());
+            }
 
-            if (matchTokens.isEmpty()) {
-                // The contact must have some kind of identifying marks
-                insert(matchTokens, splitWords(item->displayLabel));
+            matchTokens = splitWords(name.firstName());
+            if (!matchTokens.isEmpty()) {
+                wildMatchKeys[SeasideFilteredModel::NameDetailsRole].append(matchTokens.toVector());
+            }
+            matchTokens = splitWords(name.middleName());
+            if (!matchTokens.isEmpty()) {
+                wildMatchKeys[SeasideFilteredModel::NameDetailsRole].append(matchTokens.toVector());
+            }
+            matchTokens = splitWords(name.lastName());
+            if (!matchTokens.isEmpty()) {
+                wildMatchKeys[SeasideFilteredModel::NameDetailsRole].append(matchTokens.toVector());
+            }
+            matchTokens = splitWords(name.prefix());
+            if (!matchTokens.isEmpty()) {
+                wildMatchKeys[SeasideFilteredModel::NameDetailsRole].append(matchTokens.toVector());
+            }
+            matchTokens = splitWords(name.suffix());
+            if (!matchTokens.isEmpty()) {
+                wildMatchKeys[SeasideFilteredModel::NameDetailsRole].append(matchTokens.toVector());
+            };
+            matchTokens = splitWords(name.value<QString>(QContactName__FieldCustomLabel));
+            if (!matchTokens.isEmpty()) {
+                wildMatchKeys[SeasideFilteredModel::NameDetailsRole].append(matchTokens.toVector());
+            }
+            matchTokens = splitWords(item->displayLabel);
+            if (!matchTokens.isEmpty()) {
+                wildMatchKeys[SeasideFilteredModel::NameDetailsRole].append(matchTokens.toVector());
             }
 
             for (const QContactNickname &detail : item->contact.details<QContactNickname>()) {
-                insert(matchTokens, splitWords(detail.nickname()));
+                matchTokens = splitWords(detail.nickname());
+                if (matchTokens.size()) {
+                    wildMatchKeys[SeasideFilteredModel::NicknameDetailsRole].append(matchTokens.toVector());
+                }
             }
             for (const QContactEmailAddress &detail : item->contact.details<QContactEmailAddress>()) {
-                insert(matchTokens, splitWords(stringPreceding(detail.emailAddress(), atSymbol)));
+                matchTokens = splitWords(detail.emailAddress());
+                if (!matchTokens.isEmpty()) {
+                    wildMatchKeys[SeasideFilteredModel::EmailAddressesRole].append(matchTokens.toVector());
+                }
             }
             for (const QContactOrganization &detail : item->contact.details<QContactOrganization>()) {
-                insert(matchTokens, splitWords(detail.name()));
+                matchTokens = splitWords(detail.name());
+                if (!matchTokens.isEmpty()) {
+                    wildMatchKeys[SeasideFilteredModel::CompanyNameRole].append(matchTokens.toVector());
+                }
             }
-
-            // Add phone numbers to a separate list where we will match any part of the string
-            QList<QContactPhoneNumber> phoneNumbers(item->contact.details<QContactPhoneNumber>());
-            if (!phoneNumbers.isEmpty()) {
-                for (const QContactPhoneNumber &detail : phoneNumbers) {
-                    // For phone numbers, match on the normalized from (punctuation stripped)
-                    QString normalized(QtContactsSqliteExtensions::normalizePhoneNumber(detail.number(), normalizeFlags));
-                    if (!normalized.isEmpty()) {
-                        insert(matchTokens, makeSearchToken(normalized));
+            for (const QContactPhoneNumber &detail : item->contact.details<QContactPhoneNumber>()) {
+                // For phone numbers, match on the normalized from (punctuation stripped)
+                const QString normalized(QtContactsSqliteExtensions::normalizePhoneNumber(detail.number(), normalizeFlags));
+                if (!normalized.isEmpty()) {
+                    matchTokens = makeSearchToken(normalized);
+                    if (!matchTokens.isEmpty()) {
+                        wildMatchKeys[SeasideFilteredModel::PhoneNumbersRole].append(matchTokens.toVector());
                     }
                 }
             }
-            wildMatchKeys = toSortedVector(matchTokens);
+
             return true;
         }
 
@@ -392,7 +493,7 @@ struct FilterData : public SeasideCache::ItemListener
     static const QChar *cend(const QStringRef &r) { return r.data() + r.size(); }
 
     template<typename KeyType>
-    bool partialMatch(const KeyType &key, const QChar * const vbegin, const QChar * const vend) const
+    static bool partialMatch(const KeyType &key, const QChar * const vbegin, const QChar * const vend)
     {
         // Note: both key and value must already be in normalization form D
         const QChar *kbegin = cbegin(key), *kend = cend(key);
@@ -428,43 +529,85 @@ struct FilterData : public SeasideCache::ItemListener
         return false;
     }
 
-    bool partialMatch(const QString &value) const
+    static bool partialMatchStartsWith(const QVector<QVector<const QString *> > &wildMatchTokens,
+                                       const QString &value)
     {
         const QChar *vbegin = value.cbegin(), *vend = value.cend();
-
-        // Find which subset of initial-match keys the value might match
-        typedef QVector<const QString *>::const_iterator VectorIterator;
-        std::pair<VectorIterator, VectorIterator> bounds = std::equal_range(initialMatchKeys.cbegin(), initialMatchKeys.cend(), vbegin, FirstElementLessThanIndirect());
-        for ( ; bounds.first != bounds.second; ++bounds.first) {
-            const QString &key(*(*bounds.first));
-            if (partialMatch(key, vbegin, vend))
-                return true;
-        }
-
-        // Test to see if there is a match in any of the match-anywhere fields
-        for (QVector<const QString *>::const_iterator it = wildMatchKeys.cbegin(), end = wildMatchKeys.cend(); it != end; ++it) {
-            const QString &key(*(*it));
-
-            // Try to match the value anywhere inside the key
-            const QChar initialChar(*value.cbegin());
-            int index = -1;
-            while ((index = key.indexOf(initialChar, index + 1)) != -1) {
-                if (partialMatch(key.midRef(index), vbegin, vend))
+        for (const QVector<const QString *> &tokens : wildMatchTokens) {
+            if (tokens.size()) {
+                const QString &token(*tokens.first());
+                const QChar initialChar(*vbegin);
+                if (token.startsWith(initialChar) && partialMatch(token, vbegin, vend)) {
                     return true;
+                }
             }
         }
-
         return false;
     }
 
-    void itemUpdated(SeasideCache::CacheItem *) { initialMatchKeys.clear(); wildMatchKeys.clear(); }
+    static bool partialMatchContains(const QVector<QVector<const QString *> > &wildMatchTokens,
+                                     const QString &value)
+    {
+        const QChar *vbegin = value.cbegin(), *vend = value.cend();
+        for (const QVector<const QString *> &tokens : wildMatchTokens) {
+            for (QVector<const QString *>::const_iterator it = tokens.cbegin(), end = tokens.cend(); it != end; ++it) {
+                const QString &token(*(*it));
+                // Try to match the value anywhere inside the key
+                const QChar initialChar(*vbegin);
+                int index = -1;
+                while ((index = token.indexOf(initialChar, index + 1)) != -1) {
+                    if (partialMatch(token.midRef(index), vbegin, vend)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    static bool partialMatch(SeasideFilteredModel::PeopleRoles field,
+                             MatchOperation op,
+                             const QHash<SeasideFilteredModel::PeopleRoles, QVector<QVector<const QString *> > > &wildMatchTokens,
+                             const QString &value)
+    {
+        if (op == StartsWith) {
+            return partialMatchStartsWith(wildMatchTokens.value(field), value);
+        } else {
+            return partialMatchContains(wildMatchTokens.value(field), value);
+        }
+    }
+
+    int partialMatch(const QString &value) const
+    {
+        const QChar *vbegin = value.cbegin(), *vend = value.cend();
+
+        // Find which subset of presence-match keys the value might match
+        typedef QVector<const QString *>::const_iterator VectorIterator;
+        std::pair<VectorIterator, VectorIterator> bounds = std::equal_range(presenceMatchKeys.cbegin(), presenceMatchKeys.cend(), vbegin, FirstElementLessThanIndirect());
+        for ( ; bounds.first != bounds.second; ++bounds.first) {
+            const QString &key(*(*bounds.first));
+            if (partialMatch(key, vbegin, vend)) {
+                return 0; // presence field matches are sorted before other matches.
+            }
+        }
+
+        // Test to see if there is a match in any of the search-match fields
+        const QVector<FieldMatchOperationSortPriority> &priorities(sortPriorities(sortLastNameFirst));
+        for (const FieldMatchOperationSortPriority &priority : priorities) {
+            if (partialMatch(priority.field, priority.matchOperation, wildMatchKeys, value)) {
+                return priority.sortPriority;
+            }
+        }
+
+        return -1;
+    }
+
+    void itemUpdated(SeasideCache::CacheItem *) { presenceMatchKeys.clear(); wildMatchKeys.clear(); }
     void itemAboutToBeRemoved(SeasideCache::CacheItem *) { delete this; }
 };
 
 SeasideFilteredModel::SeasideFilteredModel(QObject *parent)
     : SeasideCache::ListModel(parent)
-    , m_filterIndex(0)
-    , m_referenceIndex(0)
     , m_filterUpdateIndex(-1)
     , m_filterType(FilterAll)
     , m_effectiveFilterType(FilterAll)
@@ -569,9 +712,6 @@ void SeasideFilteredModel::setFilterType(FilterType type)
         m_filterType = type;
 
         if (!equivalentFilter) {
-            m_referenceIndex = 0;
-            m_filterIndex = 0;
-
             m_effectiveFilterType = (m_filterType != FilterNone || m_filterPattern.isEmpty()) ? m_filterType : FilterAll;
             updateRegistration();
 
@@ -580,9 +720,7 @@ void SeasideFilteredModel::setFilterType(FilterType type)
             }
 
             m_referenceContactIds = SeasideCache::contacts(static_cast<SeasideCache::FilterType>(m_filterType));
-
             updateIndex();
-
             if (!filtered) {
                 m_contactIds = m_referenceContactIds;
                 m_filteredContactIds.clear();
@@ -646,102 +784,161 @@ void SeasideFilteredModel::setSearchByFirstNameCharacter(bool searchByFirstNameC
     }
 }
 
-bool SeasideFilteredModel::filterId(quint32 iid) const
+int SeasideFilteredModel::filterId(quint32 iid) const
 {
+    static const int NoMatchPriority = -1;
+    static const int MatchPriority = 0;
+
     if (m_filterParts.isEmpty() && m_requiredProperty == NoPropertyRequired)
-        return true;
+        return MatchPriority;
 
     SeasideCache::CacheItem *item = existingItem(iid);
     if (!item)
-        return false;
+        return NoMatchPriority;
 
     if (m_requiredProperty != NoPropertyRequired) {
         bool haveMatch = (m_requiredProperty & AccountUriRequired) && (item->statusFlags & SeasideCache::HasValidOnlineAccount);
         haveMatch |= (m_requiredProperty & PhoneNumberRequired) && (item->statusFlags & QContactStatusFlags::HasPhoneNumber);
         haveMatch |= (m_requiredProperty & EmailAddressRequired) && (item->statusFlags & QContactStatusFlags::HasEmailAddress);
         if (!haveMatch)
-            return false;
+            return NoMatchPriority;
+        if (m_filterParts.isEmpty())
+            return MatchPriority;
     }
 
     if (m_searchByFirstNameCharacter && !m_filterPattern.isEmpty())
-        return m_filterPattern == SeasideCache::displayLabelGroup(item);
+        return m_filterPattern == SeasideCache::displayLabelGroup(item) ? MatchPriority : NoMatchPriority;
 
     FilterData *filterData = FilterData::getItemFilterData(item, this);
-    filterData->prepareFilter(item);
+    filterData->prepareFilter(item, sortProperty());
 
     // search forwards over the label components for each filter word, making
     // sure to find all filter words before considering it a match.
+    int bestMatchPriority = NoMatchPriority;
     for (const QStringList &part : m_filterParts) {
         bool match = false;
         for (const QString &alternative : part) {
-            if (filterData->partialMatch(alternative)) {
+            const int matchPriority = filterData->partialMatch(alternative);
+            if (matchPriority >= MatchPriority) {
                 match = true;
+                if (bestMatchPriority == NoMatchPriority || bestMatchPriority > matchPriority) {
+                    bestMatchPriority = matchPriority;
+                }
                 break;
             }
         }
         if (!match) {
-            return false;
+            return NoMatchPriority;
         }
     }
 
-    return true;
-}
-
-void SeasideFilteredModel::insertRange(int index, int count, const QList<quint32> &source, int sourceIndex)
-{
-    beginInsertRows(QModelIndex(), index, index + count - 1);
-    for (int i = 0; i < count; ++i)
-        m_filteredContactIds.insert(index + i, source.at(sourceIndex + i));
-    endInsertRows();
-}
-
-void SeasideFilteredModel::removeRange(int index, int count)
-{
-    beginRemoveRows(QModelIndex(), index, index + count - 1);
-    invalidateRows(index, count);
-    endRemoveRows();
+    return bestMatchPriority;
 }
 
 void SeasideFilteredModel::refineIndex()
 {
-    // The filtered list is a guaranteed sub-set of the current list, so just scan through
-    // and remove items that don't match the filter.
-    for (int i = 0; i < m_filteredContactIds.count();) {
-        int count = 0;
-        for (; i + count < m_filteredContactIds.count(); ++count) {
-            if (filterId(m_filteredContactIds.at(i + count)))
-                break;
-        }
-
-        if (count > 0) {
-            beginRemoveRows(QModelIndex(), i, i + count - 1);
-            invalidateRows(i, count);
-            endRemoveRows();
-        }
-        ++i;
-    }
+    // While the filtered list will be a guaranteed sub-set of the current list,
+    // unfortunately the order of individual elements may change entirely,
+    // so we cannot merely remove now-non-matching elements.
+    // TODO: only search the current m_filteredContactIds list when repopulating?
+    updateIndex();
 }
 
 void SeasideFilteredModel::updateIndex()
 {
-    synchronizeFilteredList(this, m_filteredContactIds, *m_referenceContactIds);
+    populateIndex();
 }
 
 void SeasideFilteredModel::populateIndex()
 {
-    // The filtered list is empty, so just scan through the reference list and append any
-    // items that match the filter.
-    for (int i = 0; i < m_referenceContactIds->count(); ++i) {
-        if (filterId(m_referenceContactIds->at(i)))
-            m_filteredContactIds.append(m_referenceContactIds->at(i));
-    }
-    if (!m_filteredContactIds.isEmpty())
-        beginInsertRows(QModelIndex(), 0, m_filteredContactIds.count() - 1);
+    QList<quint32> filteredContactIds;
 
+    // Scan through the reference list searching for contacts
+    // which match the filter, and then return a list of matching
+    // contacts' ids, sorted by match priority.
+    const bool noFilterSet = m_filterParts.isEmpty() && m_requiredProperty == NoPropertyRequired;
+    QVector<QVector<quint32> > priorityBucketedContacts;
+    priorityBucketedContacts.fill(QVector<quint32>(), FilterData::sortPriorities().size());
+    for (int i = 0; i < m_referenceContactIds->count(); ++i) {
+        const quint32 &currContactId(m_referenceContactIds->at(i));
+        if (noFilterSet) {
+            filteredContactIds.append(currContactId);
+        } else {
+            const int bestMatchPriority = filterId(currContactId);
+            if (bestMatchPriority >= 0) {
+                // insert into the appropriate bucket which allows
+                // a total sort order to be generated.
+                priorityBucketedContacts[bestMatchPriority].append(currContactId);
+            }
+        }
+    }
+
+    if (!noFilterSet) {
+        filteredContactIds = sortedContactIds(priorityBucketedContacts);
+    }
+
+    // Check to see if contacts were merely added or removed in one
+    // contiguous chunk at the front or back.  If so, can signal
+    // add/remove of those rows only, preventing recreation of delegates.
+    // Note: this performance improvement isn't strictly necessary;
+    // for identical behaviour (modulo signal differences), could
+    // simply always perform the removeAndInsertAll codepath.
+    // Note: don't use synchronizeLists(), as populateSectionBucketIndices()
+    // is expensive, so we want to do that at most once per populateIndex().
+    bool removeAndInsertAll = false;
+    const int newSize = filteredContactIds.size();
+    const int oldSize = m_filteredContactIds.size();
+    const int sizeDelta = newSize - oldSize;
+    if (sizeDelta > 0) {
+        if (filteredContactIds.mid(0, oldSize) == m_filteredContactIds) {
+            // appending new rows
+            beginInsertRows(QModelIndex(), oldSize, newSize - 1);
+        } else if (filteredContactIds.mid(sizeDelta, oldSize) == m_filteredContactIds) {
+            // prepending new rows
+            beginInsertRows(QModelIndex(), 0, sizeDelta - 1);
+        } else {
+            removeAndInsertAll = true;
+        }
+    } else if (sizeDelta < 0) {
+        if (m_filteredContactIds.mid(0, newSize) == filteredContactIds) {
+            // chopping from the tail
+            beginRemoveRows(QModelIndex(), newSize, oldSize - 1);
+        } else if (m_filteredContactIds.mid(-sizeDelta, newSize) == filteredContactIds) {
+            // chopping from the head
+            beginRemoveRows(QModelIndex(), 0, -sizeDelta - 1);
+        } else {
+            removeAndInsertAll = true;
+        }
+    } else { // sizeDelta == 0
+        if (filteredContactIds == m_filteredContactIds) {
+            return; // no changes, no need to emit anything.
+        }
+        removeAndInsertAll = true;
+    }
+
+    if (removeAndInsertAll) {
+        if (m_filteredContactIds.size()) {
+            beginRemoveRows(QModelIndex(), 0, oldSize - 1);
+            m_filteredContactIds.clear();
+            endRemoveRows();
+            emit countChanged();
+        }
+        if (!filteredContactIds.isEmpty()) {
+            beginInsertRows(QModelIndex(), 0, newSize - 1);
+        }
+    }
+
+    m_filteredContactIds = filteredContactIds;
     m_contactIds = &m_filteredContactIds;
     populateSectionBucketIndices();
 
-    if (!m_filteredContactIds.isEmpty()) {
+    if (removeAndInsertAll && !filteredContactIds.isEmpty()) {
+        endInsertRows();
+        emit countChanged();
+    } else if (!removeAndInsertAll && sizeDelta < 0) {
+        endRemoveRows();
+        emit countChanged();
+    } else if (!removeAndInsertAll && sizeDelta > 0) {
         endInsertRows();
         emit countChanged();
     }
@@ -1015,40 +1212,9 @@ void SeasideFilteredModel::sourceDataChanged(int begin, int end)
     if (!isFiltered()) {
         emit dataChanged(createIndex(begin, 0), createIndex(end, 0));
     } else {
-        // the items inserted/removed notifications arrive sequentially.  All bets are off
-        // for dataChanged so we want to reset the progressive indexes back to the beginning.
-        m_referenceIndex = 0;
-        m_filterIndex = 0;
-
-        // This could be optimised to group multiple changes together, but as of right
-        // now begin and end are always the same so theres no point.
-        for (int i = begin; i <= end; ++i) {
-            const int f = m_filteredContactIds.indexOf(m_referenceContactIds->at(i));
-            const bool match = filterId(m_referenceContactIds->at(i));
-
-            if (f < 0 && match) {
-                // The contact is not in the filtered list but is a match to the filter; find the
-                // correct position and insert it.
-                int r = 0;
-                int f = 0;
-                for (; f < m_filteredContactIds.count(); ++f) {
-                    r = m_referenceContactIds->indexOf(m_filteredContactIds.at(f), r);
-                    if (r > begin)
-                        break;
-                }
-                beginInsertRows(QModelIndex(), f, f);
-                m_filteredContactIds.insert(f, m_referenceContactIds->at(i));
-                endInsertRows();
-            } else if (f >= 0 && !match) {
-                // The contact is in the filtered set but is not a match to the filter; remove it.
-                beginRemoveRows(QModelIndex(), f, f);
-                invalidateRows(f, 1);
-                endRemoveRows();
-            } else if (f >= 0) {
-                const QModelIndex index = createIndex(f, 0);
-                emit dataChanged(index, index);
-            }
-        }
+        // any change can can require changes to the total ordering,
+        // so unfortunately we have to regenerate our entire index.
+        updateIndex();
     }
 }
 
@@ -1243,9 +1409,6 @@ void SeasideFilteredModel::updateFilters(const QString &pattern, int property)
         updateRegistration();
     }
 
-    m_referenceIndex = 0;
-    m_filterIndex = 0;
-
     if (m_filterType == FilterNone && m_effectiveFilterType == FilterNone && !m_filterPattern.isEmpty()) {
         // Start showing filtered results
         m_effectiveFilterType = FilterAll;
@@ -1275,19 +1438,20 @@ void SeasideFilteredModel::updateFilters(const QString &pattern, int property)
     } else if (!filtered) {
         m_filteredContactIds = *m_referenceContactIds;
         m_contactIds = &m_filteredContactIds;
-        populateSectionBucketIndices();
-
         refineIndex();
+        populateSectionBucketIndices();
     } else if (refinement) {
         refineIndex();
+        populateSectionBucketIndices();
     } else {
         updateIndex();
 
         if (removeFilter) {
             m_contactIds = m_referenceContactIds;
             m_filteredContactIds.clear();
-            populateSectionBucketIndices();
         }
+
+        populateSectionBucketIndices();
     }
 
     if (rowCount() != prevCount) {
@@ -1310,7 +1474,8 @@ void SeasideFilteredModel::updateRegistration()
 
 void SeasideFilteredModel::invalidateRows(int begin, int count, bool filteredIndex, bool removeFromModel)
 {
-    const QList<quint32> *contactIds(filteredIndex ? &m_filteredContactIds : m_referenceContactIds);
+    const QList<quint32> *contactIds(filteredIndex ? &m_filteredContactIds
+                                                   : m_referenceContactIds);
 
     for (int index = begin; index < (begin + count); ++index) {
         if (contactIds->at(index) == m_lastId) {
@@ -1322,7 +1487,9 @@ void SeasideFilteredModel::invalidateRows(int begin, int count, bool filteredInd
     if (removeFromModel) {
         Q_ASSERT(filteredIndex);
         QList<quint32>::iterator it = m_filteredContactIds.begin() + begin;
-        m_filteredContactIds.erase(it, it + count);
+        while (it != m_filteredContactIds.end() && count--) {
+            it = m_filteredContactIds.erase(it);
+        }
     }
 }
 
@@ -1346,7 +1513,7 @@ void SeasideFilteredModel::updateSearchFilters()
             continue;
 
         FilterData *filterData = FilterData::getItemFilterData(item, this);
-        if (filterData->prepareFilter(item)) {
+        if (filterData->prepareFilter(item, sortProperty())) {
             if (++n == maxBatchSize) {
                 // Schedule further processing
                 QCoreApplication::postEvent(this, new QEvent(QEvent::UpdateRequest));
@@ -1370,4 +1537,3 @@ bool SeasideFilteredModel::event(QEvent *event)
 
     return true;
 }
-
