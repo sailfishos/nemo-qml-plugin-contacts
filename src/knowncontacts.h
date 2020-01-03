@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2012 Robin Burchell <robin+nemo@viroteck.net>
- * Copyright (c) 2012 – 2020 Jolla Ltd.
  * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -31,45 +29,39 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
+#ifndef KNOWNCONTACTS_H
+#define KNOWNCONTACTS_H
 
-#include <QQmlEngine>
-#include <QQmlExtensionPlugin>
+#include <QDBusInterface>
+#include <QList>
+#include <QObject>
+#include <QString>
+#include <QVariantMap>
 
-#include "seasideperson.h"
-#include "seasidefilteredmodel.h"
-#include "seasidedisplaylabelgroupmodel.h"
-#include "seasidevcardmodel.h"
-#include "knowncontacts.h"
+class QDBusPendingCallWatcher;
 
-template <typename T> static QObject *singletonApiCallback(QQmlEngine *engine, QJSEngine *) {
-    return new T(engine);
-}
-
-class Q_DECL_EXPORT NemoContactsPlugin : public QQmlExtensionPlugin
+class KnownContacts : public QObject
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.nemomobile.contacts")
 
 public:
-    virtual ~NemoContactsPlugin() { }
+    KnownContacts(QObject *parent = 0);
+    ~KnownContacts();
 
-    void initializeEngine(QQmlEngine *, const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
-    }
+    Q_INVOKABLE bool storeContact(const QVariantMap &contact);
+    Q_INVOKABLE bool storeContacts(const QVariantList &contacts);
 
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
+private:
+    QString m_currentPath;
+    QDBusInterface m_msyncd;
 
-        qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleModel");
-        qmlRegisterType<SeasideDisplayLabelGroupModel>(uri, 1, 0, "PeopleDisplayLabelGroupModel");
-        qmlRegisterType<SeasidePersonAttached>();
-        qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
-        qmlRegisterType<SeasideVCardModel>(uri, 1, 0, "PeopleVCardModel");
-        qmlRegisterSingletonType<KnownContacts>(uri, 1, 0, "KnownContacts", singletonApiCallback<KnownContacts>);
-    }
+    static quint32 getRandomNumber();
+    static QString getRandomPath();
+    const QString & getPath();
+    bool synchronize();
+
+private slots:
+    void syncStarted(QDBusPendingCallWatcher *call);
 };
 
-#include "plugin.moc"
+#endif // KNOWNCONTACTS_H
