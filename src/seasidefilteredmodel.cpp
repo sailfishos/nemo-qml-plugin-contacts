@@ -895,13 +895,17 @@ void SeasideFilteredModel::populateIndex()
     const int newSize = filteredContactIds.size();
     const int oldSize = m_filteredContactIds.size();
     const int sizeDelta = newSize - oldSize;
+    int filterDataChangedStartRow = 0;
+    int filterDataChangedEndRow = newSize - 1;
     if (sizeDelta > 0) {
         if (filteredContactIds.mid(0, oldSize) == m_filteredContactIds) {
             // appending new rows
             beginInsertRows(QModelIndex(), oldSize, newSize - 1);
+            filterDataChangedEndRow = oldSize > 0 ? oldSize - 1 : 0;
         } else if (filteredContactIds.mid(sizeDelta, oldSize) == m_filteredContactIds) {
             // prepending new rows
             beginInsertRows(QModelIndex(), 0, sizeDelta - 1);
+            filterDataChangedStartRow = newSize > sizeDelta ? sizeDelta : newSize - 1;
         } else {
             removeAndInsertAll = true;
         }
@@ -947,6 +951,13 @@ void SeasideFilteredModel::populateIndex()
     } else if (!removeAndInsertAll && sizeDelta > 0) {
         endInsertRows();
         emit countChanged();
+    }
+
+    if (!removeAndInsertAll && newSize > 0) {
+        static const QVector<int> changedRoles { FilterMatchDataRole };
+        emit dataChanged(createIndex(filterDataChangedStartRow, 0),
+                         createIndex(filterDataChangedEndRow, 0),
+                         changedRoles);
     }
 }
 
