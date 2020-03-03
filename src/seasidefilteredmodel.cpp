@@ -1190,7 +1190,17 @@ QVariant SeasideFilteredModel::data(SeasideCache::CacheItem *cacheItem, int role
                 && matchRole != SecondaryNameRole
                 && matchRole != FirstNameRole
                 && matchRole != LastNameRole) {
-            return data(cacheItem, matchRole);
+            // need special handling for nicknames
+            if (matchRole == NicknameDetailsRole) {
+                QStringList nicknames;
+                const QVariantList nickDetails = SeasidePerson::nicknameDetails(contact);
+                for (const QVariant &nick : nickDetails) {
+                    nicknames.append(nick.toMap().value(QStringLiteral("nickname")).toString());
+                }
+                return nicknames;
+            } else {
+                return data(cacheItem, matchRole);
+            }
         }
         return QVariant(QString());
     } else if (role == Qt::DisplayRole || role == SectionBucketRole) {
