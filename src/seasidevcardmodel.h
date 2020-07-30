@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Martin Jones <martin.jones@jolla.com>
+ * Copyright (c) 2014 - 2020 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
  *

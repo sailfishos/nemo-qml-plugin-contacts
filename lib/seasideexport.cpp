@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2012 Robin Burchell <robin+nemo@viroteck.net>
- * Copyright (c) 2012 – 2020 Jolla Ltd.
- * Copyright (c) 2020 Open Mobile Platform LLC.
+ * Copyright (c) 2014 - 2020 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -31,45 +29,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
+#include "seasideexport.h"
 
-#include <QQmlEngine>
-#include <QQmlExtensionPlugin>
+#include "seasidepropertyhandler.h"
 
-#include "seasideperson.h"
-#include "seasidefilteredmodel.h"
-#include "seasidedisplaylabelgroupmodel.h"
-#include "seasidevcardmodel.h"
-#include "knowncontacts.h"
+#include <QVersitContactExporter>
 
-template <typename T> static QObject *singletonApiCallback(QQmlEngine *engine, QJSEngine *) {
-    return new T(engine);
+QList<QVersitDocument> SeasideExport::buildExportContacts(const QList<QContact> &contacts)
+{
+    SeasidePropertyHandler propertyHandler;
+
+    QVersitContactExporter exporter; 
+    exporter.setDetailHandler(&propertyHandler);
+    exporter.exportContacts(contacts); 
+
+    return exporter.documents();
 }
 
-class Q_DECL_EXPORT NemoContactsPlugin : public QQmlExtensionPlugin
-{
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.nemomobile.contacts")
-
-public:
-    virtual ~NemoContactsPlugin() { }
-
-    void initializeEngine(QQmlEngine *, const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
-    }
-
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
-
-        qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleModel");
-        qmlRegisterType<SeasideDisplayLabelGroupModel>(uri, 1, 0, "PeopleDisplayLabelGroupModel");
-        qmlRegisterType<SeasidePersonAttached>();
-        qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
-        qmlRegisterType<SeasideVCardModel>(uri, 1, 0, "PeopleVCardModel");
-        qmlRegisterSingletonType<KnownContacts>(uri, 1, 0, "KnownContacts", singletonApiCallback<KnownContacts>);
-    }
-};
-
-#include "plugin.moc"

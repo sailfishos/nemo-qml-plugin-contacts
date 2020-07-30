@@ -1,15 +1,6 @@
-PROJECT_NAME = vcardconverter
-TEMPLATE = app
-CONFIG += ordered hide_symbols
+include(../common.pri)
 
-include(../../config.pri) | error("Can't load config")
-
-CONFIG += link_pkgconfig
-PKGCONFIG += Qt5Contacts Qt5Versit contactcache-qt5
-
-QT = core
-TARGET = $$PROJECT_NAME
-CONFIG -= app_bundle # OS X
+TARGET = vcardconverter
 
 SOURCES += main.cpp
 

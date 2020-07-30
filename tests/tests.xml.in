@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testdefinition version="1.0">
+   <suite name="contactcache-tests" domain="mw">
+       <description>Contact cache automatic tests</description>
+       <set name="contactcache-test0" feature="Contacts">
+           <description>Contact cache automatic tests</description>
+           <case manual="false" name="synchronizelists">
+               <step>LIBCONTACTS_TEST_MODE=1 /usr/sbin/run-blts-root /bin/su -g privileged -c '/opt/tests/@PACKAGENAME@/tst_synchronizelists' nemo</step>
+           </case>
+           <case manual="false" name="seasideimport">
+               <step>LIBCONTACTS_TEST_MODE=1 /usr/sbin/run-blts-root /bin/su -g privileged -c '/opt/tests/@PACKAGENAME@/tst_seasideimport' nemo</step>
+           </case>
+           <case manual="false" name="resolve">
+               <step>LIBCONTACTS_TEST_MODE=1 /usr/sbin/run-blts-root /bin/su -g privileged -c '/opt/tests/@PACKAGENAME@/tst_resolve' nemo</step>
+           </case>
+       </set>
+   </suite>
    <suite name="@BASENAME@-contacts-tests" domain="mw">
        <description>Contacts QML plugin automatic tests</description>
        <set name="@BASENAME@-contacts-test0" feature="QML Contacts">

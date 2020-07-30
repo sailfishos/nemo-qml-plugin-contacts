@@ -7,8 +7,9 @@ CONFIG -= app_bundle
 QT += testlib qml
 
 SRCDIR = $$PWD/../src/
-INCLUDEPATH += $$SRCDIR
-DEPENDPATH = $$INCLUDEPATH
+INCLUDEPATH += $$SRCDIR $$PWD/../lib/
+DEPENDPATH += $$INCLUDEPATH
+LIBS += -L$$PWD/../lib -lcontactcache-qt5
 
 target.path = /opt/tests/$${BASENAME}/contacts
 INSTALLS += target

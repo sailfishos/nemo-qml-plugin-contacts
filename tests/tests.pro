@@ -2,6 +2,9 @@ include(basename.pri)
 
 TEMPLATE = subdirs
 SUBDIRS = \
+          tst_synchronizelists \
+          tst_seasideimport \
+          tst_resolve \
           tst_seasideperson \
           tst_seasidefilteredmodel \
           tst_seasidestringlistcompressor
