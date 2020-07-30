@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2012 Robin Burchell <robin+nemo@viroteck.net>
- * Copyright (c) 2012 – 2020 Jolla Ltd.
+ * Copyright (c) 2014 - 2020 Jolla Ltd.
  * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -31,45 +30,54 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
+#ifndef SEASIDE_CACHE_CONFIGURATION_H
+#define SEASIDE_CACHE_CONFIGURATION_H
 
-#include <QQmlEngine>
-#include <QQmlExtensionPlugin>
+#include "contactcacheexport.h"
 
-#include "seasideperson.h"
-#include "seasidefilteredmodel.h"
-#include "seasidedisplaylabelgroupmodel.h"
-#include "seasidevcardmodel.h"
-#include "knowncontacts.h"
+#include <QObject>
+#include <QString>
 
-template <typename T> static QObject *singletonApiCallback(QQmlEngine *engine, QJSEngine *) {
-    return new T(engine);
-}
+#ifdef HAS_MLITE
+#include <mgconfitem.h>
+#endif
 
-class Q_DECL_EXPORT NemoContactsPlugin : public QQmlExtensionPlugin
+class CONTACTCACHE_EXPORT CacheConfiguration : public QObject
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.nemomobile.contacts")
 
 public:
-    virtual ~NemoContactsPlugin() { }
+    enum DisplayLabelOrder {
+        FirstNameFirst = 0,
+        LastNameFirst
+    };
 
-    void initializeEngine(QQmlEngine *, const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
-    }
+    CacheConfiguration();
 
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
+    DisplayLabelOrder displayLabelOrder() const { return m_displayLabelOrder; }
+    QString sortProperty() const { return m_sortProperty; }
+    QString groupProperty() const { return m_groupProperty; }
 
-        qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleModel");
-        qmlRegisterType<SeasideDisplayLabelGroupModel>(uri, 1, 0, "PeopleDisplayLabelGroupModel");
-        qmlRegisterType<SeasidePersonAttached>();
-        qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
-        qmlRegisterType<SeasideVCardModel>(uri, 1, 0, "PeopleVCardModel");
-        qmlRegisterSingletonType<KnownContacts>(uri, 1, 0, "KnownContacts", singletonApiCallback<KnownContacts>);
-    }
+signals:
+    void displayLabelOrderChanged(CacheConfiguration::DisplayLabelOrder order);
+    void sortPropertyChanged(const QString &sortProperty);
+    void groupPropertyChanged(const QString &groupProperty);
+
+private:
+    DisplayLabelOrder m_displayLabelOrder;
+    QString m_sortProperty;
+    QString m_groupProperty;
+
+#ifdef HAS_MLITE
+    MGConfItem m_displayLabelOrderConf;
+    MGConfItem m_sortPropertyConf;
+    MGConfItem m_groupPropertyConf;
+
+private slots:
+    void onDisplayLabelOrderChanged();
+    void onSortPropertyChanged();
+    void onGroupPropertyChanged();
+#endif
 };
 
-#include "plugin.moc"
+#endif // SEASIDE_CACHE_CONFIGURATION_H

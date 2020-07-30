@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2012 Robin Burchell <robin+nemo@viroteck.net>
+ * Copyright (c) 2012 Robin Burchell <robin+nemo@viroteck.net>
+ * Copyright (c) 2012 - 2020 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
  *

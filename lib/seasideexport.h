@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2012 Robin Burchell <robin+nemo@viroteck.net>
- * Copyright (c) 2012 – 2020 Jolla Ltd.
+ * Copyright (c) 2014 - 2020 Jolla Ltd.
  * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -31,45 +30,24 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
+#ifndef SEASIDEEXPORT_H
+#define SEASIDEEXPORT_H
 
-#include <QQmlEngine>
-#include <QQmlExtensionPlugin>
+#include "contactcacheexport.h"
 
-#include "seasideperson.h"
-#include "seasidefilteredmodel.h"
-#include "seasidedisplaylabelgroupmodel.h"
-#include "seasidevcardmodel.h"
-#include "knowncontacts.h"
+#include <QContact>
+#include <QVersitDocument>
 
-template <typename T> static QObject *singletonApiCallback(QQmlEngine *engine, QJSEngine *) {
-    return new T(engine);
-}
+QTCONTACTS_USE_NAMESPACE
+QTVERSIT_USE_NAMESPACE
 
-class Q_DECL_EXPORT NemoContactsPlugin : public QQmlExtensionPlugin
+class CONTACTCACHE_EXPORT SeasideExport
 {
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.nemomobile.contacts")
+    SeasideExport();
+    ~SeasideExport();
 
 public:
-    virtual ~NemoContactsPlugin() { }
-
-    void initializeEngine(QQmlEngine *, const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
-    }
-
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
-
-        qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleModel");
-        qmlRegisterType<SeasideDisplayLabelGroupModel>(uri, 1, 0, "PeopleDisplayLabelGroupModel");
-        qmlRegisterType<SeasidePersonAttached>();
-        qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
-        qmlRegisterType<SeasideVCardModel>(uri, 1, 0, "PeopleVCardModel");
-        qmlRegisterSingletonType<KnownContacts>(uri, 1, 0, "KnownContacts", singletonApiCallback<KnownContacts>);
-    }
+    static QList<QVersitDocument> buildExportContacts(const QList<QContact> &contacts);
 };
 
-#include "plugin.moc"
+#endif

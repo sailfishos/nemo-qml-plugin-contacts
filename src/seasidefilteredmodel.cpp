@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2013 Jolla Mobile <andrew.den.exter@jollamobile.com>
- * Copyright (C) 2019 Open Mobile Platform LLC
+ * Copyright (c) 2013 - 2020 Jolla Ltd.
+ * Copyright (c) 2019 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
  *

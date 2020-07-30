@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Jolla Mobile <robin.burchell@jollamobile.com>
+ * Copyright (c) 2012 - 2020 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
