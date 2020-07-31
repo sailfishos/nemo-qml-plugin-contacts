@@ -513,7 +513,7 @@ QContactId SeasideCache::apiId(const QContact &contact)
 
 QContactId SeasideCache::apiId(quint32 iid)
 {
-    return QtContactsSqliteExtensions::apiContactId(iid);
+    return QtContactsSqliteExtensions::apiContactId(iid, manager()->managerUri());
 }
 
 bool SeasideCache::validId(const QContactId &id)
@@ -800,6 +800,12 @@ QString SeasideCache::groupProperty()
 int SeasideCache::contactId(const QContact &contact)
 {
     quint32 internal = internalId(contact);
+    return static_cast<int>(internal);
+}
+
+int SeasideCache::contactId(const QContactId &contactId)
+{
+    quint32 internal = internalId(contactId);
     return static_cast<int>(internal);
 }
 
@@ -1724,9 +1730,7 @@ void SeasideCache::startRequest(bool *idleProcessing)
             QContactId aggregateId = m_contactsToFetchConstituents.first();
 
             // Find the constituents of this contact
-            QContact first;
-            first.setId(aggregateId);
-            m_relationshipsFetchRequest.setFirst(first);
+            m_relationshipsFetchRequest.setFirst(aggregateId);
             m_relationshipsFetchRequest.setRelationshipType(QContactRelationship::Aggregates());
             m_relationshipsFetchRequest.start();
         }
@@ -2571,7 +2575,7 @@ void SeasideCache::relationshipsAvailable()
 
     foreach (const QContactRelationship &rel, m_relationshipsFetchRequest.relationships()) {
         if (rel.relationshipType() == aggregatesRelationship) {
-            m_constituentIds.insert(apiId(rel.second()));
+            m_constituentIds.insert(rel.second());
         }
     }
 }
@@ -2784,7 +2788,7 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
         }
 
         foreach (const QContactRelationship &relationship, relationships) {
-            m_aggregatedContacts.insert(SeasideCache::apiId(relationship.first()));
+            m_aggregatedContacts.insert(relationship.first());
         }
 
         if (completed) {
@@ -2844,13 +2848,13 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
                 QContactRelationshipFetchRequest *rfr = new QContactRelationshipFetchRequest(this);
                 rfr->setManager(m_saveRequest.manager());
                 rfr->setRelationshipType(QContactRelationship::Aggregates());
-                rfr->setSecond(c);
+                rfr->setSecond(c.id());
                 connect(rfr, &QContactAbstractRequest::stateChanged, this, [this, c, rfr] {
                     if (rfr->state() == QContactAbstractRequest::FinishedState) {
                         rfr->deleteLater();
                         if (rfr->relationships().size()) {
-                            const quint32 constituentId = internalId(apiId(rfr->relationships().at(0).second()));
-                            const quint32 aggregateId = internalId(apiId(rfr->relationships().at(0).first()));
+                            const quint32 constituentId = internalId(rfr->relationships().at(0).second());
+                            const quint32 aggregateId = internalId(rfr->relationships().at(0).first());
                             this->notifySaveContactComplete(constituentId, aggregateId);
                         } else {
                             // error: cannot retrieve aggregate for newly created constituent.
@@ -3164,8 +3168,8 @@ void SeasideCache::aggregateContacts(const QContact &contact1, const QContact &c
 // the existing aggregate relationships between the two contacts.
 void SeasideCache::disaggregateContacts(const QContact &contact1, const QContact &contact2)
 {
-    instancePtr->m_relationshipsToRemove.append(makeRelationship(aggregateRelationshipType, contact1, contact2));
-    instancePtr->m_relationshipsToSave.append(makeRelationship(isNotRelationshipType, contact1, contact2));
+    instancePtr->m_relationshipsToRemove.append(makeRelationship(aggregateRelationshipType, contact1.id(), contact2.id()));
+    instancePtr->m_relationshipsToSave.append(makeRelationship(isNotRelationshipType, contact1.id(), contact2.id()));
 
     if (contact2.detail<QContactSyncTarget>().syncTarget() == syncTargetWasLocal) {
         // restore the local sync target that was changed in a previous link creation operation
@@ -3389,19 +3393,11 @@ int SeasideCache::contactIndex(quint32 iid, FilterType filterType)
 
 QContactRelationship SeasideCache::makeRelationship(const QString &type, const QContactId &id1, const QContactId &id2)
 {
-    QContact first, second;
-    first.setId(id1);
-    second.setId(id2);
     QContactRelationship relationship;
     relationship.setRelationshipType(type);
-    relationship.setFirst(first);
-    relationship.setSecond(second);
+    relationship.setFirst(id1);
+    relationship.setSecond(id2);
     return relationship;
-}
-
-QContactRelationship SeasideCache::makeRelationship(const QString &type, const QContact &contact1, const QContact &contact2)
-{
-    return makeRelationship(type, contact1.id(), contact2.id());
 }
 
 bool operator==(const SeasideCache::ResolveData &lhs, const SeasideCache::ResolveData &rhs)

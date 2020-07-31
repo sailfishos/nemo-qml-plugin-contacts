@@ -304,6 +304,7 @@ public:
     static QString groupProperty();
 
     static int contactId(const QContact &contact);
+    static int contactId(const QContactId &contactId);
 
     static CacheItem *existingItem(const QContactId &id);
     static CacheItem *existingItem(quint32 iid);
@@ -434,7 +435,6 @@ private:
     void notifySaveContactComplete(int constituentId, int aggregateId);
 
     static QContactRelationship makeRelationship(const QString &type, const QContactId &id1, const QContactId &id2);
-    static QContactRelationship makeRelationship(const QString &type, const QContact &contact1, const QContact &contact2);
 
     QList<quint32> m_contacts[FilterTypesCount];
 

@@ -54,6 +54,8 @@
 #include <QVersitWriter>
 #include <QVersitContactExporter>
 
+#include <QDebug>
+
 QTVERSIT_USE_NAMESPACE
 
 SeasidePersonAttached::SeasidePersonAttached(QObject *parent)

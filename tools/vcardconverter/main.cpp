@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2012 Robin Burchell <robin+mer@viroteck.net>
  * Copyright (c) 2012 - 2020 Jolla Ltd.
+ * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -38,11 +39,13 @@
 #include <QFile>
 #include <QTextStream>
 #include <QTimer>
+#include <QDebug>
 
 // Contacts
 #include <QContactDetailFilter>
 #include <QContactManager>
 #include <QContactSyncTarget>
+#include <QContactDisplayLabel>
 
 // Versit
 #include <QVersitReader>

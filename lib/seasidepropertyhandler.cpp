@@ -39,6 +39,7 @@
 #include <QCryptographicHash>
 #include <QDir>
 #include <QImage>
+#include <QDebug>
 
 #include <qtcontacts-extensions.h>
 

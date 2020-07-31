@@ -107,7 +107,7 @@ QContactId SeasideCache::apiId(const QContact &contact)
 
 QContactId SeasideCache::apiId(quint32 iid)
 {
-    return QtContactsSqliteExtensions::apiContactId(iid);
+    return QtContactsSqliteExtensions::apiContactId(iid, manager()->managerUri());
 }
 
 bool SeasideCache::validId(const QContactId &id)

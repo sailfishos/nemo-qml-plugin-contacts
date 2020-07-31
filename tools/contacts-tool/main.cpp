@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013 - 2020 Jolla Ltd.
+ * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -34,6 +35,7 @@
 // Qt
 #include <QCoreApplication>
 #include <QTextStream>
+#include <QDebug>
 
 // Contacts
 #include <QContactManager>
@@ -180,9 +182,9 @@ QContactFilter contactIdsFilter(const QSet<quint32> &ids)
     return filter;
 }
 
-quint32 numericId(const QContact &contact)
+quint32 numericId(const QContactId &contactId)
 {
-    return SeasideCache::contactId(contact);
+    return SeasideCache::contactId(contactId);
 }
 
 QString displayLabel(const QContact &contact)
@@ -193,7 +195,7 @@ QString displayLabel(const QContact &contact)
 
 void getRelatedContacts(const QContact &contact, QSet<quint32> *constituents, QSet<quint32> *aggregates)
 {
-    const quint32 id(numericId(contact));
+    const quint32 id(numericId(contact.id()));
 
     foreach (const QContactRelationship &relationship, contact.relationships(QString::fromLatin1("Aggregates"))) {
         const quint32 firstId(numericId(relationship.first()));
@@ -430,7 +432,7 @@ QString print(const QContactUrl &detail)
 void printContactSummary(const QContact &contact)
 {
     QTextStream output(stdout);
-    output << " ID:\t" << numericId(contact)
+    output << " ID:\t" << numericId(contact.id())
            << "\t" << displayLabel(contact)
            << "\t" << print(contact.detail<QContactName>())
            << "\t" << print(contact.detail<QContactSyncTarget>())
@@ -446,7 +448,7 @@ void printContactSummary(const QList<QContact> &contacts)
 
 void printContactDetails(const QContact &contact)
 {
-    const quint32 id(numericId(contact));
+    const quint32 id(numericId(contact.id()));
 
     QTextStream output(stdout);
     output << " ID:\t" << id
@@ -544,7 +546,7 @@ void printContactDetails(const QList<QContact> &contacts)
 
 void printContactLinks(const QContact &contact)
 {
-    const quint32 id(numericId(contact));
+    const quint32 id(numericId(contact.id()));
 
     QTextStream output(stdout);
     output << " ID:\t" << id
@@ -605,7 +607,7 @@ QString dumpContact(const QContact &contact)
 void dumpContactDetails(const QContact &contact)
 {
     QTextStream output(stdout);
-    output << " ID:\t" << numericId(contact) << "\t" << dumpContact(contact) << "\n";
+    output << " ID:\t" << numericId(contact.id()) << "\t" << dumpContact(contact) << "\n";
 
     QSet<quint32> constituents;
     getRelatedContacts(contact, &constituents, 0);

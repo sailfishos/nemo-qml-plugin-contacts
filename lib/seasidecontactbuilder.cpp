@@ -71,6 +71,7 @@
 #include <QHash>
 #include <QString>
 #include <QList>
+#include <QDebug>
 
 namespace {
 

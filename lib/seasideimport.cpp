@@ -36,6 +36,8 @@
 #include <QContact>
 #include <QContactManager>
 
+#include <QDebug>
+
 namespace {
     QContactFetchHint basicFetchHint()
     {
