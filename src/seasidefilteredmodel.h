@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013 - 2020 Jolla Ltd.
+ * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -114,6 +115,7 @@ public:
         RoleRole,
         NameDetailsRole,
         FilterMatchDataRole,
+        AddressBookRole
     };
     Q_ENUM(PeopleRoles)
 

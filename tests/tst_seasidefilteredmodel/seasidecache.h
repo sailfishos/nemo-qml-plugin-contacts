@@ -6,6 +6,7 @@
 
 #include <QContact>
 #include <QContactId>
+#include <QContactCollection>
 
 #include <QAbstractListModel>
 
@@ -214,6 +215,10 @@ public:
 
     static QString normalizePhoneNumber(const QString &input, bool validate = false);
     static QString minimizePhoneNumber(const QString &input, bool validate = false);
+
+    static QContactCollection collectionFromId(const QContactCollectionId &collectionId);
+    static QContactCollectionId aggregateCollectionId();
+    static QContactCollectionId localCollectionId();
 
     void populate(FilterType filterType);
     void insert(FilterType filterType, int index, const QList<quint32> &ids);

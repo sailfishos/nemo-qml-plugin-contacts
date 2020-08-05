@@ -50,6 +50,7 @@
 
 #include <QContactAvatar>
 #include <QContactDetailFilter>
+#include <QContactCollectionFilter>
 #include <QContactDisplayLabel>
 #include <QContactEmailAddress>
 #include <QContactFavorite>
@@ -86,9 +87,6 @@ ML10N::MLocale mLocale;
 
 const QString aggregateRelationshipType = QContactRelationship::Aggregates();
 const QString isNotRelationshipType = QString::fromLatin1("IsNot");
-
-const QString syncTargetLocal = QLatin1String("local");
-const QString syncTargetWasLocal = QLatin1String("was_local");
 
 // Find the script that all letters in the name belong to, else yield Unknown
 QChar::Script nameScript(const QString &name)
@@ -321,17 +319,6 @@ QContactFilter onlineFilter()
     return QContactStatusFlags::matchFlag(QContactStatusFlags::IsOnline);
 }
 
-QContactFilter aggregateFilter()
-{
-    static const QString aggregate(QString::fromLatin1("aggregate"));
-
-    QContactDetailFilter filter;
-    setDetailType<QContactSyncTarget>(filter, QContactSyncTarget::FieldSyncTarget);
-    filter.setValue(aggregate);
-
-    return filter;
-}
-
 typedef QPair<QString, QString> StringPair;
 
 QList<StringPair> addressPairs(const QContactPhoneNumber &phoneNumber)
@@ -368,20 +355,6 @@ StringPair addressPair(const QContactOnlineAccount &account)
 bool validAddressPair(const StringPair &address)
 {
     return (!address.first.isEmpty() || !address.second.isEmpty());
-}
-
-bool ignoreContactForDisplayLabelGroups(const QContact &contact)
-{
-    static const QString aggregate(QString::fromLatin1("aggregate"));
-
-    // Don't include the self contact in name groups
-    if (SeasideCache::apiId(contact) == SeasideCache::selfContactId()) {
-        return true;
-    }
-
-    // Also ignore non-aggregate contacts
-    QContactSyncTarget syncTarget = contact.detail<QContactSyncTarget>();
-    return (syncTarget.syncTarget() != aggregate);
 }
 
 QList<quint32> internalIds(const QList<QContactId> &ids)
@@ -553,9 +526,10 @@ SeasideCache::SeasideCache()
     m_fetchPostponed.invalidate();
 
     CacheConfiguration *config(cacheConfig());
-    connect(config, SIGNAL(displayLabelOrderChanged(CacheConfiguration::DisplayLabelOrder)),
-            this, SLOT(displayLabelOrderChanged(CacheConfiguration::DisplayLabelOrder)));
-    connect(config, SIGNAL(sortPropertyChanged(QString)), this, SLOT(sortPropertyChanged(QString)));
+    connect(config, &CacheConfiguration::displayLabelOrderChanged,
+            this, &SeasideCache::displayLabelOrderChanged);
+    connect(config, &CacheConfiguration::sortPropertyChanged,
+            this, &SeasideCache::sortPropertyChanged);
 
     // Is this a GUI application?  If so, we want to defer some processing when the display is off
     if (qApp && qApp->property("applicationDisplayName").isValid()) {
@@ -573,44 +547,49 @@ SeasideCache::SeasideCache()
     typedef QtContactsSqliteExtensions::ContactManagerEngine EngineType;
     EngineType *cme = dynamic_cast<EngineType *>(QContactManagerData::managerData(mgr)->m_engine);
     if (cme) {
-        connect(cme, SIGNAL(displayLabelGroupsChanged(QStringList)),
-                this, SLOT(displayLabelGroupsChanged(QStringList)));
+        connect(cme, &EngineType::displayLabelGroupsChanged,
+                this, &SeasideCache::displayLabelGroupsChanged);
         displayLabelGroupsChanged(cme->displayLabelGroups());
-        connect(cme, SIGNAL(contactsPresenceChanged(QList<QContactId>)),
-                this, SLOT(contactsPresenceChanged(QList<QContactId>)));
+        connect(cme, &EngineType::contactsPresenceChanged,
+                this, &SeasideCache::contactsPresenceChanged);
     } else {
         qWarning() << "Unable to retrieve contact manager engine";
     }
 
-    connect(mgr, SIGNAL(dataChanged()), this, SLOT(dataChanged()));
-    connect(mgr, SIGNAL(contactsAdded(QList<QContactId>)),
-            this, SLOT(contactsAdded(QList<QContactId>)));
-    connect(mgr, SIGNAL(contactsChanged(QList<QContactId>)),
-            this, SLOT(contactsChanged(QList<QContactId>)));
-    connect(mgr, SIGNAL(contactsRemoved(QList<QContactId>)),
-            this, SLOT(contactsRemoved(QList<QContactId>)));
+    connect(mgr, &QContactManager::dataChanged,
+            this, &SeasideCache::dataChanged);
+    connect(mgr, &QContactManager::contactsAdded,
+            this, &SeasideCache::contactsAdded);
+    connect(mgr, &QContactManager::contactsChanged,
+            this, &SeasideCache::contactsChanged);
+    connect(mgr, &QContactManager::contactsRemoved,
+            this, &SeasideCache::contactsRemoved);
 
-    connect(&m_fetchRequest, SIGNAL(resultsAvailable()), this, SLOT(contactsAvailable()));
-    connect(&m_fetchByIdRequest, SIGNAL(resultsAvailable()), this, SLOT(contactsAvailable()));
-    connect(&m_contactIdRequest, SIGNAL(resultsAvailable()), this, SLOT(contactIdsAvailable()));
-    connect(&m_relationshipsFetchRequest, SIGNAL(resultsAvailable()), this, SLOT(relationshipsAvailable()));
+    connect(&m_fetchRequest, &QContactFetchRequest::resultsAvailable,
+            this, &SeasideCache::contactsAvailable);
+    connect(&m_fetchByIdRequest, &QContactFetchByIdRequest::resultsAvailable,
+            this, &SeasideCache::contactsAvailable);
+    connect(&m_contactIdRequest, &QContactIdFetchRequest::resultsAvailable,
+            this, &SeasideCache::contactIdsAvailable);
+    connect(&m_relationshipsFetchRequest, &QContactRelationshipFetchRequest::resultsAvailable,
+            this, &SeasideCache::relationshipsAvailable);
 
-    connect(&m_fetchRequest, SIGNAL(stateChanged(QContactAbstractRequest::State)),
-            this, SLOT(requestStateChanged(QContactAbstractRequest::State)));
-    connect(&m_fetchByIdRequest, SIGNAL(stateChanged(QContactAbstractRequest::State)),
-            this, SLOT(requestStateChanged(QContactAbstractRequest::State)));
-    connect(&m_contactIdRequest, SIGNAL(stateChanged(QContactAbstractRequest::State)),
-            this, SLOT(requestStateChanged(QContactAbstractRequest::State)));
-    connect(&m_relationshipsFetchRequest, SIGNAL(stateChanged(QContactAbstractRequest::State)),
-            this, SLOT(requestStateChanged(QContactAbstractRequest::State)));
-    connect(&m_removeRequest, SIGNAL(stateChanged(QContactAbstractRequest::State)),
-            this, SLOT(requestStateChanged(QContactAbstractRequest::State)));
-    connect(&m_saveRequest, SIGNAL(stateChanged(QContactAbstractRequest::State)),
-            this, SLOT(requestStateChanged(QContactAbstractRequest::State)));
-    connect(&m_relationshipSaveRequest, SIGNAL(stateChanged(QContactAbstractRequest::State)),
-            this, SLOT(requestStateChanged(QContactAbstractRequest::State)));
-    connect(&m_relationshipRemoveRequest, SIGNAL(stateChanged(QContactAbstractRequest::State)),
-            this, SLOT(requestStateChanged(QContactAbstractRequest::State)));
+    connect(&m_fetchRequest, &QContactFetchRequest::stateChanged,
+            this, &SeasideCache::requestStateChanged);
+    connect(&m_fetchByIdRequest, &QContactFetchByIdRequest::stateChanged,
+            this, &SeasideCache::requestStateChanged);
+    connect(&m_contactIdRequest, &QContactIdFetchRequest::stateChanged,
+            this, &SeasideCache::requestStateChanged);
+    connect(&m_relationshipsFetchRequest, &QContactRelationshipFetchRequest::stateChanged,
+            this, &SeasideCache::requestStateChanged);
+    connect(&m_removeRequest, &QContactRemoveRequest::stateChanged,
+            this, &SeasideCache::requestStateChanged);
+    connect(&m_saveRequest, &QContactSaveRequest::stateChanged,
+            this, &SeasideCache::requestStateChanged);
+    connect(&m_relationshipSaveRequest, &QContactRelationshipSaveRequest::stateChanged,
+            this, &SeasideCache::requestStateChanged);
+    connect(&m_relationshipRemoveRequest, &QContactRelationshipRemoveRequest::stateChanged,
+            this, &SeasideCache::requestStateChanged);
 
     m_fetchRequest.setManager(mgr);
     m_fetchByIdRequest.setManager(mgr);
@@ -622,6 +601,7 @@ SeasideCache::SeasideCache()
     m_relationshipRemoveRequest.setManager(mgr);
 
     setSortOrder(sortProperty());
+    initCollections();
 }
 
 SeasideCache::~SeasideCache()
@@ -1402,7 +1382,28 @@ QString SeasideCache::minimizePhoneNumber(const QString &input, bool validate)
     return QtContactsSqliteExtensions::minimizePhoneNumber(validated, maxCharacters);
 }
 
-static QContactFilter filterForMergeCandidates(const QContact &contact)
+QContactCollection SeasideCache::collectionFromId(const QContactCollectionId &collectionId)
+{
+    const QList<QContactCollection> &collections = instancePtr->m_collections;
+    for (const QContactCollection &c : collections) {
+        if (c.id() == collectionId) {
+            return c;
+        }
+    }
+    return QContactCollection();
+}
+
+QContactCollectionId SeasideCache::aggregateCollectionId()
+{
+    return instance()->m_aggregateCollectionId;
+}
+
+QContactCollectionId SeasideCache::localCollectionId()
+{
+    return instance()->m_localCollectionId;
+}
+
+QContactFilter SeasideCache::filterForMergeCandidates(const QContact &contact) const
 {
     // Find any contacts that we might merge with the supplied contact
     QContactFilter rv;
@@ -1541,7 +1542,7 @@ static QContactFilter filterForMergeCandidates(const QContact &contact)
     }
 
     // Only return aggregate contact IDs
-    return rv & aggregateFilter();
+    return rv & SeasideCache::aggregateFilter();
 }
 
 void SeasideCache::startRequest(bool *idleProcessing)
@@ -1964,8 +1965,10 @@ void SeasideCache::contactsAdded(const QList<QContactId> &ids)
     }
 }
 
-void SeasideCache::contactsChanged(const QList<QContactId> &ids)
+void SeasideCache::contactsChanged(const QList<QContactId> &ids, const QList<QContactDetail::DetailType> &typesChanged)
 {
+    Q_UNUSED(typesChanged)
+
     if (m_keepPopulated) {
         updateContacts(ids, &m_changedContacts);
     } else {
@@ -2839,7 +2842,7 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
             const QContact c = m_saveRequest.contacts().at(i);
             if (m_saveRequest.errorMap().value(i) != QContactManager::NoError) {
                 notifySaveContactComplete(-1, -1);
-            } else if (c.detail<QContactSyncTarget>().syncTarget() == QStringLiteral("aggregate")) {
+            } else if (c.collectionId() == m_aggregateCollectionId) {
                 // In case an aggregate is saved rather than a local constituent,
                 // no need to look up the aggregate via a relationship fetch request.
                 notifySaveContactComplete(-1, internalId(c));
@@ -2939,6 +2942,36 @@ void SeasideCache::makePopulated(FilterType filter)
     QList<ListModel *> &models = m_models[filter];
     for (int i = 0; i < models.count(); ++i)
         models.at(i)->makePopulated();
+}
+
+void SeasideCache::initCollections()
+{
+    reloadCollections();
+
+    if (m_collections.count() > 0) {
+        m_aggregateCollectionId = m_collections.first().id();
+    }
+    if (m_collections.count() > 1) {
+        m_localCollectionId = m_collections.at(1).id();
+    }
+    if (m_aggregateCollectionId.isNull()) {
+        qWarning() << "Cannot find 'aggregate' contacts collection!";
+    }
+    if (m_localCollectionId.isNull()) {
+        qWarning() << "Cannot find 'local' contacts collection!";
+    }
+
+    connect(manager(), &QContactManager::collectionsAdded,
+            this, &SeasideCache::reloadCollections);
+    connect(manager(), &QContactManager::collectionsChanged,
+            this, &SeasideCache::reloadCollections);
+    connect(manager(), &QContactManager::collectionsRemoved,
+            this, &SeasideCache::reloadCollections);
+}
+
+void SeasideCache::reloadCollections()
+{
+    m_collections = manager()->collections();
 }
 
 void SeasideCache::setSortOrder(const QString &property)
@@ -3171,15 +3204,6 @@ void SeasideCache::disaggregateContacts(const QContact &contact1, const QContact
     instancePtr->m_relationshipsToRemove.append(makeRelationship(aggregateRelationshipType, contact1.id(), contact2.id()));
     instancePtr->m_relationshipsToSave.append(makeRelationship(isNotRelationshipType, contact1.id(), contact2.id()));
 
-    if (contact2.detail<QContactSyncTarget>().syncTarget() == syncTargetWasLocal) {
-        // restore the local sync target that was changed in a previous link creation operation
-        QContact c = contact2;
-        QContactSyncTarget syncTarget = c.detail<QContactSyncTarget>();
-        syncTarget.setSyncTarget(syncTargetLocal);
-        c.saveDetail(&syncTarget);
-        saveContact(c);
-    }
-
     instancePtr->requestUpdate();
 }
 
@@ -3209,34 +3233,7 @@ void SeasideCache::completeContactAggregation(const QContactId &contact1Id, cons
     if (!cacheItem1 || !cacheItem2 || !cacheItem1->itemData || !cacheItem2->itemData)
         return;
 
-    // Contact1 needs to be linked to each of person2's constituents. However, a local constituent
-    // cannot be linked to two aggregate contacts. So, if both contacts have local constituents,
-    // change contact2's local constitent's syncTarget to "was_local" and don't aggregate it with
-    // contact1.
-    const QList<int> &constituents1 = cacheItem1->itemData->constituents();
     const QList<int> &constituents2 = cacheItem2->itemData->constituents();
-    QContact contact2Local;
-    bool bothHaveLocals = false;
-    foreach (int id, constituents1) {
-        QContact c = contactById(apiId(id));
-        if (c.detail<QContactSyncTarget>().syncTarget() == syncTargetLocal) {
-            foreach (int id, constituents2) {
-                QContact c = contactById(apiId(id));
-                if (c.detail<QContactSyncTarget>().syncTarget() == syncTargetLocal) {
-                    contact2Local = c;
-                    bothHaveLocals = true;
-                    break;
-                }
-            }
-            break;
-        }
-    }
-    if (bothHaveLocals) {
-        QContactSyncTarget syncTarget = contact2Local.detail<QContactSyncTarget>();
-        syncTarget.setSyncTarget(syncTargetWasLocal);
-        contact2Local.saveDetail(&syncTarget);
-        saveContact(contact2Local);
-    }
 
     // For each constituent of contact2, add a relationship between it and contact1, and remove the
     // relationship between it and contact2.
@@ -3389,6 +3386,24 @@ int SeasideCache::contactIndex(quint32 iid, FilterType filterType)
 {
     const QList<quint32> &cacheIds(m_contacts[filterType]);
     return cacheIds.indexOf(iid);
+}
+
+QContactFilter SeasideCache::aggregateFilter() const
+{
+    QContactCollectionFilter filter;
+    filter.setCollectionId(m_aggregateCollectionId);
+    return filter;
+}
+
+bool SeasideCache::ignoreContactForDisplayLabelGroups(const QContact &contact) const
+{
+    // Don't include the self contact in name groups
+    if (SeasideCache::apiId(contact) == SeasideCache::selfContactId()) {
+        return true;
+    }
+
+    // Also ignore non-aggregate contacts
+    return contact.collectionId() != m_aggregateCollectionId;
 }
 
 QContactRelationship SeasideCache::makeRelationship(const QString &type, const QContactId &id1, const QContactId &id2)

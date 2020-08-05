@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2012 Robin Burchell <robin+nemo@viroteck.net>
  * Copyright (c) 2012 - 2020 Jolla Ltd.
+ * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -131,6 +132,7 @@ SeasidePerson::SeasidePerson(const QContact &contact, QObject *parent)
     , mAttachState(Unattached)
     , mItem(0)
 {
+    mAddressBook = SeasideAddressBook::fromCollectionId(contact.collectionId());
 }
 
 SeasidePerson::SeasidePerson(QContact *contact, bool complete, QObject *parent)
@@ -142,6 +144,7 @@ SeasidePerson::SeasidePerson(QContact *contact, bool complete, QObject *parent)
     , mAttachState(Attached)
     , mItem(0)
 {
+    mAddressBook = SeasideAddressBook::fromCollectionId(contact->collectionId());
 }
 
 SeasidePerson::~SeasidePerson()
@@ -1857,6 +1860,11 @@ QString SeasidePerson::syncTarget() const
     return mContact->detail<QContactSyncTarget>().syncTarget();
 }
 
+SeasideAddressBook SeasidePerson::addressBook() const
+{
+    return mAddressBook;
+}
+
 QList<int> SeasidePerson::constituents() const
 {
     return mConstituents;
@@ -2435,11 +2443,11 @@ void SeasidePerson::aggregateInto(SeasidePerson *person)
     if (!person)
         return;
     // linking must done between two aggregates
-    if (syncTarget() != QLatin1String("aggregate")) {
+    if (!addressBook().isAggregate) {
         qWarning() << "SeasidePerson::aggregateInto() failed, this person is not an aggregate contact";
         return;
     }
-    if (person->syncTarget() != QLatin1String("aggregate")) {
+    if (!person->addressBook().isAggregate) {
         qWarning() << "SeasidePerson::aggregateInto() failed, given person is not an aggregate contact";
         return;
     }
@@ -2451,11 +2459,11 @@ void SeasidePerson::disaggregateFrom(SeasidePerson *person)
     if (!person)
         return;
     // unlinking must be done between an aggregate and a non-aggregate
-    if (person->syncTarget() != QLatin1String("aggregate")) {
+    if (!person->addressBook().isAggregate) {
         qWarning() << "SeasidePerson::disaggregateFrom() failed, given person is not an aggregate contact";
         return;
     }
-    if (syncTarget() == QLatin1String("aggregate")) {
+    if (addressBook().isAggregate) {
         qWarning() << "SeasidePerson::disaggregateFrom() failed, this person is already an aggregate";
         return;
     }

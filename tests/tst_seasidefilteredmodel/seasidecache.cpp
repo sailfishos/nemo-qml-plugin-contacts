@@ -149,8 +149,7 @@ void SeasideCache::reset()
         QContact contact;
 
         // This is specific to the qtcontacts-sqlite backend:
-        const QString idStr(QString::fromLatin1("qtcontacts:org.nemomobile.contacts.sqlite::sql-%1"));
-        contact.setId(QContactId::fromString(idStr.arg(i + 1)));
+        contact.setId(apiId(i + 1));
 
         QContactName name;
         name.setFirstName(QString::fromLatin1(contactsData[i].firstName));
@@ -288,8 +287,7 @@ SeasideCache::CacheItem *SeasideCache::itemById(int id, bool)
         return 0;
 
     // Construct a valid id from this value
-    QString idStr(QString::fromLatin1("qtcontacts:org.nemomobile.contacts.sqlite::sql-%1"));
-    QContactId contactId = QContactId::fromString(idStr.arg(id));
+    QContactId contactId = apiId(id);
     if (contactId.isNull()) {
         qWarning() << "Unable to formulate valid ID from:" << id;
         return 0;
@@ -446,6 +444,21 @@ QString SeasideCache::normalizePhoneNumber(const QString &input, bool)
 QString SeasideCache::minimizePhoneNumber(const QString &input, bool)
 {
     return input;
+}
+
+QContactCollection SeasideCache::collectionFromId(const QContactCollectionId &)
+{
+    return QContactCollection();
+}
+
+QContactCollectionId SeasideCache::aggregateCollectionId()
+{
+    return QContactCollectionId();
+}
+
+QContactCollectionId SeasideCache::localCollectionId()
+{
+    return QContactCollectionId();
 }
 
 SeasideCache::DisplayLabelOrder SeasideCache::displayLabelOrder()

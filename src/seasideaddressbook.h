@@ -1,6 +1,4 @@
 /*
- * Copyright (c) 2012 Robin Burchell <robin+nemo@viroteck.net>
- * Copyright (c) 2012 – 2020 Jolla Ltd.
  * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -31,47 +29,41 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QtGlobal>
+#ifndef SEASIDEADDRESSBOOK_H
+#define SEASIDEADDRESSBOOK_H
 
-#include <QQmlEngine>
-#include <QQmlExtensionPlugin>
+// Qt
+#include <QObject>
+#include <QColor>
 
-#include "seasideaddressbook.h"
-#include "seasideperson.h"
-#include "seasidefilteredmodel.h"
-#include "seasidedisplaylabelgroupmodel.h"
-#include "seasidevcardmodel.h"
-#include "knowncontacts.h"
+// Mobility
+#include <QContactCollection>
 
-template <typename T> static QObject *singletonApiCallback(QQmlEngine *engine, QJSEngine *) {
-    return new T(engine);
-}
+QTCONTACTS_USE_NAMESPACE
 
-class Q_DECL_EXPORT NemoContactsPlugin : public QQmlExtensionPlugin
+class SeasideAddressBook
 {
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.nemomobile.contacts")
+    Q_GADGET
+    Q_PROPERTY(QString id MEMBER id)
+    Q_PROPERTY(QString name MEMBER name)
+    Q_PROPERTY(bool isAggregate MEMBER isAggregate)
+    Q_PROPERTY(bool isLocal MEMBER isLocal)
+    Q_PROPERTY(QColor color MEMBER color)
 
 public:
-    virtual ~NemoContactsPlugin() { }
+    SeasideAddressBook();
+    ~SeasideAddressBook();
 
-    void initializeEngine(QQmlEngine *, const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
-    }
+    static SeasideAddressBook fromCollectionId(const QContactCollectionId &id);
 
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
-
-        qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleModel");
-        qmlRegisterType<SeasideDisplayLabelGroupModel>(uri, 1, 0, "PeopleDisplayLabelGroupModel");
-        qmlRegisterType<SeasidePersonAttached>();
-        qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
-        qmlRegisterType<SeasideVCardModel>(uri, 1, 0, "PeopleVCardModel");
-        qmlRegisterUncreatableType<SeasideAddressBook>(uri, 1, 0, "AddressBook", "");
-        qmlRegisterSingletonType<KnownContacts>(uri, 1, 0, "KnownContacts", singletonApiCallback<KnownContacts>);
-    }
+    QString id;
+    QString name;
+    QColor color;
+    bool isAggregate = false;
+    bool isLocal = false;
 };
 
-#include "plugin.moc"
+Q_DECLARE_METATYPE(SeasideAddressBook)
+
+#endif // SEASIDEADDRESSBOOK_H
+

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2012 Robin Burchell <robin+nemo@viroteck.net>
  * Copyright (c) 2012 - 2020 Jolla Ltd.
+ * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -45,6 +46,8 @@
 
 // Seaside
 #include <seasidecache.h>
+
+#include <seasideaddressbook.h>
 
 QTCONTACTS_USE_NAMESPACE
 
@@ -291,6 +294,9 @@ public:
     Q_PROPERTY(QString syncTarget READ syncTarget CONSTANT)
     QString syncTarget() const;
 
+    Q_PROPERTY(SeasideAddressBook addressBook READ addressBook NOTIFY addressBookChanged)
+    SeasideAddressBook addressBook() const;
+
     Q_PROPERTY(QList<int> constituents READ constituents NOTIFY constituentsChanged)
     QList<int> constituents() const;
     void setConstituents(const QList<int> &constituents);
@@ -396,6 +402,7 @@ signals:
     void constituentsChanged();
     void mergeCandidatesChanged();
     void resolvingChanged();
+    void addressBookChanged();
     void aggregationOperationFinished();
     void addressResolved();
     void dataChanged();
@@ -417,6 +424,7 @@ private:
     };
 
     QContact *mContact;
+    SeasideAddressBook mAddressBook;
     mutable QString mDisplayLabel;
     QList<int> mConstituents;
     QList<int> mCandidates;

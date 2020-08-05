@@ -51,6 +51,7 @@
 #include <QContactIdFilter>
 #include <QContactIdFetchRequest>
 #include <QContactName>
+#include <QContactCollectionId>
 
 #include <QTranslator>
 #include <QBasicTimer>
@@ -355,6 +356,10 @@ public:
     static QString normalizePhoneNumber(const QString &input, bool validate = false);
     static QString minimizePhoneNumber(const QString &input, bool validate = false);
 
+    static QContactCollection collectionFromId(const QContactCollectionId &collectionId);
+    static QContactCollectionId aggregateCollectionId();
+    static QContactCollectionId localCollectionId();
+
     bool event(QEvent *event);
 
     // For synchronizeLists()
@@ -374,7 +379,7 @@ private slots:
     void addressRequestStateChanged(QContactAbstractRequest::State state);
     void dataChanged();
     void contactsAdded(const QList<QContactId> &contactIds);
-    void contactsChanged(const QList<QContactId> &contactIds);
+    void contactsChanged(const QList<QContactId> &contactIds, const QList<QContactDetail::DetailType> &typesChanged);
     void contactsPresenceChanged(const QList<QContactId> &contactIds);
     void contactsRemoved(const QList<QContactId> &contactIds);
     void displayLabelGroupsChanged(const QStringList &groups);
@@ -432,6 +437,13 @@ private:
 
     int contactIndex(quint32 iid, FilterType filter);
 
+    QContactFilter filterForMergeCandidates(const QContact &contact) const;
+    QContactFilter aggregateFilter() const;
+    bool ignoreContactForDisplayLabelGroups(const QContact &contact) const;
+
+    void initCollections();
+    void reloadCollections();
+
     void notifySaveContactComplete(int constituentId, int aggregateId);
 
     static QContactRelationship makeRelationship(const QString &type, const QContactId &id1, const QContactId &id2);
@@ -474,6 +486,9 @@ private:
     QContactRelationshipRemoveRequest m_relationshipRemoveRequest;
     QList<QContactSortOrder> m_sortOrder;
     QList<QContactSortOrder> m_onlineSortOrder;
+    QList<QContactCollection> m_collections;
+    QContactCollectionId m_aggregateCollectionId;
+    QContactCollectionId m_localCollectionId;
     FilterType m_syncFilter;
     int m_populated;
     int m_cacheIndex;

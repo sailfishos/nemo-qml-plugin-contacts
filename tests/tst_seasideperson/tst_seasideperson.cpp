@@ -48,6 +48,8 @@
 
 #include <cacheconfiguration.h>
 
+#include <qtcontacts-extensions_impl.h>
+
 #include "seasideperson.h"
 
 #include <algorithm>
@@ -919,8 +921,7 @@ void tst_SeasidePerson::setContact()
     QContact contact;
 
     {   // ### contactChanged is only emitted if the id differs, not any of the members.
-        QString idStr(QString::fromLatin1("qtcontacts:org.nemomobile.contacts.sqlite::sql-5"));
-        contact.setId(QContactId::fromString(idStr));
+        contact.setId(QtContactsSqliteExtensions::apiContactId(5, cm.managerUri()));
     }
 
     {
