@@ -1029,6 +1029,33 @@ bool SeasideFilteredModel::savePerson(SeasidePerson *person)
     return false;
 }
 
+bool SeasideFilteredModel::savePeople(const QVariantList &people)
+{
+    bool allSucceeded = true;
+
+    QList<QContact> contacts;
+    QList<SeasidePerson *> personObjects;
+    for (const QVariant &variant : people) {
+        SeasidePerson *person = variant.value<SeasidePerson*>();
+        if (person) {
+            personObjects.append(person);
+            contacts.append(person->contact());
+        } else {
+            allSucceeded = false;
+        }
+    }
+
+    if (SeasideCache::saveContacts(contacts)) {
+        for (SeasidePerson *p : personObjects) {
+            emit p->dataChanged();
+        }
+    } else {
+        allSucceeded = false;
+    }
+
+    return allSucceeded;
+}
+
 SeasidePerson *SeasideFilteredModel::personByRow(int row) const
 {
     if(row < 0 || row >= m_contactIds->size()) {

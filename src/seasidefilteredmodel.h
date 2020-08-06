@@ -151,6 +151,7 @@ public:
     Q_INVOKABLE QVariant get(int row, int role) const;
 
     Q_INVOKABLE bool savePerson(SeasidePerson *person);
+    Q_INVOKABLE bool savePeople(const QVariantList &people);
     Q_INVOKABLE SeasidePerson *personByRow(int row) const;
     Q_INVOKABLE SeasidePerson *personById(int id) const;
     Q_INVOKABLE SeasidePerson *personByPhoneNumber(const QString &number, bool requireComplete = true) const;

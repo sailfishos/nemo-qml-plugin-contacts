@@ -330,6 +330,7 @@ public:
     static CacheItem *resolveOnlineAccount(ResolveListener *listener, const QString &localUid, const QString &remoteUid, bool requireComplete = true);
 
     static bool saveContact(const QContact &contact);
+    static bool saveContacts(const QList<QContact> &contacts);
     static bool removeContact(const QContact &contact);
     static bool removeContacts(const QList<QContact> &contacts);
 

@@ -364,6 +364,11 @@ bool SeasideCache::saveContact(const QContact &)
     return false;
 }
 
+bool SeasideCache::saveContacts(const QList<QContact> &)
+{
+    return false;
+}
+
 void SeasideCache::removeContact(const QContact &)
 {
 }

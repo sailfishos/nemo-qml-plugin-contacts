@@ -982,12 +982,19 @@ void SeasideCache::requestUpdate()
 
 bool SeasideCache::saveContact(const QContact &contact)
 {
-    QContactId id = apiId(contact);
-    if (validId(id)) {
-        instancePtr->m_contactsToSave[id] = contact;
-        instancePtr->contactDataChanged(internalId(id));
-    } else {
-        instancePtr->m_contactsToCreate.append(contact);
+    return saveContacts(QList<QContact>() << contact);
+}
+
+bool SeasideCache::saveContacts(const QList<QContact> &contacts)
+{
+    for (const QContact &contact : contacts) {
+        const QContactId id = apiId(contact);
+        if (validId(id)) {
+            instancePtr->m_contactsToSave[id] = contact;
+            instancePtr->contactDataChanged(internalId(id));
+        } else {
+            instancePtr->m_contactsToCreate.append(contact);
+        }
     }
 
     instancePtr->requestUpdate();
@@ -2703,6 +2710,11 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
         return;
 
     QContactAbstractRequest *request = static_cast<QContactAbstractRequest *>(sender());
+
+    if (request->error() != QContactManager::NoError) {
+        qWarning() << "Contact request" << request->type()
+                   << "error:" << request->error();
+    }
 
     if (request == &m_relationshipsFetchRequest) {
         if (!m_contactsToFetchConstituents.isEmpty()) {
