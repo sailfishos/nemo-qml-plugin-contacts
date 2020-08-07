@@ -52,7 +52,6 @@ public:
     QVersitContactHandler *propertyHandler;
 
     QSet<QContactDetail::DetailType> unimportableDetailTypes;
-    QStringList importableSyncTargets;
 
     QHash<QString, int> importGuids;
     QHash<QString, int> importNames;

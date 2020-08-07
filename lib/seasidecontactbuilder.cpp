@@ -36,10 +36,10 @@
 #include "seasidepropertyhandler.h"
 
 #include <QContactDetailFilter>
+#include <QContactCollectionFilter>
 #include <QContactFetchHint>
 #include <QContactManager>
 #include <QContactSortOrder>
-#include <QContactSyncTarget>
 
 #include <QContactAddress>
 #include <QContactAnniversary>
@@ -88,16 +88,9 @@ QContactFetchHint basicFetchHint()
 
 QContactFilter localContactFilter()
 {
-    // Contacts that are local to the device have sync target 'local' or 'was_local' or 'bluetooth'
-    QContactDetailFilter filterLocal, filterWasLocal, filterBluetooth;
-    filterLocal.setDetailType(QContactSyncTarget::Type, QContactSyncTarget::FieldSyncTarget);
-    filterWasLocal.setDetailType(QContactSyncTarget::Type, QContactSyncTarget::FieldSyncTarget);
-    filterBluetooth.setDetailType(QContactSyncTarget::Type, QContactSyncTarget::FieldSyncTarget);
-    filterLocal.setValue(QString::fromLatin1("local"));
-    filterWasLocal.setValue(QString::fromLatin1("was_local"));
-    filterBluetooth.setValue(QString::fromLatin1("bluetooth"));
-
-    return filterLocal | filterWasLocal | filterBluetooth;
+    QContactCollectionFilter filter;
+    filter.setCollectionId(SeasideCache::localCollectionId());
+    return filter;
 }
 
 bool allCharactersMatchScript(const QString &s, QChar::Script script)
@@ -332,7 +325,6 @@ SeasideContactBuilder::SeasideContactBuilder()
     d->manager = 0;
     d->propertyHandler = 0;
     d->unimportableDetailTypes = (QSet<QContactDetail::DetailType>() << QContactDetail::TypeGlobalPresence << QContactDetail::TypeVersion);
-    d->importableSyncTargets = (QStringList() << QLatin1String("was_local") << QLatin1String("bluetooth"));
 }
 
 SeasideContactBuilder::~SeasideContactBuilder()
@@ -478,13 +470,6 @@ void SeasideContactBuilder::preprocessContact(QContact &contact)
         if (d->unimportableDetailTypes.contains(detail.type())) {
             qDebug() << "  Removing unimportable detail:" << detail;
             contact.removeDetail(&detail);
-        } else if (detail.type() == QContactSyncTarget::Type) {
-            // We allow some syncTarget values
-            const QString syncTarget(detail.value<QString>(QContactSyncTarget::FieldSyncTarget));
-            if (!d->importableSyncTargets.contains(syncTarget)) {
-                qDebug() << "  Removing unimportable syncTarget:" << syncTarget;
-                contact.removeDetail(&detail);
-            }
         }
     }
 

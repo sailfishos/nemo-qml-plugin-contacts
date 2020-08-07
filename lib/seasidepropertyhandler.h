@@ -59,9 +59,6 @@ QTVERSIT_USE_NAMESPACE
     a file, and then the path to the file needs to be saved
     to the backend as a contact avatar url detail.
 
-    The X-NEMOMOBILE-SYNCTARGET property is supported for specifying
-    the sync target of a contact.
-
     Also support the X-NEMOMOBILE-ONLINEACCOUNT-DEMO property
     for loading demo online account data.
 */
