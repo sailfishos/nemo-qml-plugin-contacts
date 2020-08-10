@@ -601,7 +601,6 @@ SeasideCache::SeasideCache()
     m_relationshipRemoveRequest.setManager(mgr);
 
     setSortOrder(sortProperty());
-    initCollections();
 }
 
 SeasideCache::~SeasideCache()
@@ -1389,25 +1388,14 @@ QString SeasideCache::minimizePhoneNumber(const QString &input, bool validate)
     return QtContactsSqliteExtensions::minimizePhoneNumber(validated, maxCharacters);
 }
 
-QContactCollection SeasideCache::collectionFromId(const QContactCollectionId &collectionId)
-{
-    const QList<QContactCollection> &collections = instancePtr->m_collections;
-    for (const QContactCollection &c : collections) {
-        if (c.id() == collectionId) {
-            return c;
-        }
-    }
-    return QContactCollection();
-}
-
 QContactCollectionId SeasideCache::aggregateCollectionId()
 {
-    return instance()->m_aggregateCollectionId;
+    return QtContactsSqliteExtensions::aggregateCollectionId(manager()->managerUri());
 }
 
 QContactCollectionId SeasideCache::localCollectionId()
 {
-    return instance()->m_localCollectionId;
+    return QtContactsSqliteExtensions::localCollectionId(manager()->managerUri());
 }
 
 QContactFilter SeasideCache::filterForMergeCandidates(const QContact &contact) const
@@ -2854,7 +2842,7 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
             const QContact c = m_saveRequest.contacts().at(i);
             if (m_saveRequest.errorMap().value(i) != QContactManager::NoError) {
                 notifySaveContactComplete(-1, -1);
-            } else if (c.collectionId() == m_aggregateCollectionId) {
+            } else if (c.collectionId() == aggregateCollectionId()) {
                 // In case an aggregate is saved rather than a local constituent,
                 // no need to look up the aggregate via a relationship fetch request.
                 notifySaveContactComplete(-1, internalId(c));
@@ -2954,36 +2942,6 @@ void SeasideCache::makePopulated(FilterType filter)
     QList<ListModel *> &models = m_models[filter];
     for (int i = 0; i < models.count(); ++i)
         models.at(i)->makePopulated();
-}
-
-void SeasideCache::initCollections()
-{
-    reloadCollections();
-
-    if (m_collections.count() > 0) {
-        m_aggregateCollectionId = m_collections.first().id();
-    }
-    if (m_collections.count() > 1) {
-        m_localCollectionId = m_collections.at(1).id();
-    }
-    if (m_aggregateCollectionId.isNull()) {
-        qWarning() << "Cannot find 'aggregate' contacts collection!";
-    }
-    if (m_localCollectionId.isNull()) {
-        qWarning() << "Cannot find 'local' contacts collection!";
-    }
-
-    connect(manager(), &QContactManager::collectionsAdded,
-            this, &SeasideCache::reloadCollections);
-    connect(manager(), &QContactManager::collectionsChanged,
-            this, &SeasideCache::reloadCollections);
-    connect(manager(), &QContactManager::collectionsRemoved,
-            this, &SeasideCache::reloadCollections);
-}
-
-void SeasideCache::reloadCollections()
-{
-    m_collections = manager()->collections();
 }
 
 void SeasideCache::setSortOrder(const QString &property)
@@ -3403,7 +3361,7 @@ int SeasideCache::contactIndex(quint32 iid, FilterType filterType)
 QContactFilter SeasideCache::aggregateFilter() const
 {
     QContactCollectionFilter filter;
-    filter.setCollectionId(m_aggregateCollectionId);
+    filter.setCollectionId(aggregateCollectionId());
     return filter;
 }
 
@@ -3415,7 +3373,7 @@ bool SeasideCache::ignoreContactForDisplayLabelGroups(const QContact &contact) c
     }
 
     // Also ignore non-aggregate contacts
-    return contact.collectionId() != m_aggregateCollectionId;
+    return contact.collectionId() != aggregateCollectionId();
 }
 
 QContactRelationship SeasideCache::makeRelationship(const QString &type, const QContactId &id1, const QContactId &id2)

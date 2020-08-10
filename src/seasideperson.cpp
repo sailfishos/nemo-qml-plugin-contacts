@@ -121,30 +121,31 @@ SeasidePerson::SeasidePerson(QObject *parent)
     , mAttachState(Unattached)
     , mItem(0)
 {
+    setAddressBook(SeasideAddressBook::fromCollectionId(SeasideCache::localCollectionId()));
 }
 
 SeasidePerson::SeasidePerson(const QContact &contact, QObject *parent)
     : QObject(parent)
     , mContact(new QContact(contact))
+    , mAddressBook(SeasideAddressBook::fromCollectionId(contact.collectionId()))
     , mDisplayLabel(generateDisplayLabel(contact))
     , mComplete(true)
     , mResolving(false)
     , mAttachState(Unattached)
     , mItem(0)
 {
-    mAddressBook = SeasideAddressBook::fromCollectionId(contact.collectionId());
 }
 
 SeasidePerson::SeasidePerson(QContact *contact, bool complete, QObject *parent)
     : QObject(parent)
     , mContact(contact)
+    , mAddressBook(SeasideAddressBook::fromCollectionId(contact->collectionId()))
     , mDisplayLabel(generateDisplayLabel(*contact))
     , mComplete(complete)
     , mResolving(false)
     , mAttachState(Attached)
     , mItem(0)
 {
-    mAddressBook = SeasideAddressBook::fromCollectionId(contact->collectionId());
 }
 
 SeasidePerson::~SeasidePerson()
@@ -1863,6 +1864,15 @@ QString SeasidePerson::syncTarget() const
 SeasideAddressBook SeasidePerson::addressBook() const
 {
     return mAddressBook;
+}
+
+void SeasidePerson::setAddressBook(const SeasideAddressBook &addressBook)
+{
+    if (mAddressBook != addressBook) {
+        mAddressBook = addressBook;
+        mContact->setCollectionId(addressBook.collectionId);
+        emit addressBookChanged();
+    }
 }
 
 QList<int> SeasidePerson::constituents() const

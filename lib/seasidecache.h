@@ -442,9 +442,6 @@ private:
     QContactFilter aggregateFilter() const;
     bool ignoreContactForDisplayLabelGroups(const QContact &contact) const;
 
-    void initCollections();
-    void reloadCollections();
-
     void notifySaveContactComplete(int constituentId, int aggregateId);
 
     static QContactRelationship makeRelationship(const QString &type, const QContactId &id1, const QContactId &id2);
@@ -487,9 +484,6 @@ private:
     QContactRelationshipRemoveRequest m_relationshipRemoveRequest;
     QList<QContactSortOrder> m_sortOrder;
     QList<QContactSortOrder> m_onlineSortOrder;
-    QList<QContactCollection> m_collections;
-    QContactCollectionId m_aggregateCollectionId;
-    QContactCollectionId m_localCollectionId;
     FilterType m_syncFilter;
     int m_populated;
     int m_cacheIndex;

@@ -6,6 +6,7 @@
 
 #include <QContact>
 #include <QContactId>
+#include <QContactManager>
 #include <QContactCollection>
 
 #include <QAbstractListModel>
@@ -143,6 +144,7 @@ public:
     };
 
     static SeasideCache *instance();
+    static QContactManager *manager();
 
     static QContactId apiId(const QContact &contact);
     static QContactId apiId(quint32 iid);
@@ -217,7 +219,6 @@ public:
     static QString normalizePhoneNumber(const QString &input, bool validate = false);
     static QString minimizePhoneNumber(const QString &input, bool validate = false);
 
-    static QContactCollection collectionFromId(const QContactCollectionId &collectionId);
     static QContactCollectionId aggregateCollectionId();
     static QContactCollectionId localCollectionId();
 

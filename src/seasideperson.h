@@ -294,8 +294,9 @@ public:
     Q_PROPERTY(QString syncTarget READ syncTarget CONSTANT)
     QString syncTarget() const;
 
-    Q_PROPERTY(SeasideAddressBook addressBook READ addressBook NOTIFY addressBookChanged)
+    Q_PROPERTY(SeasideAddressBook addressBook READ addressBook WRITE setAddressBook NOTIFY addressBookChanged)
     SeasideAddressBook addressBook() const;
+    void setAddressBook(const SeasideAddressBook &addressBook);
 
     Q_PROPERTY(QList<int> constituents READ constituents NOTIFY constituentsChanged)
     QList<int> constituents() const;
@@ -413,6 +414,7 @@ public slots:
 private:
     void updateContactDetails(const QContact &oldContact);
     void emitChangeSignals();
+    static QDateTime birthday(const QContact &contact);
 
     QString getPrimaryName(const QContact &contact) const;
     QString getSecondaryName(const QContact &contact) const;

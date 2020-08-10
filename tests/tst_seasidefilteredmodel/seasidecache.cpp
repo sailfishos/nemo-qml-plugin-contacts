@@ -100,6 +100,12 @@ SeasideCache *SeasideCache::instance()
     return instancePtr;
 }
 
+QContactManager *SeasideCache::manager()
+{
+    static QContactManager *mgr = new QContactManager;
+    return mgr;
+}
+
 QContactId SeasideCache::apiId(const QContact &contact)
 {
     return contact.id();
@@ -449,11 +455,6 @@ QString SeasideCache::normalizePhoneNumber(const QString &input, bool)
 QString SeasideCache::minimizePhoneNumber(const QString &input, bool)
 {
     return input;
-}
-
-QContactCollection SeasideCache::collectionFromId(const QContactCollectionId &)
-{
-    return QContactCollection();
 }
 
 QContactCollectionId SeasideCache::aggregateCollectionId()

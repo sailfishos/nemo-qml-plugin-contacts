@@ -29,53 +29,46 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
+#ifndef SEASIDEADDRESSBOOKMODEL_H
+#define SEASIDEADDRESSBOOKMODEL_H
+
 #include "seasideaddressbook.h"
 
-// Seaside
-#include <seasidecache.h>
+#include <QAbstractListModel>
+#include <QList>
 
-SeasideAddressBook::SeasideAddressBook()
+QTCONTACTS_USE_NAMESPACE
+
+class SeasideAddressBookModel : public QAbstractListModel
 {
-}
+    Q_OBJECT
+    Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
 
-SeasideAddressBook::~SeasideAddressBook()
-{
-}
+public:
+    enum Role {
+        AddressBookRole = Qt::UserRole,
+    };
+    Q_ENUM(Role)
 
-bool SeasideAddressBook::operator==(const SeasideAddressBook &other)
-{
-    return collectionId == other.collectionId;
-}
+    SeasideAddressBookModel(QObject *parent = 0);
+    ~SeasideAddressBookModel();
 
-QString SeasideAddressBook::idString() const
-{
-    return collectionId.toString();
-}
+    Q_INVOKABLE SeasideAddressBook addressBookAt(int index) const;
 
-QString SeasideAddressBook::displayName() const
-{
-    if (isLocal) {
-        //: Name of address book stored locally on the phone
-        //% "Phone"
-        return qtTrId("nemo_contacts-la-phone_address_book");
-    } else {
-        // TODO can fetch account display name for cloud-based accounts, etc.
-        return name;
-    }
-}
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role) const override;
+    QHash<int, QByteArray> roleNames() const override;
 
-SeasideAddressBook SeasideAddressBook::fromCollectionId(const QContactCollectionId &collectionId)
-{
-    const QContactCollection collection = SeasideCache::manager()->collection(collectionId);
+signals:
+    void countChanged();
 
-    SeasideAddressBook addressBook;
-    addressBook.collectionId = collectionId;
-    addressBook.name = collection.metaData(QContactCollection::KeyName).toString();
-    addressBook.color = collection.metaData(QContactCollection::KeyColor).value<QColor>();
-    addressBook.secondaryColor = collection.metaData(QContactCollection::KeySecondaryColor).value<QColor>();
-    addressBook.image = collection.metaData(QContactCollection::KeyImage).toString();
-    addressBook.isAggregate = collection.id() == SeasideCache::aggregateCollectionId();
-    addressBook.isLocal = collection.id() == SeasideCache::localCollectionId();
+private:
+    void collectionsAdded(const QList<QContactCollectionId> &collectionIds);
+    void collectionsRemoved(const QList<QContactCollectionId> &collectionIds);
+    void collectionsChanged(const QList<QContactCollectionId> &collectionIds);
+    int findCollection(const QContactCollectionId &id) const;
 
-    return addressBook;
-}
+    QList<SeasideAddressBook> m_addressBooks;
+ };
+
+#endif

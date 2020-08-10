@@ -32,11 +32,13 @@
  */
 
 #include <QtGlobal>
+#include <QTranslator>
 
 #include <QQmlEngine>
 #include <QQmlExtensionPlugin>
 
 #include "seasideaddressbook.h"
+#include "seasideaddressbookmodel.h"
 #include "seasideperson.h"
 #include "seasidefilteredmodel.h"
 #include "seasidedisplaylabelgroupmodel.h"
@@ -47,6 +49,22 @@ template <typename T> static QObject *singletonApiCallback(QQmlEngine *engine, Q
     return new T(engine);
 }
 
+class AppTranslator: public QTranslator
+{
+    Q_OBJECT
+public:
+    AppTranslator(QObject *parent)
+        : QTranslator(parent)
+    {
+        qApp->installTranslator(this);
+    }
+
+    virtual ~AppTranslator()
+    {
+        qApp->removeTranslator(this);
+    }
+};
+
 class Q_DECL_EXPORT NemoContactsPlugin : public QQmlExtensionPlugin
 {
     Q_OBJECT
@@ -55,9 +73,14 @@ class Q_DECL_EXPORT NemoContactsPlugin : public QQmlExtensionPlugin
 public:
     virtual ~NemoContactsPlugin() { }
 
-    void initializeEngine(QQmlEngine *, const char *uri)
+    void initializeEngine(QQmlEngine *engine, const char *uri)
     {
         Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
+
+        AppTranslator *engineeringEnglish = new AppTranslator(engine);
+        AppTranslator *translator = new AppTranslator(engine);
+        engineeringEnglish->load("nemo-qml-plugin-contacts_eng_en", "/usr/share/translations");
+        translator->load(QLocale(), "nemo-qml-plugin-contacts", "-", "/usr/share/translations");
     }
 
     void registerTypes(const char *uri)
@@ -65,6 +88,7 @@ public:
         Q_ASSERT(uri == QLatin1String("org.nemomobile.contacts"));
 
         qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleModel");
+        qmlRegisterType<SeasideAddressBookModel>(uri, 1, 0, "AddressBookModel");
         qmlRegisterType<SeasideDisplayLabelGroupModel>(uri, 1, 0, "PeopleDisplayLabelGroupModel");
         qmlRegisterType<SeasidePersonAttached>();
         qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
