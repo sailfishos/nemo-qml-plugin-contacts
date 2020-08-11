@@ -1346,15 +1346,29 @@ void SeasidePerson::setWebsiteDetails(const QVariantList &websiteDetails)
     emit websiteDetailsChanged();
 }
 
-QDateTime SeasidePerson::birthday() const
+QVariantMap SeasidePerson::birthdayDetail(const QContact &contact)
 {
-    const QContactDetail birthdayDetail(mContact->detail<QContactBirthday>());
-    if (birthdayDetail.isEmpty())
-        return QDateTime();
+    static const QString birthdayDetailDate(QStringLiteral("date"));
 
-    const QDateTime birthDateTime(mContact->detail<QContactBirthday>().dateTime());
-    if (!birthDateTime.isValid())
+    const QContactDetail detail(contact.detail<QContactBirthday>());
+    QVariantMap item(detailProperties(detail));
+    item.insert(birthdayDetailDate, birthday(contact));
+    item.insert(detailType, BirthdayType);
+    item.insert(detailSubType, NoSubType);
+    return item;
+}
+
+QVariantMap SeasidePerson::birthdayDetail() const
+{
+    return birthdayDetail(*mContact);
+}
+
+QDateTime SeasidePerson::birthday(const QContact &contact)
+{
+    const QDateTime birthDateTime(contact.detail<QContactBirthday>().dateTime());
+    if (!birthDateTime.isValid()) {
         return QDateTime();
+    }
 
     const QTime birthTime(birthDateTime.time());
     if (birthTime.hour() == 0 && birthTime.minute() == 0) {
@@ -1365,6 +1379,11 @@ QDateTime SeasidePerson::birthday() const
     }
 
     return birthDateTime;
+}
+
+QDateTime SeasidePerson::birthday() const
+{
+    return birthday(*mContact);
 }
 
 void SeasidePerson::setBirthday(const QDateTime &bd)

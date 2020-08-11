@@ -276,6 +276,9 @@ public:
     void setBirthday(const QDateTime &bd);
     void resetBirthday();
 
+    Q_PROPERTY(QVariantMap birthdayDetail READ birthdayDetail NOTIFY birthdayChanged)
+    QVariantMap birthdayDetail() const;
+
     Q_PROPERTY(QVariantList anniversaryDetails READ anniversaryDetails WRITE setAnniversaryDetails NOTIFY anniversaryDetailsChanged)
     QVariantList anniversaryDetails() const;
     void setAnniversaryDetails(const QVariantList &anniversaryDetails);
@@ -359,6 +362,7 @@ public:
     static QVariantList emailDetails(const QContact &contact);
     static QVariantList addressDetails(const QContact &contact);
     static QVariantList websiteDetails(const QContact &contact);
+    static QVariantMap birthdayDetail(const QContact &contact);
     static QVariantList anniversaryDetails(const QContact &contact);
     static QVariantList accountDetails(const QContact &contact);
     static QVariantList noteDetails(const QContact &contact);
