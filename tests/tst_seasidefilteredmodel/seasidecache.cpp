@@ -427,6 +427,11 @@ QString SeasideCache::secondaryName(const QString &, const QString &)
     return QString();
 }
 
+QString SeasideCache::placeholderDisplayLabel()
+{
+    return QString();
+}
+
 QString SeasideCache::generateDisplayLabel(const QContact &, DisplayLabelOrder)
 {
     return QString();

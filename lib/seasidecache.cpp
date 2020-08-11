@@ -1135,6 +1135,13 @@ void updateNameDetail(F1 getter, F2 setter, QContactName *nameDetail, const QStr
     (nameDetail->*setter)(existing + value);
 }
 
+QString SeasideCache::placeholderDisplayLabel()
+{
+    //: The display label for a contact which has no name or nickname.
+    //% "(Unnamed)"
+    return qtTrId("nemo_contacts-la-placeholder_display_label");
+}
+
 void SeasideCache::decomposeDisplayLabel(const QString &formattedDisplayLabel, QContactName *nameDetail)
 {
     if (!translator) {
@@ -1196,7 +1203,7 @@ void SeasideCache::decomposeDisplayLabel(const QString &formattedDisplayLabel, Q
 }
 
 // small helper to avoid inconvenience
-QString SeasideCache::generateDisplayLabel(const QContact &contact, DisplayLabelOrder order)
+QString SeasideCache::generateDisplayLabel(const QContact &contact, DisplayLabelOrder order, bool fallbackToNonNameDetails)
 {
     QContactName name = contact.detail<QContactName>();
 
@@ -1221,7 +1228,7 @@ QString SeasideCache::generateDisplayLabel(const QContact &contact, DisplayLabel
         displayLabel.append(nameStr2);
     }
 
-    if (!displayLabel.isEmpty()) {
+    if (!displayLabel.isEmpty() || !fallbackToNonNameDetails) {
         return displayLabel;
     }
 
@@ -1231,7 +1238,7 @@ QString SeasideCache::generateDisplayLabel(const QContact &contact, DisplayLabel
         return displayLabel;
     }
 
-    return "(Unnamed)"; // TODO: localisation
+    return placeholderDisplayLabel();
 }
 
 QString SeasideCache::generateDisplayLabelFromNonNameDetails(const QContact &contact)
@@ -2115,8 +2122,18 @@ void SeasideCache::updateCache(CacheItem *item, const QContact &contact, bool pa
         item->contact = contact;
     }
 
-    item->displayLabel = generateDisplayLabel(item->contact, displayLabelOrder());
-    item->displayLabelGroup = contact.detail<QContactDisplayLabel>().value(QContactDisplayLabel__FieldLabelGroup).toString();
+    // If a valid display label was previously generated with name details, don't override with
+    // non-name details.
+    const bool fallbackToNonNameDetails = item->displayLabel.isEmpty();
+
+    const QString displayLabel = generateDisplayLabel(item->contact, displayLabelOrder(), fallbackToNonNameDetails);
+    if (!displayLabel.isEmpty()) {
+        item->displayLabel = displayLabel;
+    }
+    const QString displayLabelGroup = contact.detail<QContactDisplayLabel>().value(QContactDisplayLabel__FieldLabelGroup).toString();
+    if (!displayLabelGroup.isEmpty()) {
+        item->displayLabelGroup = displayLabelGroup;
+    }
 
     if (!initialInsert) {
         reportItemUpdated(item);

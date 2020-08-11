@@ -211,6 +211,7 @@ public:
     static QString primaryName(const QString &firstName, const QString &lastName);
     static QString secondaryName(const QString &firstName, const QString &lastName);
 
+    static QString placeholderDisplayLabel();
     static QString generateDisplayLabel(const QContact &contact, DisplayLabelOrder order = FirstNameFirst);
     static QString generateDisplayLabelFromNonNameDetails(const QContact &contact);
     static QUrl filteredAvatarUrl(const QContact &contact, const QStringList &metadataFragments = QStringList());

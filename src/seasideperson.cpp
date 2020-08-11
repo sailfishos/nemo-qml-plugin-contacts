@@ -274,9 +274,7 @@ QString SeasidePerson::generateDisplayLabelFromNonNameDetails(const QContact &co
 
 QString SeasidePerson::placeholderDisplayLabel()
 {
-    //: The display label for a contact which has no name or nickname.
-    //% "(Unnamed)"
-    return qtTrId("nemo_contacts-la-placeholder_display_label");
+    return SeasideCache::placeholderDisplayLabel();
 }
 
 void SeasidePerson::recalculateDisplayLabel(SeasideCache::DisplayLabelOrder order) const
