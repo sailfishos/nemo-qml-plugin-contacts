@@ -540,7 +540,6 @@ void setDetailLabelType(QContactDetail &detail, int label)
 
 const QString detailReadOnly(QStringLiteral("readOnly"));
 const QString detailOriginId(QStringLiteral("originId"));
-const QString detailSyncTarget(QStringLiteral("syncTarget"));
 const QString detailType(QStringLiteral("type"));
 const QString detailSubType(QStringLiteral("subType"));
 const QString detailSubTypes(QStringLiteral("subTypes"));
@@ -556,20 +555,16 @@ QVariantMap detailProperties(const QContactDetail &detail)
     const bool readOnly((detail.accessConstraints() & QContactDetail::ReadOnly) == QContactDetail::ReadOnly);
     rv.insert(detailReadOnly, readOnly);
 
+    // The provenance is formatted as <collection-id>:<origin-id>:<detail-id>
     const QString provenance(detail.value(QContactDetail__FieldProvenance).toString());
     if (!provenance.isEmpty()) {
         int index = provenance.indexOf(colon);
-        if (index != -1) {
-            // The first field is the contact ID where this detaiol originates
-            quint32 originId = provenance.left(index).toUInt();
+        int nextIndex = provenance.indexOf(colon, index + 1);
+        if (index != -1 && nextIndex != -1) {
+            // The second field is the contact ID where this detail originates
+            index++;
+            quint32 originId = provenance.mid(index, nextIndex - index).toUInt();
             rv.insert(detailOriginId, originId);
-
-            // Bypass the detail ID field
-            index = provenance.indexOf(colon, index + 1);
-        }
-        if (index != -1) {
-            // The remainder is the syncTarget
-            rv.insert(detailSyncTarget, provenance.mid(index + 1));
         }
     }
 
