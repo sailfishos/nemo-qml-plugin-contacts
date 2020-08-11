@@ -314,11 +314,6 @@ QContactFilter favoriteFilter()
     return QContactFavorite::match();
 }
 
-QContactFilter onlineFilter()
-{
-    return QContactStatusFlags::matchFlag(QContactStatusFlags::IsOnline);
-}
-
 typedef QPair<QString, QString> StringPair;
 
 QList<StringPair> addressPairs(const QContactPhoneNumber &phoneNumber)
@@ -1005,7 +1000,6 @@ bool SeasideCache::saveContacts(const QList<QContact> &contacts)
 void SeasideCache::contactDataChanged(quint32 iid)
 {
     instancePtr->contactDataChanged(iid, FilterFavorites);
-    instancePtr->contactDataChanged(iid, FilterOnline);
     instancePtr->contactDataChanged(iid, FilterAll);
 }
 
@@ -1040,7 +1034,6 @@ bool SeasideCache::removeContacts(const QList<QContact> &contacts)
 
         quint32 iid = internalId(id);
         instancePtr->removeContactData(iid, FilterFavorites);
-        instancePtr->removeContactData(iid, FilterOnline);
         instancePtr->removeContactData(iid, FilterAll);
 
         const QString group(displayLabelGroup(existingItem(iid)));
@@ -1605,16 +1598,6 @@ void SeasideCache::startRequest(bool *idleProcessing)
 
                 m_fetchProcessedCount = 0;
                 m_populating = true;
-            } else if (m_populateProgress == FetchOnline) {
-                // Now query for online contacts - fetch the account details, so we know if they're valid
-                m_fetchRequest.setFilter(onlineFilter());
-                m_fetchRequest.setFetchHint(onlineFetchHint(m_fetchTypes | SeasideCache::FetchAccountUri));
-                m_fetchRequest.setSorting(m_onlineSortOrder);
-                qDebug() << "Starting online  query at" << m_timer.elapsed() << "ms";
-                m_fetchRequest.start();
-
-                m_fetchProcessedCount = 0;
-                m_populating = true;
             }
         }
 
@@ -1636,16 +1619,13 @@ void SeasideCache::startRequest(bool *idleProcessing)
                 m_contactIdRequest.start();
             }
         }
-    } else if (m_syncFilter == FilterAll || m_syncFilter == FilterOnline) {
+    } else if (m_syncFilter == FilterAll) {
         if (m_contactIdRequest.isActive()) {
             requestPending = true;
         } else {
             if (m_syncFilter == FilterAll) {
                 m_contactIdRequest.setFilter(allFilter());
                 m_contactIdRequest.setSorting(m_sortOrder);
-            } else if (m_syncFilter == FilterOnline) {
-                m_contactIdRequest.setFilter(onlineFilter());
-                m_contactIdRequest.setSorting(m_onlineSortOrder);
             }
 
             m_contactIdRequest.start();
@@ -2351,8 +2331,7 @@ void SeasideCache::contactsAvailable()
     if (request == &m_fetchRequest && m_populating) {
         Q_ASSERT(m_populateProgress > Unpopulated && m_populateProgress < Populated);
         FilterType type(m_populateProgress == FetchFavorites ? FilterFavorites
-                                                             : (m_populateProgress == FetchMetadata ? FilterAll
-                                                                                                    : FilterOnline));
+                                                             : FilterAll);
         QHash<FilterType, QPair<QSet<QContactDetail::DetailType>, QList<QContact> > >::iterator it = m_contactsToAppend.find(type);
         if (it != m_contactsToAppend.end()) {
             // All populate queries have the same detail types, so we can append this list to the existing one
@@ -2391,8 +2370,6 @@ void SeasideCache::applyPendingContactUpdates()
         QHash<FilterType, QPair<QSet<QContactDetail::DetailType>, QList<QContact> > >::iterator end = m_contactsToAppend.end(), it = end;
         if ((it = m_contactsToAppend.find(FilterFavorites)) != end) {
         } else if ((it = m_contactsToAppend.find(FilterAll)) != end) {
-        } else {
-            it = m_contactsToAppend.find(FilterOnline);
         }
         Q_ASSERT(it != end);
 
@@ -2426,9 +2403,6 @@ void SeasideCache::applyPendingContactUpdates()
                 makePopulated(FilterNone);
                 makePopulated(FilterAll);
                 qDebug() << "All queried in" << m_timer.elapsed() << "ms";
-            } else if (type == FilterOnline && (m_populateProgress != FetchOnline)) {
-                makePopulated(FilterOnline);
-                qDebug() << "Online queried in" << m_timer.elapsed() << "ms";
             }
             updateSectionBucketIndexCaches();
         }
@@ -2751,9 +2725,6 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
                 // Next, query for all contacts (including favorites)
                 m_syncFilter = FilterAll;
             } else if (m_syncFilter == FilterAll) {
-                // Next, query for online contacts
-                m_syncFilter = FilterOnline;
-            } else if (m_syncFilter == FilterOnline) {
                 m_syncFilter = FilterNone;
             }
         } else if (!m_contactsToFetchCandidates.isEmpty()) {
@@ -2824,13 +2795,6 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
                     makePopulated(FilterNone);
                     makePopulated(FilterAll);
                     qDebug() << "All queried in" << m_timer.elapsed() << "ms";
-                }
-
-                m_populateProgress = FetchOnline;
-            } else if (m_populateProgress == FetchOnline) {
-                if (m_contactsToAppend.find(FilterOnline) == m_contactsToAppend.end()) {
-                    makePopulated(FilterOnline);
-                    qDebug() << "Online queried in" << m_timer.elapsed() << "ms";
                 }
 
                 m_populateProgress = Populated;

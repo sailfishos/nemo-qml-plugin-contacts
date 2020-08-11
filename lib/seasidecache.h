@@ -80,7 +80,6 @@ public:
         FilterNone,
         FilterAll,
         FilterFavorites,
-        FilterOnline,
         FilterTypesCount
     };
     Q_ENUM(FilterType)
@@ -393,7 +392,6 @@ private:
         Unpopulated,
         FetchFavorites,
         FetchMetadata,
-        FetchOnline,
         Populated
     };
 

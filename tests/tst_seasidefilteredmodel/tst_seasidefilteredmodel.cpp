@@ -839,22 +839,6 @@ void tst_SeasideFilteredModel::data()
     QCOMPARE(index.data(SeasideFilteredModel::LastNameRole).toString(), QString("Burchell"));
     QCOMPARE(index.data(SeasideFilteredModel::SectionBucketRole).toString(), QString("R"));
     QCOMPARE(index.data(SeasideFilteredModel::AvatarRole).toUrl(), QUrl(QLatin1String("image://theme/icon-m-telephony-contact-avatar")));
-
-    model.setFilterType(SeasideFilteredModel::FilterOnline);
-
-    index = model.index(QModelIndex(), 0, 0);
-    QCOMPARE(index.data(Qt::DisplayRole).toString(), QString("Aaron Arthur"));
-    QCOMPARE(index.data(SeasideFilteredModel::FirstNameRole).toString(), QString("Aaron"));
-    QCOMPARE(index.data(SeasideFilteredModel::LastNameRole).toString(), QString("Arthur"));
-    QCOMPARE(index.data(SeasideFilteredModel::SectionBucketRole).toString(), QString("A"));
-    QCOMPARE(index.data(SeasideFilteredModel::AvatarRole).toUrl(), QUrl(QLatin1String("image://theme/icon-m-telephony-contact-avatar")));
-
-    index = model.index(QModelIndex(), 2, 0);
-    QCOMPARE(index.data(Qt::DisplayRole).toString(), QString("Joe Johns"));
-    QCOMPARE(index.data(SeasideFilteredModel::FirstNameRole).toString(), QString("Joe"));
-    QCOMPARE(index.data(SeasideFilteredModel::LastNameRole).toString(), QString("Johns"));
-    QCOMPARE(index.data(SeasideFilteredModel::SectionBucketRole).toString(), QString("J"));
-    QCOMPARE(index.data(SeasideFilteredModel::AvatarRole).toUrl(), QUrl(QLatin1String("file:///cache/joe.jpg")));
 }
 
 void tst_SeasideFilteredModel::filterId()

@@ -199,7 +199,6 @@ void SeasideCache::reset()
 
     insert(FilterAll, 0, getContactsForFilterType(FilterAll));
     insert(FilterFavorites, 0, getContactsForFilterType(FilterFavorites));
-    insert(FilterOnline, 0, getContactsForFilterType(FilterOnline));
 }
 
 QList<quint32> SeasideCache::getContactsForFilterType(FilterType filterType)
@@ -208,8 +207,7 @@ QList<quint32> SeasideCache::getContactsForFilterType(FilterType filterType)
 
     for (uint i = 0; i < sizeof(contactsData) / sizeof(Contact); ++i) {
         if ((filterType == FilterAll) ||
-            (filterType == FilterFavorites && contactsData[i].isFavorite) ||
-            (filterType == FilterOnline && contactsData[i].isOnline)) {
+            (filterType == FilterFavorites && contactsData[i].isFavorite)) {
             ids.append(internalId(instancePtr->m_cache[i].contact.id()));
         }
     }

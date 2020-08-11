@@ -64,7 +64,6 @@ public:
         FilterNone = SeasideCache::FilterNone,
         FilterAll = SeasideCache::FilterAll,
         FilterFavorites = SeasideCache::FilterFavorites,
-        FilterOnline = SeasideCache::FilterOnline,
         FilterTypesCount = SeasideCache::FilterTypesCount
     };
 

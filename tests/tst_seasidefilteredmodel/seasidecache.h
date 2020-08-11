@@ -25,7 +25,6 @@ public:
         FilterNone,
         FilterAll,
         FilterFavorites,
-        FilterOnline,
         FilterTypesCount
     };
 
