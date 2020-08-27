@@ -1146,10 +1146,10 @@ void SeasideCache::decomposeDisplayLabel(const QString &formattedDisplayLabel, Q
 {
     if (!translator) {
         engEnTranslator = new QTranslator(qApp);
-        engEnTranslator->load(QString::fromLatin1("libcontacts_eng_en"), QString::fromLatin1("/usr/share/translations"));
+        engEnTranslator->load(QString::fromLatin1("nemo-qml-plugin-contacts_eng_en"), QString::fromLatin1("/usr/share/translations"));
         qApp->installTranslator(engEnTranslator);
         translator = new QTranslator(qApp);
-        translator->load(QLocale(), QString::fromLatin1("libcontacts"), QString::fromLatin1("-"), QString::fromLatin1("/usr/share/translations"));
+        translator->load(QLocale(), QString::fromLatin1("nemo-qml-plugin-contacts"), QString::fromLatin1("-"), QString::fromLatin1("/usr/share/translations"));
         qApp->installTranslator(translator);
     }
 
@@ -1161,15 +1161,15 @@ void SeasideCache::decomposeDisplayLabel(const QString &formattedDisplayLabel, Q
         if (tokens.count() == 2) {
             //: Format string for allocating 2 tokens to name parts - 2 characters from the set [FMLPS]
             //% "FL"
-            format = qtTrId("libcontacts_name_structure_2_tokens");
+            format = qtTrId("nemo_contacts_name_structure_2_tokens");
         } else if (tokens.count() == 3) {
             //: Format string for allocating 3 tokens to name parts - 3 characters from the set [FMLPS]
             //% "FML"
-            format = qtTrId("libcontacts_name_structure_3_tokens");
+            format = qtTrId("nemo_contacts_name_structure_3_tokens");
         } else if (tokens.count() > 3) {
             //: Format string for allocating 4 tokens to name parts - 4 characters from the set [FMLPS]
             //% "FFML"
-            format = qtTrId("libcontacts_name_structure_4_tokens");
+            format = qtTrId("nemo_contacts_name_structure_4_tokens");
 
             // Coalesce the leading tokens together to limit the possibilities
             int excess = tokens.count() - 4;
