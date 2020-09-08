@@ -44,14 +44,16 @@ QTCONTACTS_USE_NAMESPACE
 class SeasideAddressBook
 {
     Q_GADGET
-    Q_PROPERTY(QString id READ idString CONSTANT)
+    Q_PROPERTY(QString id READ idString)
     Q_PROPERTY(QString name MEMBER name)
-    Q_PROPERTY(QString displayName READ displayName CONSTANT)
     Q_PROPERTY(QColor color MEMBER color)
     Q_PROPERTY(QColor secondaryColor MEMBER secondaryColor)
-    Q_PROPERTY(QString image MEMBER image CONSTANT)
+    Q_PROPERTY(QString image MEMBER image)
+    Q_PROPERTY(QVariantMap extendedMetaData MEMBER extendedMetaData)
+    Q_PROPERTY(int accountId MEMBER accountId)
     Q_PROPERTY(bool isAggregate MEMBER isAggregate)
     Q_PROPERTY(bool isLocal MEMBER isLocal)
+    Q_PROPERTY(bool readOnly MEMBER readOnly)
 
 public:
     SeasideAddressBook();
@@ -61,17 +63,19 @@ public:
     inline bool operator!=(const SeasideAddressBook &other) { return !(operator==(other)); }
 
     QString idString() const;
-    QString displayName() const;
 
     static SeasideAddressBook fromCollectionId(const QContactCollectionId &id);
 
     QContactCollectionId collectionId;
+    QVariantMap extendedMetaData;
     QString name;
     QColor color;
     QColor secondaryColor;
     QString image;
+    int accountId = 0;
     bool isAggregate = false;
     bool isLocal = false;
+    bool readOnly = false;
 };
 
 Q_DECLARE_METATYPE(SeasideAddressBook)

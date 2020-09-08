@@ -34,6 +34,11 @@
 // Seaside
 #include <seasidecache.h>
 
+// qtcontacts-sqlite
+#include <qtcontacts-extensions.h>
+
+#include <QDebug>
+
 SeasideAddressBook::SeasideAddressBook()
 {
 }
@@ -52,30 +57,21 @@ QString SeasideAddressBook::idString() const
     return collectionId.toString();
 }
 
-QString SeasideAddressBook::displayName() const
-{
-    if (isLocal) {
-        //: Name of address book stored locally on the phone
-        //% "Phone"
-        return qtTrId("nemo_contacts-la-phone_address_book");
-    } else {
-        // TODO can fetch account display name for cloud-based accounts, etc.
-        return name;
-    }
-}
-
 SeasideAddressBook SeasideAddressBook::fromCollectionId(const QContactCollectionId &collectionId)
 {
     const QContactCollection collection = SeasideCache::manager()->collection(collectionId);
 
     SeasideAddressBook addressBook;
     addressBook.collectionId = collectionId;
+    addressBook.extendedMetaData = collection.extendedMetaData();
     addressBook.name = collection.metaData(QContactCollection::KeyName).toString();
     addressBook.color = collection.metaData(QContactCollection::KeyColor).value<QColor>();
     addressBook.secondaryColor = collection.metaData(QContactCollection::KeySecondaryColor).value<QColor>();
     addressBook.image = collection.metaData(QContactCollection::KeyImage).toString();
+    addressBook.accountId = collection.extendedMetaData(COLLECTION_EXTENDEDMETADATA_KEY_ACCOUNTID).toInt();
     addressBook.isAggregate = collection.id() == SeasideCache::aggregateCollectionId();
     addressBook.isLocal = collection.id() == SeasideCache::localCollectionId();
+    addressBook.readOnly = collection.extendedMetaData(COLLECTION_EXTENDEDMETADATA_KEY_READONLY).toBool();
 
     return addressBook;
 }
