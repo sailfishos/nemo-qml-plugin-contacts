@@ -34,9 +34,10 @@
 
 #include "synchronizelists.h"
 
-#include <qtcontacts-extensions.h>
 #include <qtcontacts-extensions_impl.h>
+#include <qtcontacts-extensions_manager_impl.h>
 #include <qcontactstatusflags_impl.h>
+#include <qcontactclearchangeflagsrequest_impl.h>
 #include <contactmanagerengine.h>
 
 #include <private/qcontactmanager_p.h>
@@ -583,6 +584,8 @@ SeasideCache::SeasideCache()
             this, &SeasideCache::requestStateChanged);
     connect(&m_relationshipsFetchRequest, &QContactRelationshipFetchRequest::stateChanged,
             this, &SeasideCache::requestStateChanged);
+    connect(&m_clearChangeFlagsRequest, &QContactClearChangeFlagsRequest::stateChanged,
+            this, &SeasideCache::requestStateChanged);
     connect(&m_removeRequest, &QContactRemoveRequest::stateChanged,
             this, &SeasideCache::requestStateChanged);
     connect(&m_saveRequest, &QContactSaveRequest::stateChanged,
@@ -596,6 +599,7 @@ SeasideCache::SeasideCache()
     m_fetchByIdRequest.setManager(mgr);
     m_contactIdRequest.setManager(mgr);
     m_relationshipsFetchRequest.setManager(mgr);
+    m_clearChangeFlagsRequest.setManager(mgr);
     m_removeRequest.setManager(mgr);
     m_saveRequest.setManager(mgr);
     m_relationshipSaveRequest.setManager(mgr);
@@ -1037,7 +1041,10 @@ bool SeasideCache::removeContacts(const QList<QContact> &contacts)
             continue;
         }
 
-        instancePtr->m_contactsToRemove.append(id);
+        if (contact.collectionId() == localCollectionId()) {
+            instancePtr->m_localContactsToRemove.append(id);
+        }
+        instancePtr->m_contactsToRemove[contact.collectionId()].append(id);
 
         quint32 iid = internalId(id);
         instancePtr->removeContactData(iid, FilterFavorites);
@@ -1674,10 +1681,31 @@ void SeasideCache::startRequest(bool *idleProcessing)
         if (m_removeRequest.isActive()) {
             requestPending = true;
         } else {
-            m_removeRequest.setContactIds(m_contactsToRemove);
-            m_removeRequest.start();
+            // Make per-collection remove requests, as backend does not allow batch removal of
+            // contacts from different collections.
+            for (auto it = m_contactsToRemove.begin(); it != m_contactsToRemove.end();) {
+                const QList<QContactId> &contactsToRemove = it.value();
+                if (!contactsToRemove.isEmpty()) {
+                    m_removeRequest.setContactIds(contactsToRemove);
+                    m_removeRequest.start();
 
-            m_contactsToRemove.clear();
+                    m_contactsToRemove.erase(it);
+                    break;
+                } else {
+                    ++it;
+                }
+            }
+        }
+    } else if (!m_localContactsToRemove.isEmpty() && !m_removeRequest.isActive()) {
+        if (m_clearChangeFlagsRequest.state() == QContactAbstractRequest::ActiveState) {
+            requestPending = true;
+        } else {
+            // When local contacts are removed, their flags must also be cleared so that they are
+            // removed from the database.
+            m_clearChangeFlagsRequest.setContactIds(m_localContactsToRemove);
+            m_clearChangeFlagsRequest.start();
+
+            m_localContactsToRemove.clear();
         }
     }
 
@@ -2694,6 +2722,14 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
 {
     if (state != QContactAbstractRequest::FinishedState)
         return;
+
+    if (sender() == &m_clearChangeFlagsRequest) {
+        // Not a subclass of QContactAbstractRequest, so handle separately.
+        if (m_clearChangeFlagsRequest.error() != QContactManager::NoError) {
+            qWarning() << "ClearChangeFlagsRequest error:" << m_clearChangeFlagsRequest.error();
+        }
+        return;
+    }
 
     QContactAbstractRequest *request = static_cast<QContactAbstractRequest *>(sender());
 

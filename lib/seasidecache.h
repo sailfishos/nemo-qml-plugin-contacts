@@ -37,6 +37,7 @@
 #include "cacheconfiguration.h"
 
 #include <qtcontacts-extensions.h>
+#include <qcontactclearchangeflagsrequest.h>
 #include <QContactStatusFlags>
 
 #include <QContact>
@@ -460,7 +461,8 @@ private:
     QList<QContact> m_contactsToCreate;
     QHash<FilterType, QPair<QSet<QContactDetail::DetailType>, QList<QContact> > > m_contactsToAppend;
     QList<QPair<QSet<QContactDetail::DetailType>, QList<QContact> > > m_contactsToUpdate;
-    QList<QContactId> m_contactsToRemove;
+    QMap<QContactCollectionId, QList<QContactId> > m_contactsToRemove;
+    QList<QContactId> m_localContactsToRemove;
     QList<QContactId> m_changedContacts;
     QList<QContactId> m_presenceChangedContacts;
     QSet<QContactId> m_aggregatedContacts;
@@ -479,6 +481,7 @@ private:
     QContactFetchByIdRequest m_fetchByIdRequest;
     QContactIdFetchRequest m_contactIdRequest;
     QContactRelationshipFetchRequest m_relationshipsFetchRequest;
+    QContactClearChangeFlagsRequest m_clearChangeFlagsRequest;
     QContactRemoveRequest m_removeRequest;
     QContactSaveRequest m_saveRequest;
     QContactRelationshipSaveRequest m_relationshipSaveRequest;
