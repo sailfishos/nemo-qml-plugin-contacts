@@ -90,10 +90,12 @@ public:
         FetchPhoneNumber = (1 << 1),
         FetchEmailAddress = (1 << 2),
         FetchOrganization = (1 << 3),
+        FetchAvatar = (1 << 4),
         FetchTypesMask = (FetchAccountUri |
                           FetchPhoneNumber |
                           FetchEmailAddress |
-                          FetchOrganization)
+                          FetchOrganization |
+                          FetchAvatar)
     };
 
     enum DisplayLabelOrder {
@@ -294,7 +296,7 @@ public:
     static void registerDisplayLabelGroupChangeListener(SeasideDisplayLabelGroupChangeListener *listener);
     static void unregisterDisplayLabelGroupChangeListener(SeasideDisplayLabelGroupChangeListener *listener);
 
-    static void registerChangeListener(ChangeListener *listener);
+    static void registerChangeListener(ChangeListener *listener, FetchDataType requiredTypes = FetchNone, FetchDataType extraTypes = FetchNone);
     static void unregisterChangeListener(ChangeListener *listener);
 
     static void unregisterResolveListener(ResolveListener *listener);

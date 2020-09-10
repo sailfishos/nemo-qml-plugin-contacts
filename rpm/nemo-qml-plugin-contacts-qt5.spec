@@ -6,7 +6,7 @@ Release:    1
 License:    BSD
 URL:        https://git.merproject.org/mer-core/nemo-qml-plugin-contacts
 Source0:    %{name}-%{version}.tar.bz2
-Obsoletes:  libcontacts-qt5 <= 0.2.11
+Obsoletes:  libcontacts-qt5 <= 0.2.12
 Obsoletes:  libcontacts-qt5-tests <= 0.2.11
 Obsoletes:  libcontacts-qt5-devel <= 0.2.11
 Requires:   qtcontacts-sqlite-qt5 >= 0.1.37

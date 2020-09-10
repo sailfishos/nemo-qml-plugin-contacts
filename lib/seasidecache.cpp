@@ -257,6 +257,9 @@ QContactFetchHint metadataFetchHint(quint32 fetchTypes = 0)
     if (fetchTypes & SeasideCache::FetchOrganization) {
         types << detailType<QContactOrganization>();
     }
+    if (fetchTypes & SeasideCache::FetchAvatar) {
+        types << detailType<QContactAvatar>();
+    }
 
     setDetailTypesHint(fetchHint, types);
     return fetchHint;
@@ -298,6 +301,9 @@ QContactFetchHint extendedMetadataFetchHint(quint32 fetchTypes)
     }
     if (fetchTypes & SeasideCache::FetchOrganization) {
         types << detailType<QContactOrganization>();
+    }
+    if (fetchTypes & SeasideCache::FetchAvatar) {
+        types << detailType<QContactAvatar>();
     }
 
     setDetailTypesHint(fetchHint, types);
@@ -674,12 +680,13 @@ void SeasideCache::unregisterDisplayLabelGroupChangeListener(SeasideDisplayLabel
     instancePtr->m_displayLabelGroupChangeListeners.removeAll(listener);
 }
 
-void SeasideCache::registerChangeListener(ChangeListener *listener)
+void SeasideCache::registerChangeListener(ChangeListener *listener, FetchDataType requiredTypes, FetchDataType extraTypes)
 {
     // Ensure the cache has been instantiated
     instance();
 
     instancePtr->m_changeListeners.append(listener);
+    instancePtr->keepPopulated(requiredTypes, extraTypes);
 }
 
 void SeasideCache::unregisterChangeListener(ChangeListener *listener)
