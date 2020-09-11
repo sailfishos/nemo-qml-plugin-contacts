@@ -1980,6 +1980,9 @@ void SeasidePerson::updateContactDetails(const QContact &oldContact)
     if (oldContact.details<QContactEmailAddress>() != mContact->details<QContactEmailAddress>()) {
         emitChangeSignal(&SeasidePerson::emailDetailsChanged);
     }
+    if (oldContact.details<QContactAddress>() != mContact->details<QContactAddress>()) {
+        emitChangeSignal(&SeasidePerson::addressDetailsChanged);
+    }
     if (presenceInfoChanged ||
         oldContact.details<QContactOnlineAccount>() != mContact->details<QContactOnlineAccount>()) {
         emitChangeSignal(&SeasidePerson::accountDetailsChanged);
@@ -1992,6 +1995,9 @@ void SeasidePerson::updateContactDetails(const QContact &oldContact)
     }
     if (oldContact.details<QContactAnniversary>() != mContact->details<QContactAnniversary>()) {
         emitChangeSignal(&SeasidePerson::anniversaryDetailsChanged);
+    }
+    if (oldContact.details<QContactNote>() != mContact->details<QContactNote>()) {
+        emitChangeSignal(&SeasidePerson::noteDetailsChanged);
     }
 
     if (m_changesReported) {
@@ -2018,10 +2024,12 @@ void SeasidePerson::emitChangeSignals()
     emitChangeSignal(&SeasidePerson::nicknameDetailsChanged);
     emitChangeSignal(&SeasidePerson::phoneDetailsChanged);
     emitChangeSignal(&SeasidePerson::emailDetailsChanged);
+    emitChangeSignal(&SeasidePerson::addressDetailsChanged);
     emitChangeSignal(&SeasidePerson::accountDetailsChanged);
     emitChangeSignal(&SeasidePerson::websiteDetailsChanged);
     emitChangeSignal(&SeasidePerson::birthdayChanged);
     emitChangeSignal(&SeasidePerson::anniversaryDetailsChanged);
+    emitChangeSignal(&SeasidePerson::noteDetailsChanged);
     emit dataChanged();
 }
 
