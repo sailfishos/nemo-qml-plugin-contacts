@@ -449,7 +449,7 @@ void SeasidePerson::setAvatarUrl(QUrl avatarUrl)
     QContactAvatar localAvatar;
     foreach (const QContactAvatar &avatar, mContact->details<QContactAvatar>()) {
         // Find the existing local data, if there is one
-        if (avatar.value(QContactAvatar__FieldAvatarMetadata).toString() == localMetadata) {
+        if (avatar.value(QContactAvatar::FieldMetaData).toString() == localMetadata) {
             if (localAvatar.isEmpty()) {
                 localAvatar = avatar;
             } else {
@@ -461,7 +461,7 @@ void SeasidePerson::setAvatarUrl(QUrl avatarUrl)
     }
 
     localAvatar.setImageUrl(avatarUrl);
-    localAvatar.setValue(QContactAvatar__FieldAvatarMetadata, localMetadata);
+    localAvatar.setValue(QContactAvatar::FieldMetaData, localMetadata);
     mContact->saveDetail(&localAvatar);
 
     emit avatarUrlChanged();
@@ -554,7 +554,7 @@ QVariantMap detailProperties(const QContactDetail &detail)
     rv.insert(detailReadOnly, readOnly);
 
     // The provenance is formatted as <collection-id>:<origin-id>:<detail-id>
-    const QString provenance(detail.value(QContactDetail__FieldProvenance).toString());
+    const QString provenance(detail.value(QContactDetail::FieldProvenance).toString());
     if (!provenance.isEmpty()) {
         int index = provenance.indexOf(colon);
         int nextIndex = provenance.indexOf(colon, index + 1);
@@ -2151,7 +2151,7 @@ QStringList SeasidePerson::avatarUrlsExcluding(const QStringList &excludeMetadat
     QSet<QString> urls;
 
     foreach (const QContactAvatar &avatar, mContact->details<QContactAvatar>()) {
-        const QString metadata(avatar.value(QContactAvatar__FieldAvatarMetadata).toString());
+        const QString metadata(avatar.value(QContactAvatar::FieldMetaData).toString());
         if (excludeMetadata.contains(metadata))
             continue;
 

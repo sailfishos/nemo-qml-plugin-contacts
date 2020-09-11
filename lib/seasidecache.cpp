@@ -1322,7 +1322,7 @@ static bool avatarUrlWithMetadata(const QContact &contact, QUrl &matchingUrl, co
     for (int i = 0; i < avatarDetails.size(); ++i) {
         const QContactAvatar &av(avatarDetails[i]);
 
-        const QString metadata(av.value(QContactAvatar__FieldAvatarMetadata).toString());
+        const QString metadata(av.value(QContactAvatar::FieldMetaData).toString());
         if (!metadataFragment.isEmpty() && !metadata.startsWith(metadataFragment)) {
             // this avatar doesn't match the metadata requirement.  ignore it.
             continue;

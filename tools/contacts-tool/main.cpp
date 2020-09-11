@@ -260,7 +260,7 @@ QString print(const QContactAvatar &detail)
 {
     QStringList list;
     list.append(detail.imageUrl().toString());
-    list.append(detail.value(QContactAvatar__FieldAvatarMetadata).toString());
+    list.append(detail.value(QContactAvatar::FieldMetaData).toString());
     return QString::fromLatin1("Avatar:\t") + list.join(QChar::fromLatin1(';'));
 }
 

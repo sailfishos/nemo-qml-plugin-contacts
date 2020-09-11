@@ -445,7 +445,7 @@ struct FilterData : public SeasideCache::ItemListener
             if (!matchTokens.isEmpty()) {
                 wildMatchKeys[SeasideFilteredModel::NameDetailsRole].append(matchTokens.toVector());
             };
-            matchTokens = splitWords(name.value<QString>(QContactName__FieldCustomLabel));
+            matchTokens = splitWords(name.value<QString>(QContactName::FieldCustomLabel));
             if (!matchTokens.isEmpty()) {
                 wildMatchKeys[SeasideFilteredModel::NameDetailsRole].append(matchTokens.toVector());
             }
