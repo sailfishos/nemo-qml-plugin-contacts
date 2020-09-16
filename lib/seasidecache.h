@@ -456,7 +456,7 @@ private:
     QMultiHash<QString, CachedPhoneNumber> m_phoneNumberIds;
     QHash<QString, quint32> m_emailAddressIds;
     QHash<QPair<QString, QString>, quint32> m_onlineAccountIds;
-    QHash<QContactId, QContact> m_contactsToSave;
+    QMap<QContactCollectionId, QHash<QContactId, QContact> > m_contactsToSave;
     QHash<QString, QSet<quint32> > m_contactDisplayLabelGroups;
     QList<QContact> m_contactsToCreate;
     QHash<FilterType, QPair<QSet<QContactDetail::DetailType>, QList<QContact> > > m_contactsToAppend;

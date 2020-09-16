@@ -995,7 +995,7 @@ bool SeasideCache::saveContacts(const QList<QContact> &contacts)
     for (const QContact &contact : contacts) {
         const QContactId id = apiId(contact);
         if (validId(id)) {
-            instancePtr->m_contactsToSave[id] = contact;
+            instancePtr->m_contactsToSave[contact.collectionId()][id] = contact;
             instancePtr->contactDataChanged(internalId(id));
         } else {
             instancePtr->m_contactsToCreate.append(contact);
@@ -1713,18 +1713,28 @@ void SeasideCache::startRequest(bool *idleProcessing)
         if (m_saveRequest.isActive()) {
             requestPending = true;
         } else {
-            m_contactsToCreate.reserve(m_contactsToCreate.count() + m_contactsToSave.count());
+            // Make per-collection save requests, as backend does not allow batch saving of
+            // contacts from different collections.
+            if (!m_contactsToCreate.isEmpty()) {
+                m_saveRequest.setContacts(m_contactsToCreate);
+                m_saveRequest.start();
 
-            typedef QHash<QContactId, QContact>::iterator iterator;
-            for (iterator it = m_contactsToSave.begin(); it != m_contactsToSave.end(); ++it) {
-                m_contactsToCreate.append(*it);
+                m_contactsToCreate.clear();
+
+            } else if (!m_contactsToSave.isEmpty()) {
+                for (auto it = m_contactsToSave.begin(); it != m_contactsToSave.end();) {
+                    const QHash<QContactId, QContact> &contactsToSave = it.value();
+                    if (!contactsToSave.isEmpty()) {
+                        m_saveRequest.setContacts(contactsToSave.values());
+                        m_saveRequest.start();
+
+                        m_contactsToSave.erase(it);
+                        break;
+                    } else {
+                        ++it;
+                    }
+                }
             }
-
-            m_saveRequest.setContacts(m_contactsToCreate);
-            m_saveRequest.start();
-
-            m_contactsToCreate.clear();
-            m_contactsToSave.clear();
         }
     }
 
