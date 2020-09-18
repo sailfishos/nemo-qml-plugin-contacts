@@ -56,8 +56,8 @@ private:
     QDBusInterface m_msyncd;
 
     static quint32 getRandomNumber();
-    static QString getRandomPath();
-    const QString & getPath();
+    static QString getRandomPath(int accountId);
+    const QString &getPath(int accountId);
     bool synchronize();
 
 private slots:

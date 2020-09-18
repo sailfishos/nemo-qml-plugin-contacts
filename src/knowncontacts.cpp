@@ -45,7 +45,8 @@ static const auto KnownContactsSyncProfile = QStringLiteral("knowncontacts.Conta
 static const auto MsyncdService = QStringLiteral("com.meego.msyncd");
 static const auto SynchronizerPath = QStringLiteral("/synchronizer");
 static const auto MsyncdInterface = MsyncdService;
-static const auto IdKey = QStringLiteral("id");
+static const auto GalIdKey = QStringLiteral("id");
+static const auto AccountIdKey = QStringLiteral("accountId");
 
 KnownContacts::KnownContacts(QObject *parent)
     : QObject(parent)
@@ -66,34 +67,51 @@ bool KnownContacts::storeContact(const QVariantMap &contact)
 
 bool KnownContacts::storeContacts(const QVariantList &contacts)
 {
-    QSettings file(getPath(), QSettings::IniFormat, this);
-    if (!file.isWritable()) {
-        qWarning() << "Can not store contacts:" << file.fileName() << "is not writable";
-        return false;
-    }
+    QMap<int, QList<QVariantMap> > accountContacts;
 
     for (const auto variant : contacts) {
-        QVariantMap contact = variant.toMap();
+        const QVariantMap contact = variant.toMap();
         if (contact.isEmpty()) {
-            qWarning() << "Can not store contacts: a contact is not a mapping";
-            return false;
+            qWarning() << "Cannot store contacts: a contact is not a mapping";
+            continue;
         }
-        QString id = contact.value(IdKey).toString();
-        if (id.isEmpty()) {
-            qWarning() << "Can not store contacts: all contacts must have key 'id' with non-empty value";
-            return false;
+        const QString contactGalId = contact.value(GalIdKey).toString();
+        if (contactGalId.isEmpty()) {
+            qWarning() << "Cannot store contact: missing value for key 'id'";
+            continue;
+        }
+        const int accountId = contact.value(AccountIdKey).toInt();
+        if (accountId <= 0) {
+            qWarning() << "Cannot store contact: missing value for key 'accountId'";
+            continue;
+        }
+        accountContacts[accountId].append(contact);
+    }
+
+    for (auto it = accountContacts.constBegin(); it != accountContacts.constEnd(); ++it) {
+        const int accountId = it.key();
+
+        QSettings file(getPath(accountId), QSettings::IniFormat, this);
+        if (!file.isWritable()) {
+            qWarning() << "Can not store contacts:" << file.fileName() << "is not writable";
+            continue;
         }
 
-        file.beginGroup(id);
-        QMapIterator<QString, QVariant> iter(contact);
-        while (iter.hasNext()) {
-            iter.next();
-            if (iter.key() != IdKey)
-                file.setValue(iter.key(), iter.value());
+        const QList<QVariantMap> &contacts = it.value();
+        for (const QVariantMap &contact : contacts) {
+            const QString contactGalId = contact.value(GalIdKey).toString();
+            file.beginGroup(contactGalId);
+            QMapIterator<QString, QVariant> iter(contact);
+            while (iter.hasNext()) {
+                iter.next();
+                if (iter.key() != GalIdKey) {
+                    file.setValue(iter.key(), iter.value());
+                }
+            }
+            file.endGroup();
         }
-        file.endGroup();
+        file.sync();
     }
-    file.sync();
 
     return synchronize();
 }
@@ -106,19 +124,19 @@ quint32 KnownContacts::getRandomNumber()
     return distribution(generator);
 }
 
-QString KnownContacts::getRandomPath()
+QString KnownContacts::getRandomPath(int accountId)
 {
     return QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) +
                 QDir::separator() + KnownContactsSyncFolder + QDir::separator() +
-                QStringLiteral("contacts-%1.ini").arg(getRandomNumber());
+                QStringLiteral("%1-contacts-%2.ini").arg(accountId).arg(getRandomNumber());
 }
 
-const QString & KnownContacts::getPath()
+const QString & KnownContacts::getPath(int accountId)
 {
     if (m_currentPath.isEmpty()) {
-        auto path = getRandomPath();
+        auto path = getRandomPath(accountId);
         while (QFile::exists(path))
-            path = getRandomPath();
+            path = getRandomPath(accountId);
         m_currentPath.swap(path);
     }
     return m_currentPath;
