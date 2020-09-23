@@ -1,7 +1,7 @@
 Name:       nemo-qml-plugin-contacts-qt5
 
 Summary:    Nemo QML contacts library
-Version:    0.2.25
+Version:    0.3.0
 Release:    1
 License:    BSD
 URL:        https://git.merproject.org/mer-core/nemo-qml-plugin-contacts
@@ -15,7 +15,7 @@ BuildRequires:  pkgconfig(Qt5Qml)
 BuildRequires:  pkgconfig(Qt5Contacts)
 BuildRequires:  pkgconfig(Qt5Versit)
 BuildRequires:  pkgconfig(Qt5Test)
-BuildRequires:  pkgconfig(qtcontacts-sqlite-qt5-extensions) >= 0.2.31
+BuildRequires:  pkgconfig(qtcontacts-sqlite-qt5-extensions) >= 0.3.0
 BuildRequires:  pkgconfig(mlocale5)
 BuildRequires:  pkgconfig(mce)
 BuildRequires:  pkgconfig(mlite5)
