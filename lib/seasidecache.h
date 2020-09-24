@@ -92,11 +92,15 @@ public:
         FetchEmailAddress = (1 << 2),
         FetchOrganization = (1 << 3),
         FetchAvatar = (1 << 4),
+        FetchFavorite = (1 << 5),
+        FetchGender = (1 << 6),
         FetchTypesMask = (FetchAccountUri |
                           FetchPhoneNumber |
                           FetchEmailAddress |
                           FetchOrganization |
-                          FetchAvatar)
+                          FetchAvatar |
+                          FetchFavorite |
+                          FetchGender)
     };
 
     enum DisplayLabelOrder {

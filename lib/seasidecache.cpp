@@ -220,17 +220,21 @@ QContactFetchHint presenceFetchHint()
     return fetchHint;
 }
 
+DetailList displayDetails()
+{
+    DetailList types;
+    types << detailType<QContactName>()
+          << detailType<QContactNickname>()
+          << detailType<QContactDisplayLabel>();
+    return types;
+}
+
 DetailList contactsTableDetails()
 {
     DetailList types;
 
     // These details are reported in every query
-    types << detailType<QContactSyncTarget>() <<
-             detailType<QContactName>() <<
-             detailType<QContactDisplayLabel>() <<
-             detailType<QContactFavorite>() <<
-             detailType<QContactTimestamp>() <<
-             detailType<QContactGender>() <<
+    types << detailType<QContactTimestamp>() <<
              detailType<QContactStatusFlags>();
 
     return types;
@@ -243,8 +247,9 @@ QContactFetchHint metadataFetchHint(quint32 fetchTypes = 0)
     // Include all detail types which come from the main contacts table
     DetailList types(contactsTableDetails());
 
-    // Include nickname, as some contacts have no other name
-    types << detailType<QContactNickname>();
+    // Include common details used for display purposes
+    // (including nickname, as some contacts have no other name)
+    types << displayDetails();
 
     if (fetchTypes & SeasideCache::FetchAccountUri) {
         types << detailType<QContactOnlineAccount>();
@@ -260,6 +265,12 @@ QContactFetchHint metadataFetchHint(quint32 fetchTypes = 0)
     }
     if (fetchTypes & SeasideCache::FetchAvatar) {
         types << detailType<QContactAvatar>();
+    }
+    if (fetchTypes & SeasideCache::FetchFavorite) {
+        types << detailType<QContactFavorite>();
+    }
+    if (fetchTypes & SeasideCache::FetchGender) {
+        types << detailType<QContactGender>();
     }
 
     setDetailTypesHint(fetchHint, types);
@@ -277,11 +288,8 @@ QContactFetchHint onlineFetchHint(quint32 fetchTypes = 0)
 
 QContactFetchHint favoriteFetchHint(quint32 fetchTypes = 0)
 {
-    QContactFetchHint fetchHint(onlineFetchHint(fetchTypes));
-
     // We also need avatar info
-    setDetailTypesHint(fetchHint, detailTypesHint(fetchHint) << detailType<QContactAvatar>());
-    return fetchHint;
+    return onlineFetchHint(fetchTypes | SeasideCache::FetchAvatar | SeasideCache::FetchFavorite);
 }
 
 QContactFetchHint extendedMetadataFetchHint(quint32 fetchTypes)
@@ -305,6 +313,12 @@ QContactFetchHint extendedMetadataFetchHint(quint32 fetchTypes)
     }
     if (fetchTypes & SeasideCache::FetchAvatar) {
         types << detailType<QContactAvatar>();
+    }
+    if (fetchTypes & SeasideCache::FetchFavorite) {
+        types << detailType<QContactFavorite>();
+    }
+    if (fetchTypes & SeasideCache::FetchGender) {
+        types << detailType<QContactGender>();
     }
 
     setDetailTypesHint(fetchHint, types);
@@ -1614,7 +1628,7 @@ void SeasideCache::startRequest(bool *idleProcessing)
                 // Request the metadata of all contacts (only data from the primary table, and any
                 // other details required to determine whether the contacts matches the filter)
                 m_fetchRequest.setFilter(allFilter());
-                m_fetchRequest.setFetchHint(metadataFetchHint(m_fetchTypes));
+                m_fetchRequest.setFetchHint(metadataFetchHint(m_fetchTypes | SeasideCache::FetchGender));
                 m_fetchRequest.setSorting(m_sortOrder);
                 qDebug() << "Starting metadata query at" << m_timer.elapsed() << "ms";
                 m_fetchRequest.start();
