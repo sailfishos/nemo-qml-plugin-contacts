@@ -1219,10 +1219,12 @@ void SeasideCache::decomposeDisplayLabel(const QString &formattedDisplayLabel, Q
 // small helper to avoid inconvenience
 QString SeasideCache::generateDisplayLabel(const QContact &contact, DisplayLabelOrder order, bool fallbackToNonNameDetails)
 {
+    QString displayLabel = contact.detail<QContactDisplayLabel>().label();
+    if (!displayLabel.isEmpty()) {
+        return displayLabel;
+    }
+
     QContactName name = contact.detail<QContactName>();
-
-    QString displayLabel;
-
     QString nameStr1(name.firstName());
     QString nameStr2(name.lastName());
 

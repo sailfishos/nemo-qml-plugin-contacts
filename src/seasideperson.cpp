@@ -128,24 +128,24 @@ SeasidePerson::SeasidePerson(const QContact &contact, QObject *parent)
     : QObject(parent)
     , mContact(new QContact(contact))
     , mAddressBook(SeasideAddressBook::fromCollectionId(contact.collectionId()))
-    , mDisplayLabel(generateDisplayLabel(contact))
     , mComplete(true)
     , mResolving(false)
     , mAttachState(Unattached)
     , mItem(0)
 {
+    recalculateDisplayLabel();
 }
 
 SeasidePerson::SeasidePerson(QContact *contact, bool complete, QObject *parent)
     : QObject(parent)
     , mContact(contact)
     , mAddressBook(SeasideAddressBook::fromCollectionId(contact->collectionId()))
-    , mDisplayLabel(generateDisplayLabel(*contact))
     , mComplete(complete)
     , mResolving(false)
     , mAttachState(Attached)
     , mItem(0)
 {
+    recalculateDisplayLabel();
 }
 
 SeasidePerson::~SeasidePerson()
@@ -280,7 +280,13 @@ QString SeasidePerson::placeholderDisplayLabel()
 void SeasidePerson::recalculateDisplayLabel(SeasideCache::DisplayLabelOrder order) const
 {
     QString oldDisplayLabel = mDisplayLabel;
-    QString newDisplayLabel = generateDisplayLabel(*mContact, order);
+    QString newDisplayLabel;
+    SeasideCache::CacheItem *cacheItem = SeasideCache::existingItem(mContact->id());
+    if (cacheItem) {
+        newDisplayLabel = cacheItem->displayLabel.isEmpty();
+    } else {
+        newDisplayLabel = generateDisplayLabel(*mContact, order);
+    }
 
     if (oldDisplayLabel != newDisplayLabel) {
         mDisplayLabel = newDisplayLabel;
@@ -294,6 +300,10 @@ void SeasidePerson::recalculateDisplayLabel(SeasideCache::DisplayLabelOrder orde
 
 QString SeasidePerson::displayLabel() const
 {
+    SeasideCache::CacheItem *cacheItem = SeasideCache::existingItem(mContact->id());
+    if (cacheItem && !cacheItem->displayLabel.isEmpty()) {
+        return cacheItem->displayLabel;
+    }
     if (mDisplayLabel.isEmpty()) {
         return SeasidePerson::placeholderDisplayLabel();
     }
@@ -308,7 +318,7 @@ QString SeasidePerson::primaryName() const
 
     if (secondaryName().isEmpty()) {
         // No real name details - fall back to the display label for primary name
-        return mDisplayLabel;
+        return displayLabel();
     }
 
     return QString();
@@ -2407,7 +2417,6 @@ void SeasidePerson::addressResolved(const QString &, const QString &, SeasideCac
 void SeasidePerson::itemUpdated(SeasideCache::CacheItem *)
 {
     // We don't know what has changed - report everything changed
-    recalculateDisplayLabel();
     emitChangeSignals();
 }
 
