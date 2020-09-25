@@ -29,39 +29,56 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef KNOWNCONTACTS_H
-#define KNOWNCONTACTS_H
+#ifndef SEASIDEADDRESSBOOK_H
+#define SEASIDEADDRESSBOOK_H
 
-#include <QDBusInterface>
-#include <QList>
+// Qt
 #include <QObject>
-#include <QString>
-#include <QVariantMap>
+#include <QColor>
 
-class QDBusPendingCallWatcher;
+// Mobility
+#include <QContactCollection>
 
-class KnownContacts : public QObject
+QTCONTACTS_USE_NAMESPACE
+
+class SeasideAddressBook
 {
-    Q_OBJECT
+    Q_GADGET
+    Q_PROPERTY(QString id READ idString)
+    Q_PROPERTY(QString name MEMBER name)
+    Q_PROPERTY(QColor color MEMBER color)
+    Q_PROPERTY(QColor secondaryColor MEMBER secondaryColor)
+    Q_PROPERTY(QString image MEMBER image)
+    Q_PROPERTY(QVariantMap extendedMetaData MEMBER extendedMetaData)
+    Q_PROPERTY(int accountId MEMBER accountId)
+    Q_PROPERTY(bool isAggregate MEMBER isAggregate)
+    Q_PROPERTY(bool isLocal MEMBER isLocal)
+    Q_PROPERTY(bool readOnly MEMBER readOnly)
 
 public:
-    KnownContacts(QObject *parent = 0);
-    ~KnownContacts();
+    SeasideAddressBook();
+    ~SeasideAddressBook();
 
-    Q_INVOKABLE bool storeContact(const QVariantMap &contact);
-    Q_INVOKABLE bool storeContacts(const QVariantList &contacts);
+    bool operator==(const SeasideAddressBook &other);
+    inline bool operator!=(const SeasideAddressBook &other) { return !(operator==(other)); }
 
-private:
-    QString m_currentPath;
-    QDBusInterface m_msyncd;
+    QString idString() const;
 
-    static quint32 getRandomNumber();
-    static QString getRandomPath(int accountId);
-    const QString &getPath(int accountId);
-    bool synchronize();
+    static SeasideAddressBook fromCollectionId(const QContactCollectionId &id);
 
-private slots:
-    void syncStarted(QDBusPendingCallWatcher *call);
+    QContactCollectionId collectionId;
+    QVariantMap extendedMetaData;
+    QString name;
+    QColor color;
+    QColor secondaryColor;
+    QString image;
+    int accountId = 0;
+    bool isAggregate = false;
+    bool isLocal = false;
+    bool readOnly = false;
 };
 
-#endif // KNOWNCONTACTS_H
+Q_DECLARE_METATYPE(SeasideAddressBook)
+
+#endif // SEASIDEADDRESSBOOK_H
+

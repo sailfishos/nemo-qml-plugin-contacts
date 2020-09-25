@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2012 Robin Burchell <robin+nemo@viroteck.net>
+ * Copyright (c) 2012 Robin Burchell <robin+nemo@viroteck.net>
+ * Copyright (c) 2012 - 2020 Jolla Ltd.
+ * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -44,6 +46,8 @@
 
 // Seaside
 #include <seasidecache.h>
+
+#include <seasideaddressbook.h>
 
 QTCONTACTS_USE_NAMESPACE
 
@@ -272,6 +276,9 @@ public:
     void setBirthday(const QDateTime &bd);
     void resetBirthday();
 
+    Q_PROPERTY(QVariantMap birthdayDetail READ birthdayDetail NOTIFY birthdayChanged)
+    QVariantMap birthdayDetail() const;
+
     Q_PROPERTY(QVariantList anniversaryDetails READ anniversaryDetails WRITE setAnniversaryDetails NOTIFY anniversaryDetailsChanged)
     QVariantList anniversaryDetails() const;
     void setAnniversaryDetails(const QVariantList &anniversaryDetails);
@@ -289,6 +296,10 @@ public:
 
     Q_PROPERTY(QString syncTarget READ syncTarget CONSTANT)
     QString syncTarget() const;
+
+    Q_PROPERTY(SeasideAddressBook addressBook READ addressBook WRITE setAddressBook NOTIFY addressBookChanged)
+    SeasideAddressBook addressBook() const;
+    void setAddressBook(const SeasideAddressBook &addressBook);
 
     Q_PROPERTY(QList<int> constituents READ constituents NOTIFY constituentsChanged)
     QList<int> constituents() const;
@@ -351,6 +362,7 @@ public:
     static QVariantList emailDetails(const QContact &contact);
     static QVariantList addressDetails(const QContact &contact);
     static QVariantList websiteDetails(const QContact &contact);
+    static QVariantMap birthdayDetail(const QContact &contact);
     static QVariantList anniversaryDetails(const QContact &contact);
     static QVariantList accountDetails(const QContact &contact);
     static QVariantList noteDetails(const QContact &contact);
@@ -395,6 +407,7 @@ signals:
     void constituentsChanged();
     void mergeCandidatesChanged();
     void resolvingChanged();
+    void addressBookChanged();
     void aggregationOperationFinished();
     void addressResolved();
     void dataChanged();
@@ -405,6 +418,7 @@ public slots:
 private:
     void updateContactDetails(const QContact &oldContact);
     void emitChangeSignals();
+    static QDateTime birthday(const QContact &contact);
 
     QString getPrimaryName(const QContact &contact) const;
     QString getSecondaryName(const QContact &contact) const;
@@ -416,6 +430,7 @@ private:
     };
 
     QContact *mContact;
+    SeasideAddressBook mAddressBook;
     mutable QString mDisplayLabel;
     QList<int> mConstituents;
     QList<int> mCandidates;

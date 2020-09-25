@@ -29,39 +29,49 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef KNOWNCONTACTS_H
-#define KNOWNCONTACTS_H
+#include "seasideaddressbook.h"
 
-#include <QDBusInterface>
-#include <QList>
-#include <QObject>
-#include <QString>
-#include <QVariantMap>
+// Seaside
+#include <seasidecache.h>
 
-class QDBusPendingCallWatcher;
+// qtcontacts-sqlite
+#include <qtcontacts-extensions.h>
 
-class KnownContacts : public QObject
+#include <QDebug>
+
+SeasideAddressBook::SeasideAddressBook()
 {
-    Q_OBJECT
+}
 
-public:
-    KnownContacts(QObject *parent = 0);
-    ~KnownContacts();
+SeasideAddressBook::~SeasideAddressBook()
+{
+}
 
-    Q_INVOKABLE bool storeContact(const QVariantMap &contact);
-    Q_INVOKABLE bool storeContacts(const QVariantList &contacts);
+bool SeasideAddressBook::operator==(const SeasideAddressBook &other)
+{
+    return collectionId == other.collectionId;
+}
 
-private:
-    QString m_currentPath;
-    QDBusInterface m_msyncd;
+QString SeasideAddressBook::idString() const
+{
+    return collectionId.toString();
+}
 
-    static quint32 getRandomNumber();
-    static QString getRandomPath(int accountId);
-    const QString &getPath(int accountId);
-    bool synchronize();
+SeasideAddressBook SeasideAddressBook::fromCollectionId(const QContactCollectionId &collectionId)
+{
+    const QContactCollection collection = SeasideCache::manager()->collection(collectionId);
 
-private slots:
-    void syncStarted(QDBusPendingCallWatcher *call);
-};
+    SeasideAddressBook addressBook;
+    addressBook.collectionId = collectionId;
+    addressBook.extendedMetaData = collection.extendedMetaData();
+    addressBook.name = collection.metaData(QContactCollection::KeyName).toString();
+    addressBook.color = collection.metaData(QContactCollection::KeyColor).value<QColor>();
+    addressBook.secondaryColor = collection.metaData(QContactCollection::KeySecondaryColor).value<QColor>();
+    addressBook.image = collection.metaData(QContactCollection::KeyImage).toString();
+    addressBook.accountId = collection.extendedMetaData(COLLECTION_EXTENDEDMETADATA_KEY_ACCOUNTID).toInt();
+    addressBook.isAggregate = collection.id() == SeasideCache::aggregateCollectionId();
+    addressBook.isLocal = collection.id() == SeasideCache::localCollectionId();
+    addressBook.readOnly = collection.extendedMetaData(COLLECTION_EXTENDEDMETADATA_KEY_READONLY).toBool();
 
-#endif // KNOWNCONTACTS_H
+    return addressBook;
+}

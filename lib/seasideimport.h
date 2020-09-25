@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2013 - 2020 Jolla Ltd.
  * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -29,39 +30,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef KNOWNCONTACTS_H
-#define KNOWNCONTACTS_H
+#ifndef SEASIDEIMPORT_H
+#define SEASIDEIMPORT_H
 
-#include <QDBusInterface>
-#include <QList>
-#include <QObject>
-#include <QString>
-#include <QVariantMap>
+#include "contactcacheexport.h"
+#include "seasidecontactbuilder.h"
 
-class QDBusPendingCallWatcher;
+#include <QContact>
+#include <QVersitDocument>
 
-class KnownContacts : public QObject
+QTCONTACTS_USE_NAMESPACE
+QTVERSIT_USE_NAMESPACE
+
+class CONTACTCACHE_EXPORT SeasideImport
 {
-    Q_OBJECT
+    SeasideImport();
+    ~SeasideImport();
 
 public:
-    KnownContacts(QObject *parent = 0);
-    ~KnownContacts();
-
-    Q_INVOKABLE bool storeContact(const QVariantMap &contact);
-    Q_INVOKABLE bool storeContacts(const QVariantList &contacts);
-
-private:
-    QString m_currentPath;
-    QDBusInterface m_msyncd;
-
-    static quint32 getRandomNumber();
-    static QString getRandomPath(int accountId);
-    const QString &getPath(int accountId);
-    bool synchronize();
-
-private slots:
-    void syncStarted(QDBusPendingCallWatcher *call);
+    static QList<QContact> buildImportContacts(const QList<QVersitDocument> &details, int *newCount = 0, int *updatedCount = 0, int *ignoredCount = 0, SeasideContactBuilder *builder = 0);
 };
 
-#endif // KNOWNCONTACTS_H
+#endif

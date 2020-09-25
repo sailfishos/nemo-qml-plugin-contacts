@@ -6,6 +6,8 @@
 
 #include <QContact>
 #include <QContactId>
+#include <QContactManager>
+#include <QContactCollection>
 
 #include <QAbstractListModel>
 
@@ -23,7 +25,6 @@ public:
         FilterNone,
         FilterAll,
         FilterFavorites,
-        FilterOnline,
         FilterTypesCount
     };
 
@@ -142,6 +143,7 @@ public:
     };
 
     static SeasideCache *instance();
+    static QContactManager *manager();
 
     static QContactId apiId(const QContact &contact);
     static QContactId apiId(quint32 iid);
@@ -192,6 +194,7 @@ public:
     static CacheItem *resolveOnlineAccount(ResolveListener *listener, const QString &localUid, const QString &remoteUid, bool requireComplete = true);
 
     static bool saveContact(const QContact &contact);
+    static bool saveContacts(const QList<QContact> &contacts);
     static void removeContact(const QContact &contact);
     static void removeContacts(const QList<QContact> &contact);
 
@@ -208,12 +211,16 @@ public:
     static QString primaryName(const QString &firstName, const QString &lastName);
     static QString secondaryName(const QString &firstName, const QString &lastName);
 
+    static QString placeholderDisplayLabel();
     static QString generateDisplayLabel(const QContact &contact, DisplayLabelOrder order = FirstNameFirst);
     static QString generateDisplayLabelFromNonNameDetails(const QContact &contact);
     static QUrl filteredAvatarUrl(const QContact &contact, const QStringList &metadataFragments = QStringList());
 
     static QString normalizePhoneNumber(const QString &input, bool validate = false);
     static QString minimizePhoneNumber(const QString &input, bool validate = false);
+
+    static QContactCollectionId aggregateCollectionId();
+    static QContactCollectionId localCollectionId();
 
     void populate(FilterType filterType);
     void insert(FilterType filterType, int index, const QList<quint32> &ids);

@@ -29,39 +29,46 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef KNOWNCONTACTS_H
-#define KNOWNCONTACTS_H
+#ifndef SEASIDEADDRESSBOOKMODEL_H
+#define SEASIDEADDRESSBOOKMODEL_H
 
-#include <QDBusInterface>
+#include "seasideaddressbook.h"
+
+#include <QAbstractListModel>
 #include <QList>
-#include <QObject>
-#include <QString>
-#include <QVariantMap>
 
-class QDBusPendingCallWatcher;
+QTCONTACTS_USE_NAMESPACE
 
-class KnownContacts : public QObject
+class SeasideAddressBookModel : public QAbstractListModel
 {
     Q_OBJECT
+    Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
 
 public:
-    KnownContacts(QObject *parent = 0);
-    ~KnownContacts();
+    enum Role {
+        AddressBookRole = Qt::UserRole,
+    };
+    Q_ENUM(Role)
 
-    Q_INVOKABLE bool storeContact(const QVariantMap &contact);
-    Q_INVOKABLE bool storeContacts(const QVariantList &contacts);
+    SeasideAddressBookModel(QObject *parent = 0);
+    ~SeasideAddressBookModel();
+
+    Q_INVOKABLE SeasideAddressBook addressBookAt(int index) const;
+
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role) const override;
+    QHash<int, QByteArray> roleNames() const override;
+
+signals:
+    void countChanged();
 
 private:
-    QString m_currentPath;
-    QDBusInterface m_msyncd;
+    void collectionsAdded(const QList<QContactCollectionId> &collectionIds);
+    void collectionsRemoved(const QList<QContactCollectionId> &collectionIds);
+    void collectionsChanged(const QList<QContactCollectionId> &collectionIds);
+    int findCollection(const QContactCollectionId &id) const;
 
-    static quint32 getRandomNumber();
-    static QString getRandomPath(int accountId);
-    const QString &getPath(int accountId);
-    bool synchronize();
+    QList<SeasideAddressBook> m_addressBooks;
+ };
 
-private slots:
-    void syncStarted(QDBusPendingCallWatcher *call);
-};
-
-#endif // KNOWNCONTACTS_H
+#endif

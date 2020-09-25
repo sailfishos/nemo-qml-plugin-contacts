@@ -80,8 +80,7 @@ Module {
                 "FilterNone": 0,
                 "FilterAll": 1,
                 "FilterFavorites": 2,
-                "FilterOnline": 3,
-                "FilterTypesCount": 4
+                "FilterTypesCount": 3
             }
         }
         Enum {

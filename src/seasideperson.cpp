@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2012 Robin Burchell <robin+nemo@viroteck.net>
+ * Copyright (c) 2012 Robin Burchell <robin+nemo@viroteck.net>
+ * Copyright (c) 2012 - 2020 Jolla Ltd.
+ * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -52,6 +54,8 @@
 
 #include <QVersitWriter>
 #include <QVersitContactExporter>
+
+#include <QDebug>
 
 QTVERSIT_USE_NAMESPACE
 
@@ -117,28 +121,31 @@ SeasidePerson::SeasidePerson(QObject *parent)
     , mAttachState(Unattached)
     , mItem(0)
 {
+    setAddressBook(SeasideAddressBook::fromCollectionId(SeasideCache::localCollectionId()));
 }
 
 SeasidePerson::SeasidePerson(const QContact &contact, QObject *parent)
     : QObject(parent)
     , mContact(new QContact(contact))
-    , mDisplayLabel(generateDisplayLabel(contact))
+    , mAddressBook(SeasideAddressBook::fromCollectionId(contact.collectionId()))
     , mComplete(true)
     , mResolving(false)
     , mAttachState(Unattached)
     , mItem(0)
 {
+    recalculateDisplayLabel();
 }
 
 SeasidePerson::SeasidePerson(QContact *contact, bool complete, QObject *parent)
     : QObject(parent)
     , mContact(contact)
-    , mDisplayLabel(generateDisplayLabel(*contact))
+    , mAddressBook(SeasideAddressBook::fromCollectionId(contact->collectionId()))
     , mComplete(complete)
     , mResolving(false)
     , mAttachState(Attached)
     , mItem(0)
 {
+    recalculateDisplayLabel();
 }
 
 SeasidePerson::~SeasidePerson()
@@ -267,15 +274,19 @@ QString SeasidePerson::generateDisplayLabelFromNonNameDetails(const QContact &co
 
 QString SeasidePerson::placeholderDisplayLabel()
 {
-    //: The display label for a contact which has no name or nickname.
-    //% "(Unnamed)"
-    return qtTrId("nemo_contacts-la-placeholder_display_label");
+    return SeasideCache::placeholderDisplayLabel();
 }
 
 void SeasidePerson::recalculateDisplayLabel(SeasideCache::DisplayLabelOrder order) const
 {
     QString oldDisplayLabel = mDisplayLabel;
-    QString newDisplayLabel = generateDisplayLabel(*mContact, order);
+    QString newDisplayLabel;
+    SeasideCache::CacheItem *cacheItem = SeasideCache::existingItem(mContact->id());
+    if (cacheItem) {
+        newDisplayLabel = cacheItem->displayLabel.isEmpty();
+    } else {
+        newDisplayLabel = generateDisplayLabel(*mContact, order);
+    }
 
     if (oldDisplayLabel != newDisplayLabel) {
         mDisplayLabel = newDisplayLabel;
@@ -289,6 +300,10 @@ void SeasidePerson::recalculateDisplayLabel(SeasideCache::DisplayLabelOrder orde
 
 QString SeasidePerson::displayLabel() const
 {
+    SeasideCache::CacheItem *cacheItem = SeasideCache::existingItem(mContact->id());
+    if (cacheItem && !cacheItem->displayLabel.isEmpty()) {
+        return cacheItem->displayLabel;
+    }
     if (mDisplayLabel.isEmpty()) {
         return SeasidePerson::placeholderDisplayLabel();
     }
@@ -303,7 +318,7 @@ QString SeasidePerson::primaryName() const
 
     if (secondaryName().isEmpty()) {
         // No real name details - fall back to the display label for primary name
-        return mDisplayLabel;
+        return displayLabel();
     }
 
     return QString();
@@ -444,7 +459,7 @@ void SeasidePerson::setAvatarUrl(QUrl avatarUrl)
     QContactAvatar localAvatar;
     foreach (const QContactAvatar &avatar, mContact->details<QContactAvatar>()) {
         // Find the existing local data, if there is one
-        if (avatar.value(QContactAvatar__FieldAvatarMetadata).toString() == localMetadata) {
+        if (avatar.value(QContactAvatar::FieldMetaData).toString() == localMetadata) {
             if (localAvatar.isEmpty()) {
                 localAvatar = avatar;
             } else {
@@ -456,7 +471,7 @@ void SeasidePerson::setAvatarUrl(QUrl avatarUrl)
     }
 
     localAvatar.setImageUrl(avatarUrl);
-    localAvatar.setValue(QContactAvatar__FieldAvatarMetadata, localMetadata);
+    localAvatar.setValue(QContactAvatar::FieldMetaData, localMetadata);
     mContact->saveDetail(&localAvatar);
 
     emit avatarUrlChanged();
@@ -533,7 +548,6 @@ void setDetailLabelType(QContactDetail &detail, int label)
 
 const QString detailReadOnly(QStringLiteral("readOnly"));
 const QString detailOriginId(QStringLiteral("originId"));
-const QString detailSyncTarget(QStringLiteral("syncTarget"));
 const QString detailType(QStringLiteral("type"));
 const QString detailSubType(QStringLiteral("subType"));
 const QString detailSubTypes(QStringLiteral("subTypes"));
@@ -549,20 +563,16 @@ QVariantMap detailProperties(const QContactDetail &detail)
     const bool readOnly((detail.accessConstraints() & QContactDetail::ReadOnly) == QContactDetail::ReadOnly);
     rv.insert(detailReadOnly, readOnly);
 
-    const QString provenance(detail.value(QContactDetail__FieldProvenance).toString());
+    // The provenance is formatted as <collection-id>:<origin-id>:<detail-id>
+    const QString provenance(detail.value(QContactDetail::FieldProvenance).toString());
     if (!provenance.isEmpty()) {
         int index = provenance.indexOf(colon);
-        if (index != -1) {
-            // The first field is the contact ID where this detaiol originates
-            quint32 originId = provenance.left(index).toUInt();
+        int nextIndex = provenance.indexOf(colon, index + 1);
+        if (index != -1 && nextIndex != -1) {
+            // The second field is the contact ID where this detail originates
+            index++;
+            quint32 originId = provenance.mid(index, nextIndex - index).toUInt();
             rv.insert(detailOriginId, originId);
-
-            // Bypass the detail ID field
-            index = provenance.indexOf(colon, index + 1);
-        }
-        if (index != -1) {
-            // The remainder is the syncTarget
-            rv.insert(detailSyncTarget, provenance.mid(index + 1));
         }
     }
 
@@ -1344,15 +1354,29 @@ void SeasidePerson::setWebsiteDetails(const QVariantList &websiteDetails)
     emit websiteDetailsChanged();
 }
 
-QDateTime SeasidePerson::birthday() const
+QVariantMap SeasidePerson::birthdayDetail(const QContact &contact)
 {
-    const QContactDetail birthdayDetail(mContact->detail<QContactBirthday>());
-    if (birthdayDetail.isEmpty())
-        return QDateTime();
+    static const QString birthdayDetailDate(QStringLiteral("date"));
 
-    const QDateTime birthDateTime(mContact->detail<QContactBirthday>().dateTime());
-    if (!birthDateTime.isValid())
+    const QContactDetail detail(contact.detail<QContactBirthday>());
+    QVariantMap item(detailProperties(detail));
+    item.insert(birthdayDetailDate, birthday(contact));
+    item.insert(detailType, BirthdayType);
+    item.insert(detailSubType, NoSubType);
+    return item;
+}
+
+QVariantMap SeasidePerson::birthdayDetail() const
+{
+    return birthdayDetail(*mContact);
+}
+
+QDateTime SeasidePerson::birthday(const QContact &contact)
+{
+    const QDateTime birthDateTime(contact.detail<QContactBirthday>().dateTime());
+    if (!birthDateTime.isValid()) {
         return QDateTime();
+    }
 
     const QTime birthTime(birthDateTime.time());
     if (birthTime.hour() == 0 && birthTime.minute() == 0) {
@@ -1363,6 +1387,11 @@ QDateTime SeasidePerson::birthday() const
     }
 
     return birthDateTime;
+}
+
+QDateTime SeasidePerson::birthday() const
+{
+    return birthday(*mContact);
 }
 
 void SeasidePerson::setBirthday(const QDateTime &bd)
@@ -1854,6 +1883,20 @@ QString SeasidePerson::syncTarget() const
     return mContact->detail<QContactSyncTarget>().syncTarget();
 }
 
+SeasideAddressBook SeasidePerson::addressBook() const
+{
+    return mAddressBook;
+}
+
+void SeasidePerson::setAddressBook(const SeasideAddressBook &addressBook)
+{
+    if (mAddressBook != addressBook) {
+        mAddressBook = addressBook;
+        mContact->setCollectionId(addressBook.collectionId);
+        emit addressBookChanged();
+    }
+}
+
 QList<int> SeasidePerson::constituents() const
 {
     return mConstituents;
@@ -2118,7 +2161,7 @@ QStringList SeasidePerson::avatarUrlsExcluding(const QStringList &excludeMetadat
     QSet<QString> urls;
 
     foreach (const QContactAvatar &avatar, mContact->details<QContactAvatar>()) {
-        const QString metadata(avatar.value(QContactAvatar__FieldAvatarMetadata).toString());
+        const QString metadata(avatar.value(QContactAvatar::FieldMetaData).toString());
         if (excludeMetadata.contains(metadata))
             continue;
 
@@ -2374,7 +2417,6 @@ void SeasidePerson::addressResolved(const QString &, const QString &, SeasideCac
 void SeasidePerson::itemUpdated(SeasideCache::CacheItem *)
 {
     // We don't know what has changed - report everything changed
-    recalculateDisplayLabel();
     emitChangeSignals();
 }
 
@@ -2432,11 +2474,11 @@ void SeasidePerson::aggregateInto(SeasidePerson *person)
     if (!person)
         return;
     // linking must done between two aggregates
-    if (syncTarget() != QLatin1String("aggregate")) {
+    if (!addressBook().isAggregate) {
         qWarning() << "SeasidePerson::aggregateInto() failed, this person is not an aggregate contact";
         return;
     }
-    if (person->syncTarget() != QLatin1String("aggregate")) {
+    if (!person->addressBook().isAggregate) {
         qWarning() << "SeasidePerson::aggregateInto() failed, given person is not an aggregate contact";
         return;
     }
@@ -2448,11 +2490,11 @@ void SeasidePerson::disaggregateFrom(SeasidePerson *person)
     if (!person)
         return;
     // unlinking must be done between an aggregate and a non-aggregate
-    if (person->syncTarget() != QLatin1String("aggregate")) {
+    if (!person->addressBook().isAggregate) {
         qWarning() << "SeasidePerson::disaggregateFrom() failed, given person is not an aggregate contact";
         return;
     }
-    if (syncTarget() == QLatin1String("aggregate")) {
+    if (addressBook().isAggregate) {
         qWarning() << "SeasidePerson::disaggregateFrom() failed, this person is already an aggregate";
         return;
     }

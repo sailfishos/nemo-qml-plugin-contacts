@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2014 - 2020 Jolla Ltd.
  * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -29,39 +30,24 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef KNOWNCONTACTS_H
-#define KNOWNCONTACTS_H
+#ifndef SEASIDEEXPORT_H
+#define SEASIDEEXPORT_H
 
-#include <QDBusInterface>
-#include <QList>
-#include <QObject>
-#include <QString>
-#include <QVariantMap>
+#include "contactcacheexport.h"
 
-class QDBusPendingCallWatcher;
+#include <QContact>
+#include <QVersitDocument>
 
-class KnownContacts : public QObject
+QTCONTACTS_USE_NAMESPACE
+QTVERSIT_USE_NAMESPACE
+
+class CONTACTCACHE_EXPORT SeasideExport
 {
-    Q_OBJECT
+    SeasideExport();
+    ~SeasideExport();
 
 public:
-    KnownContacts(QObject *parent = 0);
-    ~KnownContacts();
-
-    Q_INVOKABLE bool storeContact(const QVariantMap &contact);
-    Q_INVOKABLE bool storeContacts(const QVariantList &contacts);
-
-private:
-    QString m_currentPath;
-    QDBusInterface m_msyncd;
-
-    static quint32 getRandomNumber();
-    static QString getRandomPath(int accountId);
-    const QString &getPath(int accountId);
-    bool synchronize();
-
-private slots:
-    void syncStarted(QDBusPendingCallWatcher *call);
+    static QList<QVersitDocument> buildExportContacts(const QList<QContact> &contacts);
 };
 
-#endif // KNOWNCONTACTS_H
+#endif

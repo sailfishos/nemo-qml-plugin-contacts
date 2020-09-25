@@ -8,10 +8,12 @@ HEADERS += \
         seasidecache.h \
         seasidefilteredmodel.h \
         $$SRCDIR/seasidefilteredmodel.h \
+        $$SRCDIR/seasideaddressbook.h \
         $$SRCDIR/seasideperson.h
 
 SOURCES += \
         seasidecache.cpp \
         tst_seasidefilteredmodel.cpp \
         $$SRCDIR/seasidefilteredmodel.cpp \
+        $$SRCDIR/seasideaddressbook.cpp \
         $$SRCDIR/seasideperson.cpp

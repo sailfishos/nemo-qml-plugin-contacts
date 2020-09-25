@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2013 Jolla Mobile <andrew.den.exter@jollamobile.com>
- * Copyright (C) 2019 Open Mobile Platform LLC
+ * Copyright (c) 2013 - 2020 Jolla Ltd.
+ * Copyright (c) 2019 - 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -87,6 +87,7 @@ const QByteArray titleRole("title");
 const QByteArray roleRole("role");
 const QByteArray nameDetailsRole("nameDetails");
 const QByteArray filterMatchDataRole("filterMatchData");
+const QByteArray addressBookRole("addressBook");
 
 const ML10N::MLocale mLocale;
 
@@ -444,7 +445,7 @@ struct FilterData : public SeasideCache::ItemListener
             if (!matchTokens.isEmpty()) {
                 wildMatchKeys[SeasideFilteredModel::NameDetailsRole].append(matchTokens.toVector());
             };
-            matchTokens = splitWords(name.value<QString>(QContactName__FieldCustomLabel));
+            matchTokens = splitWords(name.value<QString>(QContactName::FieldCustomLabel));
             if (!matchTokens.isEmpty()) {
                 wildMatchKeys[SeasideFilteredModel::NameDetailsRole].append(matchTokens.toVector());
             }
@@ -662,6 +663,7 @@ QHash<int, QByteArray> SeasideFilteredModel::roleNames() const
     roles.insert(RoleRole, roleRole);
     roles.insert(NameDetailsRole, nameDetailsRole);
     roles.insert(FilterMatchDataRole, filterMatchDataRole);
+    roles.insert(AddressBookRole, addressBookRole);
     return roles;
 }
 
@@ -993,6 +995,7 @@ QVariantMap SeasideFilteredModel::get(int row) const
     m.insert(roleRole, data(cacheItem, RoleRole));
     m.insert(nameDetailsRole, data(cacheItem, NameDetailsRole));
     m.insert(filterMatchDataRole, data(cacheItem, FilterMatchDataRole));
+    m.insert(addressBookRole, data(cacheItem, AddressBookRole));
     return m;
 }
 
@@ -1024,6 +1027,33 @@ bool SeasideFilteredModel::savePerson(SeasidePerson *person)
     }
 
     return false;
+}
+
+bool SeasideFilteredModel::savePeople(const QVariantList &people)
+{
+    bool allSucceeded = true;
+
+    QList<QContact> contacts;
+    QList<SeasidePerson *> personObjects;
+    for (const QVariant &variant : people) {
+        SeasidePerson *person = variant.value<SeasidePerson*>();
+        if (person) {
+            personObjects.append(person);
+            contacts.append(person->contact());
+        } else {
+            allSucceeded = false;
+        }
+    }
+
+    if (SeasideCache::saveContacts(contacts)) {
+        for (SeasidePerson *p : personObjects) {
+            emit p->dataChanged();
+        }
+    } else {
+        allSucceeded = false;
+    }
+
+    return allSucceeded;
 }
 
 SeasidePerson *SeasideFilteredModel::personByRow(int row) const
@@ -1073,7 +1103,9 @@ void SeasideFilteredModel::removePeople(const QVariantList &people)
             contacts.append(person->contact());
         }
     }
-    SeasideCache::removeContacts(contacts);
+    if (contacts.count() > 0) {
+        SeasideCache::removeContacts(contacts);
+    }
 }
 
 QModelIndex SeasideFilteredModel::index(const QModelIndex &parent, int row, int column) const
@@ -1213,6 +1245,11 @@ QVariant SeasideFilteredModel::data(SeasideCache::CacheItem *cacheItem, int role
         // Avoid creating a Person instance for as long as possible.
         SeasideCache::ensureCompletion(cacheItem);
         return QVariant::fromValue(personFromItem(cacheItem));
+    } else if (role == AddressBookRole) {
+        if (SeasidePerson *person = static_cast<SeasidePerson *>(cacheItem->itemData)) {
+            return QVariant::fromValue(person->addressBook());
+        }
+        return QVariant::fromValue(SeasideAddressBook::fromCollectionId(cacheItem->contact.collectionId()));
     } else {
         qWarning() << "Invalid role requested:" << role;
     }

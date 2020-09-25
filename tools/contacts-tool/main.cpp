@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2013 Matt Vogt <matthew.vogt@jollamobile.com>
+ * Copyright (c) 2013 - 2020 Jolla Ltd.
+ * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -34,10 +35,13 @@
 // Qt
 #include <QCoreApplication>
 #include <QTextStream>
+#include <QDebug>
 
 // Contacts
 #include <QContactManager>
 #include <QContactDetailFilter>
+#include <QContactCollectionFilter>
+#include <QContactCollection>
 
 #include <QContactAddress>
 #include <QContactAnniversary>
@@ -82,12 +86,13 @@ void invalidUsage(const QString &app)
         "Usage: %1 [OPTIONS] COMMAND\n"
         "\n"
         "where COMMAND is one of:\n"
-        "  list [sync-target]   - lists all contacts, optionally specified by sync-target type\n"
+        "  list [collection]    - lists all contacts, optionally specified by collection name\n"
         "  search <search-text> - searches for contacts with details containing search-text\n"
         "  details <ID...>      - lists details for contacts matching the supplied ID list\n"
         "  links <ID...>        - lists links for contacts matching the supplied ID list\n"
         "  delete <ID...>       - removes contacts matching the supplied ID list\n"
         "  dump [ID...]         - displays contact details in debug format\n"
+        "  collections          - lists all contact collections"
         "  help                 - show this command summary\n"
         "  version              - show the application version\n"
         "\n"
@@ -109,6 +114,12 @@ QContactManager &manager()
 {
     static QContactManager *mgr(createManager());
     return *mgr;
+}
+
+const QList<QContactCollection>& managerCollections()
+{
+    static const QList<QContactCollection> collections = manager().collections();
+    return collections;
 }
 
 QSet<quint32> parseIds(const QString &ids)
@@ -152,20 +163,11 @@ QContactDetailFilter detailFilter(F field, const QString &searchText, bool parti
     return filter;
 }
 
-QContactFilter syncTargetFilter(const QString &target)
-{
-    return detailFilter<QContactSyncTarget>(QContactSyncTarget::FieldSyncTarget, target);
-}
-
-QContactFilter localContactFilter()
-{
-    // Contacts that are local to the device have sync target 'local' or 'was_local'
-    return syncTargetFilter(QString::fromLatin1("local")) | syncTargetFilter(QString::fromLatin1("was_local"));
-}
-
 QContactFilter aggregateContactFilter()
 {
-    return syncTargetFilter(QString::fromLatin1("aggregate"));
+    QContactCollectionFilter filter;
+    filter.setCollectionId(SeasideCache::aggregateCollectionId());
+    return filter;
 }
 
 QContactFilter contactIdsFilter(const QSet<quint32> &ids)
@@ -180,9 +182,9 @@ QContactFilter contactIdsFilter(const QSet<quint32> &ids)
     return filter;
 }
 
-quint32 numericId(const QContact &contact)
+quint32 numericId(const QContactId &contactId)
 {
-    return SeasideCache::contactId(contact);
+    return SeasideCache::contactId(contactId);
 }
 
 QString displayLabel(const QContact &contact)
@@ -193,7 +195,7 @@ QString displayLabel(const QContact &contact)
 
 void getRelatedContacts(const QContact &contact, QSet<quint32> *constituents, QSet<quint32> *aggregates)
 {
-    const quint32 id(numericId(contact));
+    const quint32 id(numericId(contact.id()));
 
     foreach (const QContactRelationship &relationship, contact.relationships(QString::fromLatin1("Aggregates"))) {
         const quint32 firstId(numericId(relationship.first()));
@@ -258,7 +260,7 @@ QString print(const QContactAvatar &detail)
 {
     QStringList list;
     list.append(detail.imageUrl().toString());
-    list.append(detail.value(QContactAvatar__FieldAvatarMetadata).toString());
+    list.append(detail.value(QContactAvatar::FieldMetaData).toString());
     return QString::fromLatin1("Avatar:\t") + list.join(QChar::fromLatin1(';'));
 }
 
@@ -356,6 +358,22 @@ QString print(const QContactSyncTarget &detail)
     return QString::fromLatin1("SyncTarget:\t") + detail.syncTarget();
 }
 
+QString print(const QContactCollectionId &collectionId)
+{
+    QContactCollection matchingCollection;
+    for (const QContactCollection &collection : managerCollections()) {
+        if (collection.id() == collectionId) {
+            matchingCollection = collection;
+            break;
+        }
+    }
+
+    const QString name = matchingCollection.id().isNull()
+            ? QString::fromLatin1("(no collection)")
+            : matchingCollection.metaData(QContactCollection::KeyName).toString();
+    return QString::fromLatin1("Collection:\t") + name;
+}
+
 QString print(const QContactNickname &detail)
 {
     return QString::fromLatin1("Nickname:\t") + detail.nickname();
@@ -430,9 +448,10 @@ QString print(const QContactUrl &detail)
 void printContactSummary(const QContact &contact)
 {
     QTextStream output(stdout);
-    output << " ID:\t" << numericId(contact)
+    output << " ID:\t" << numericId(contact.id())
            << "\t" << displayLabel(contact)
            << "\t" << print(contact.detail<QContactName>())
+           << "\t" << print(contact.collectionId())
            << "\t" << print(contact.detail<QContactSyncTarget>())
            << "\n";
 }
@@ -446,13 +465,13 @@ void printContactSummary(const QList<QContact> &contacts)
 
 void printContactDetails(const QContact &contact)
 {
-    const quint32 id(numericId(contact));
+    const quint32 id(numericId(contact.id()));
 
     QTextStream output(stdout);
     output << " ID:\t" << id
            << delimiter << displayLabel(contact)
            << delimiter << print(contact.detail<QContactName>())
-           << delimiter << print(contact.detail<QContactSyncTarget>())
+           << delimiter << print(contact.collectionId())
            << delimiter << print(contact.detail<QContactGender>())
            << delimiter << print(contact.detail<QContactFavorite>())
            << delimiter << print(contact.detail<QContactTimestamp>())
@@ -544,12 +563,12 @@ void printContactDetails(const QList<QContact> &contacts)
 
 void printContactLinks(const QContact &contact)
 {
-    const quint32 id(numericId(contact));
+    const quint32 id(numericId(contact.id()));
 
     QTextStream output(stdout);
     output << " ID:\t" << id
            << "\t" << displayLabel(contact)
-           << "\t" << print(contact.detail<QContactSyncTarget>())
+           << "\t" << print(contact.collectionId())
            << "\n";
 
     QSet<quint32> constituents;
@@ -562,7 +581,7 @@ void printContactLinks(const QContact &contact)
             QContact constituent(manager().contact(SeasideCache::apiId(id)));
             output << "   ID:\t" << id
                    << "\t" << displayLabel(constituent)
-                   << "\t" << print(constituent.detail<QContactSyncTarget>())
+                   << "\t" << print(constituent.collectionId())
                    << "\n";
         }
     }
@@ -572,7 +591,7 @@ void printContactLinks(const QContact &contact)
             QContact aggregate(manager().contact(SeasideCache::apiId(id)));
             output << "   ID:\t" << id
                    << "\t" << displayLabel(aggregate)
-                   << "\t" << print(aggregate.detail<QContactSyncTarget>())
+                   << "\t" << print(aggregate.collectionId())
                    << "\n";
         }
     }
@@ -605,7 +624,7 @@ QString dumpContact(const QContact &contact)
 void dumpContactDetails(const QContact &contact)
 {
     QTextStream output(stdout);
-    output << " ID:\t" << numericId(contact) << "\t" << dumpContact(contact) << "\n";
+    output << " ID:\t" << numericId(contact.id()) << "\t" << dumpContact(contact) << "\n";
 
     QSet<quint32> constituents;
     getRelatedContacts(contact, &constituents, 0);
@@ -634,18 +653,29 @@ int listContacts(char **begin, char **end)
         return 0;
     }
 
-    QString syncTarget(QString::fromUtf8(*begin));
+    QString collectionName(QString::fromUtf8(*begin));
     if (++begin != end) {
-        errorMessage(QString::fromLatin1("Only one syncTarget is supported"));
+        errorMessage(QString::fromLatin1("Only one collection is supported"));
         return 3;
     }
-    
-    if (syncTarget == QString::fromLatin1("local")) {
-        // Include 'was_local' contacts here
-        printContactSummary(manager().contacts(localContactFilter()));
+
+    QContactCollectionId matchingCollectionId;
+    for (const QContactCollection &collection : managerCollections()) {
+        if (collection.metaData(QContactCollection::KeyName).toString() == collectionName) {
+            matchingCollectionId = collection.id();
+            break;
+        }
     }
 
-    printContactSummary(manager().contacts(syncTargetFilter(syncTarget)));
+    if (matchingCollectionId.isNull()) {
+        errorMessage(QString::fromLatin1("Cannot find collection named '%1'").arg(collectionName));
+        return 3;
+    }
+
+    QContactCollectionFilter filter;
+    filter.setCollectionId(matchingCollectionId);
+    printContactSummary(manager().contacts(filter));
+
     return 0;
 }
 
@@ -764,6 +794,24 @@ int dumpContacts(char **begin, char **end)
     return 0;
 }
 
+int dumpCollections()
+{
+    QTextStream output(stdout);
+
+    if (managerCollections().isEmpty()) {
+        output << "No collections found\n";
+        return 0;
+    }
+
+    for (const QContactCollection &collection : managerCollections()) {
+        output << "  ID: " << collection.id().toString()
+               << "  Name: " << collection.metaData(QContactCollection::KeyName).toString()
+               << "\n";
+    }
+
+    return 0;
+}
+
 }
 
 int main(int argc, char **argv)
@@ -812,6 +860,9 @@ int main(int argc, char **argv)
     }
     if (command == QString::fromLatin1("dump")) {
         return dumpContacts(remaining, end);
+    }
+    if (command == QString::fromLatin1("collections")) {
+        return dumpCollections();
     }
 
     if (command == QString::fromLatin1("version")) {

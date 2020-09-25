@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2012 Robin Burchell <robin+mer@viroteck.net>
+ * Copyright (c) 2012 Robin Burchell <robin+mer@viroteck.net>
+ * Copyright (c) 2012 - 2020 Jolla Ltd.
+ * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -29,6 +31,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
+#include <qtcontacts-extensions.h>
+#include <qtcontacts-extensions_impl.h>
+
 #include <seasideimport.h>
 #include <seasideexport.h>
 
@@ -37,11 +42,13 @@
 #include <QFile>
 #include <QTextStream>
 #include <QTimer>
+#include <QDebug>
 
 // Contacts
-#include <QContactDetailFilter>
+#include <QContactCollectionFilter>
 #include <QContactManager>
 #include <QContactSyncTarget>
+#include <QContactDisplayLabel>
 
 // Versit
 #include <QVersitReader>
@@ -60,22 +67,16 @@ void errorMessage(const QString &s)
 
 void invalidUsage(const QString &app)
 {
-    errorMessage(QString::fromLatin1("Usage: %s [-e | --export] <filename>").arg(app));
+    errorMessage(QString::fromLatin1("Usage: %1 [-e | --export] <filename>").arg(app));
     ::exit(1);
 }
 
-QContactFilter localContactFilter()
+QContactFilter localContactFilter(const QContactCollectionId &localAddressbookId)
 {
-    // Contacts that are local to the device have sync target 'local' or 'was_local'
-    QContactDetailFilter filterLocal, filterWasLocal, filterBluetooth;
-    filterLocal.setDetailType(QContactSyncTarget::Type, QContactSyncTarget::FieldSyncTarget);
-    filterWasLocal.setDetailType(QContactSyncTarget::Type, QContactSyncTarget::FieldSyncTarget);
-    filterBluetooth.setDetailType(QContactSyncTarget::Type, QContactSyncTarget::FieldSyncTarget);
-    filterLocal.setValue(QString::fromLatin1("local"));
-    filterWasLocal.setValue(QString::fromLatin1("was_local"));
-    filterBluetooth.setValue(QString::fromLatin1("bluetooth"));
-
-    return filterLocal | filterWasLocal | filterBluetooth;
+    // Contacts that are local to the device belong to the "local" addressbook.
+    QContactCollectionFilter filter;
+    filter.setCollectionId(localAddressbookId);
+    return filter;
 }
 
 }
@@ -97,7 +98,7 @@ int main(int argc, char **argv)
             } else if (arg == QString::fromLatin1("-e") || arg == QString::fromLatin1("--export")) {
                 import = false;
             } else {
-                errorMessage(QString::fromLatin1("%s: unknown option: '%s'").arg(app).arg(arg));
+                errorMessage(QString::fromLatin1("%1: unknown option: '%2'").arg(app).arg(arg));
                 invalidUsage(app);
             }
         } else {
@@ -106,18 +107,19 @@ int main(int argc, char **argv)
     }
 
     if (filename.isNull()) {
-        errorMessage(QString::fromLatin1("%s: filename must be specified").arg(app));
+        errorMessage(QString::fromLatin1("%1: filename must be specified").arg(app));
         invalidUsage(app);
     }
 
     QFile vcf(filename);
     QIODevice::OpenMode mode(import ? QIODevice::ReadOnly : QIODevice::WriteOnly | QIODevice::Truncate);
     if (!vcf.open(mode)) {
-        errorMessage(QString::fromLatin1("%s: file cannot be opened: '%s'").arg(app).arg(filename));
+        errorMessage(QString::fromLatin1("%1: file cannot be opened: '%2'").arg(app).arg(filename));
         ::exit(2);
     }
 
-    QContactManager mgr;
+    QContactManager mgr(QString::fromLatin1("org.nemomobile.contacts.sqlite"));
+    const QContactCollectionId localAddressbookId(QtContactsSqliteExtensions::localCollectionId(mgr.managerUri()));
 
     if (import) {
         // Read the contacts from the VCF
@@ -129,9 +131,13 @@ int main(int argc, char **argv)
         int newCount;
         int updatedCount;
         QList<QContact> importedContacts(SeasideImport::buildImportContacts(reader.results(), &newCount, &updatedCount));
+        for (int i = 0; i < importedContacts.size(); ++i) {
+            QContact &c(importedContacts[i]);
+            c.setCollectionId(localAddressbookId);
+        }
 
         QString existingDesc(updatedCount ? QString::fromLatin1(" (updating %1 existing)").arg(updatedCount) : QString());
-        qDebug("Importing %d new contacts%s", newCount, qPrintable(existingDesc));
+        qDebug("Importing %d new contacts %s", newCount, qPrintable(existingDesc));
 
         int importedCount = 0;
 
@@ -156,7 +162,7 @@ int main(int argc, char **argv)
         }
         qDebug("Wrote %d contacts", importedCount);
     } else {
-        QList<QContact> localContacts(mgr.contacts(localContactFilter()));
+        QList<QContact> localContacts(mgr.contacts(localContactFilter(localAddressbookId)));
 
         QList<QVersitDocument> documents(SeasideExport::buildExportContacts(localContacts));
         qDebug("Exporting %d contacts", documents.count());

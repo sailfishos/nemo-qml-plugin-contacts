@@ -2,9 +2,11 @@ include(../common.pri)
 
 TARGET = tst_seasideperson
 
-PKGCONFIG += contactcache-qt5
+SOURCES += \
+        $$SRCDIR/seasideperson.cpp \
+        $$SRCDIR/seasideaddressbook.cpp \
+        tst_seasideperson.cpp
 
-SOURCES += $$SRCDIR/seasideperson.cpp \
-           tst_seasideperson.cpp
-
-HEADERS += $$SRCDIR/seasideperson.h
+HEADERS += \
+        $$SRCDIR/seasideperson.h \
+        $$SRCDIR/seasideaddressbook.h

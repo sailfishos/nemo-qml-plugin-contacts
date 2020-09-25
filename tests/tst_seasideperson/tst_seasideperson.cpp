@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Jolla Mobile <robin.burchell@jollamobile.com>
+ * Copyright (c) 2012 - 2020 Jolla Ltd.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -47,6 +47,8 @@
 #include <QContactManager>
 
 #include <cacheconfiguration.h>
+
+#include <qtcontacts-extensions_impl.h>
 
 #include "seasideperson.h"
 
@@ -919,8 +921,7 @@ void tst_SeasidePerson::setContact()
     QContact contact;
 
     {   // ### contactChanged is only emitted if the id differs, not any of the members.
-        QString idStr(QString::fromLatin1("qtcontacts:org.nemomobile.contacts.sqlite::sql-5"));
-        contact.setId(QContactId::fromString(idStr));
+        contact.setId(QtContactsSqliteExtensions::apiContactId(5, cm.managerUri()));
     }
 
     {

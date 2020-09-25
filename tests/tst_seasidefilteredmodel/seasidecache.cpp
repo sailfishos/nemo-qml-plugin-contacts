@@ -100,6 +100,12 @@ SeasideCache *SeasideCache::instance()
     return instancePtr;
 }
 
+QContactManager *SeasideCache::manager()
+{
+    static QContactManager *mgr = new QContactManager;
+    return mgr;
+}
+
 QContactId SeasideCache::apiId(const QContact &contact)
 {
     return contact.id();
@@ -107,7 +113,7 @@ QContactId SeasideCache::apiId(const QContact &contact)
 
 QContactId SeasideCache::apiId(quint32 iid)
 {
-    return QtContactsSqliteExtensions::apiContactId(iid);
+    return QtContactsSqliteExtensions::apiContactId(iid, manager()->managerUri());
 }
 
 bool SeasideCache::validId(const QContactId &id)
@@ -149,8 +155,7 @@ void SeasideCache::reset()
         QContact contact;
 
         // This is specific to the qtcontacts-sqlite backend:
-        const QString idStr(QString::fromLatin1("qtcontacts:org.nemomobile.contacts.sqlite::sql-%1"));
-        contact.setId(QContactId::fromString(idStr.arg(i + 1)));
+        contact.setId(apiId(i + 1));
 
         QContactName name;
         name.setFirstName(QString::fromLatin1(contactsData[i].firstName));
@@ -194,7 +199,6 @@ void SeasideCache::reset()
 
     insert(FilterAll, 0, getContactsForFilterType(FilterAll));
     insert(FilterFavorites, 0, getContactsForFilterType(FilterFavorites));
-    insert(FilterOnline, 0, getContactsForFilterType(FilterOnline));
 }
 
 QList<quint32> SeasideCache::getContactsForFilterType(FilterType filterType)
@@ -203,8 +207,7 @@ QList<quint32> SeasideCache::getContactsForFilterType(FilterType filterType)
 
     for (uint i = 0; i < sizeof(contactsData) / sizeof(Contact); ++i) {
         if ((filterType == FilterAll) ||
-            (filterType == FilterFavorites && contactsData[i].isFavorite) ||
-            (filterType == FilterOnline && contactsData[i].isOnline)) {
+            (filterType == FilterFavorites && contactsData[i].isFavorite)) {
             ids.append(internalId(instancePtr->m_cache[i].contact.id()));
         }
     }
@@ -288,8 +291,7 @@ SeasideCache::CacheItem *SeasideCache::itemById(int id, bool)
         return 0;
 
     // Construct a valid id from this value
-    QString idStr(QString::fromLatin1("qtcontacts:org.nemomobile.contacts.sqlite::sql-%1"));
-    QContactId contactId = QContactId::fromString(idStr.arg(id));
+    QContactId contactId = apiId(id);
     if (contactId.isNull()) {
         qWarning() << "Unable to formulate valid ID from:" << id;
         return 0;
@@ -366,6 +368,11 @@ bool SeasideCache::saveContact(const QContact &)
     return false;
 }
 
+bool SeasideCache::saveContacts(const QList<QContact> &)
+{
+    return false;
+}
+
 void SeasideCache::removeContact(const QContact &)
 {
 }
@@ -420,6 +427,11 @@ QString SeasideCache::secondaryName(const QString &, const QString &)
     return QString();
 }
 
+QString SeasideCache::placeholderDisplayLabel()
+{
+    return QString();
+}
+
 QString SeasideCache::generateDisplayLabel(const QContact &, DisplayLabelOrder)
 {
     return QString();
@@ -446,6 +458,16 @@ QString SeasideCache::normalizePhoneNumber(const QString &input, bool)
 QString SeasideCache::minimizePhoneNumber(const QString &input, bool)
 {
     return input;
+}
+
+QContactCollectionId SeasideCache::aggregateCollectionId()
+{
+    return QContactCollectionId();
+}
+
+QContactCollectionId SeasideCache::localCollectionId()
+{
+    return QContactCollectionId();
 }
 
 SeasideCache::DisplayLabelOrder SeasideCache::displayLabelOrder()

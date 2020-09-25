@@ -5,9 +5,5 @@ documentation.list
 *.so
 *.moc
 moc_*
-/tests/tests.xml
-/tests/tst_*
-/tools/contacts-tool/contacts-tool
-/tools/vcardconverter/vcardconverter
 /translations/nemo-qml-plugin-contacts.ts
 /translations/nemo-qml-plugin-contacts_*.qm

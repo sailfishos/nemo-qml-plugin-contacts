@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2014 - 2020 Jolla Ltd.
  * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -29,39 +30,54 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef KNOWNCONTACTS_H
-#define KNOWNCONTACTS_H
+#ifndef SEASIDE_CACHE_CONFIGURATION_H
+#define SEASIDE_CACHE_CONFIGURATION_H
 
-#include <QDBusInterface>
-#include <QList>
+#include "contactcacheexport.h"
+
 #include <QObject>
 #include <QString>
-#include <QVariantMap>
 
-class QDBusPendingCallWatcher;
+#ifdef HAS_MLITE
+#include <mgconfitem.h>
+#endif
 
-class KnownContacts : public QObject
+class CONTACTCACHE_EXPORT CacheConfiguration : public QObject
 {
     Q_OBJECT
 
 public:
-    KnownContacts(QObject *parent = 0);
-    ~KnownContacts();
+    enum DisplayLabelOrder {
+        FirstNameFirst = 0,
+        LastNameFirst
+    };
 
-    Q_INVOKABLE bool storeContact(const QVariantMap &contact);
-    Q_INVOKABLE bool storeContacts(const QVariantList &contacts);
+    CacheConfiguration();
+
+    DisplayLabelOrder displayLabelOrder() const { return m_displayLabelOrder; }
+    QString sortProperty() const { return m_sortProperty; }
+    QString groupProperty() const { return m_groupProperty; }
+
+signals:
+    void displayLabelOrderChanged(CacheConfiguration::DisplayLabelOrder order);
+    void sortPropertyChanged(const QString &sortProperty);
+    void groupPropertyChanged(const QString &groupProperty);
 
 private:
-    QString m_currentPath;
-    QDBusInterface m_msyncd;
+    DisplayLabelOrder m_displayLabelOrder;
+    QString m_sortProperty;
+    QString m_groupProperty;
 
-    static quint32 getRandomNumber();
-    static QString getRandomPath(int accountId);
-    const QString &getPath(int accountId);
-    bool synchronize();
+#ifdef HAS_MLITE
+    MGConfItem m_displayLabelOrderConf;
+    MGConfItem m_sortPropertyConf;
+    MGConfItem m_groupPropertyConf;
 
 private slots:
-    void syncStarted(QDBusPendingCallWatcher *call);
+    void onDisplayLabelOrderChanged();
+    void onSortPropertyChanged();
+    void onGroupPropertyChanged();
+#endif
 };
 
-#endif // KNOWNCONTACTS_H
+#endif // SEASIDE_CACHE_CONFIGURATION_H

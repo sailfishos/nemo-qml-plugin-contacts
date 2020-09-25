@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2013 Jolla Mobile <andrew.den.exter@jollamobile.com>
+ * Copyright (c) 2013 - 2020 Jolla Ltd.
+ * Copyright (c) 2020 Open Mobile Platform LLC.
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -63,7 +64,6 @@ public:
         FilterNone = SeasideCache::FilterNone,
         FilterAll = SeasideCache::FilterAll,
         FilterFavorites = SeasideCache::FilterFavorites,
-        FilterOnline = SeasideCache::FilterOnline,
         FilterTypesCount = SeasideCache::FilterTypesCount
     };
 
@@ -114,6 +114,7 @@ public:
         RoleRole,
         NameDetailsRole,
         FilterMatchDataRole,
+        AddressBookRole
     };
     Q_ENUM(PeopleRoles)
 
@@ -149,6 +150,7 @@ public:
     Q_INVOKABLE QVariant get(int row, int role) const;
 
     Q_INVOKABLE bool savePerson(SeasidePerson *person);
+    Q_INVOKABLE bool savePeople(const QVariantList &people);
     Q_INVOKABLE SeasidePerson *personByRow(int row) const;
     Q_INVOKABLE SeasidePerson *personById(int id) const;
     Q_INVOKABLE SeasidePerson *personByPhoneNumber(const QString &number, bool requireComplete = true) const;
