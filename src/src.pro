@@ -39,6 +39,9 @@ SOURCES += $$PWD/plugin.cpp \
            $$PWD/seasidedisplaylabelgroupmodel.cpp \
            $$PWD/seasidestringlistcompressor.cpp \
            $$PWD/seasidevcardmodel.cpp \
+           $$PWD/seasidesimplecontactmodel.cpp \
+           $$PWD/seasideconstituentmodel.cpp \
+           $$PWD/seasidemergecandidatemodel.cpp \
            $$PWD/knowncontacts.cpp
 
 HEADERS += $$PWD/seasideperson.h \
@@ -48,4 +51,7 @@ HEADERS += $$PWD/seasideperson.h \
            $$PWD/seasidedisplaylabelgroupmodel.h \
            $$PWD/seasidestringlistcompressor.h \
            $$PWD/seasidevcardmodel.h \
+           $$PWD/seasidesimplecontactmodel.h \
+           $$PWD/seasideconstituentmodel.h \
+           $$PWD/seasidemergecandidatemodel.h \
            $$PWD/knowncontacts.h
