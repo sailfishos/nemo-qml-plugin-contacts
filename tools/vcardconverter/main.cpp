@@ -67,15 +67,14 @@ void errorMessage(const QString &s)
 
 void invalidUsage(const QString &app)
 {
-    errorMessage(QString::fromLatin1("Usage: %1 [-e | --export] <filename>").arg(app));
+    errorMessage(QString::fromLatin1("Usage: %1 [-e | --export] <filename> [<collectionId>]").arg(app));
     ::exit(1);
 }
 
-QContactFilter localContactFilter(const QContactCollectionId &localAddressbookId)
+QContactFilter collectionFilter(const QContactCollectionId &collectionId)
 {
-    // Contacts that are local to the device belong to the "local" addressbook.
     QContactCollectionFilter filter;
-    filter.setCollectionId(localAddressbookId);
+    filter.setCollectionId(collectionId);
     return filter;
 }
 
@@ -87,6 +86,7 @@ int main(int argc, char **argv)
 
     bool import = true;
     QString filename;
+    QString collection;
 
     const QString app(QString::fromLatin1(argv[0]));
 
@@ -102,7 +102,11 @@ int main(int argc, char **argv)
                 invalidUsage(app);
             }
         } else {
-            filename = arg;
+            if (filename.isEmpty()) {
+                filename = arg;
+            } else {
+                collection = arg;
+            }
         }
     }
 
@@ -119,7 +123,21 @@ int main(int argc, char **argv)
     }
 
     QContactManager mgr(QString::fromLatin1("org.nemomobile.contacts.sqlite"));
-    const QContactCollectionId localAddressbookId(QtContactsSqliteExtensions::localCollectionId(mgr.managerUri()));
+    const QContactCollectionId collectionId(collection.isEmpty() ? QtContactsSqliteExtensions::localCollectionId(mgr.managerUri())
+                                                                 : QContactCollectionId::fromString(collection));
+    const bool collectionIsLocalAddressbook = collectionId == QtContactsSqliteExtensions::localCollectionId(mgr.managerUri());
+
+    if (!collectionIsLocalAddressbook) {
+        if (import) {
+            qDebug("Importing contact data to non-local addressbook - this data may be "
+                   "synced to the remote account provider or application which owns "
+                   "the collection!");
+        } else {
+            qDebug("Exporting non-local contacts - your usage of this data must comply "
+                   "with the terms of service of the account provider or application "
+                   "from which the data was synced!");
+        }
+    }
 
     if (import) {
         // Read the contacts from the VCF
@@ -128,12 +146,12 @@ int main(int argc, char **argv)
         reader.waitForFinished();
 
         // Get the import list which duplicates coalesced, and updates merged
-        int newCount;
-        int updatedCount;
-        QList<QContact> importedContacts(SeasideImport::buildImportContacts(reader.results(), &newCount, &updatedCount));
+        int newCount = reader.results().count();
+        int updatedCount = 0;
+        QList<QContact> importedContacts(SeasideImport::buildImportContacts(reader.results(), &newCount, &updatedCount, nullptr, nullptr, !collectionIsLocalAddressbook));
         for (int i = 0; i < importedContacts.size(); ++i) {
             QContact &c(importedContacts[i]);
-            c.setCollectionId(localAddressbookId);
+            c.setCollectionId(collectionId);
         }
 
         QString existingDesc(updatedCount ? QString::fromLatin1(" (updating %1 existing)").arg(updatedCount) : QString());
@@ -162,9 +180,9 @@ int main(int argc, char **argv)
         }
         qDebug("Wrote %d contacts", importedCount);
     } else {
-        QList<QContact> localContacts(mgr.contacts(localContactFilter(localAddressbookId)));
+        QList<QContact> contacts(mgr.contacts(collectionFilter(collectionId)));
 
-        QList<QVersitDocument> documents(SeasideExport::buildExportContacts(localContacts));
+        QList<QVersitDocument> documents(SeasideExport::buildExportContacts(contacts));
         qDebug("Exporting %d contacts", documents.count());
 
         QVersitWriter writer(&vcf);
