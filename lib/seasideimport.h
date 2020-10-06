@@ -48,7 +48,7 @@ class CONTACTCACHE_EXPORT SeasideImport
     ~SeasideImport();
 
 public:
-    static QList<QContact> buildImportContacts(const QList<QVersitDocument> &details, int *newCount = 0, int *updatedCount = 0, int *ignoredCount = 0, SeasideContactBuilder *builder = 0);
+    static QList<QContact> buildImportContacts(const QList<QVersitDocument> &details, int *newCount = 0, int *updatedCount = 0, int *ignoredCount = 0, SeasideContactBuilder *builder = 0, bool skipLocalDupDetection = false);
 };
 
 #endif

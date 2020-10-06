@@ -49,12 +49,19 @@ namespace {
     }
 }
 
-QList<QContact> SeasideImport::buildImportContacts(const QList<QVersitDocument> &details, int *newCount, int *updatedCount, int *ignoredCount, SeasideContactBuilder *contactBuilder)
+QList<QContact> SeasideImport::buildImportContacts(
+        const QList<QVersitDocument> &details,
+        int *newCount,
+        int *updatedCount,
+        int *ignoredCount,
+        SeasideContactBuilder *contactBuilder,
+        bool skipLocalDupDetection)
 {
     if (newCount)
         *newCount = 0;
     if (updatedCount)
         *updatedCount = 0;
+    int existingCount = 0;
     bool eraseMatch = false;
 
     SeasideContactBuilder *builder = contactBuilder
@@ -81,77 +88,79 @@ QList<QContact> SeasideImport::buildImportContacts(const QList<QVersitDocument> 
         }
     }
 
-    // Build up information about local device contacts, so we can detect matches
-    // in order to correctly set the appropriate ContactId in the imported contacts
-    // prior to save (thereby ensuring correct add vs update save semantics).
-    builder->buildLocalDeviceContactIndexes();
+    if (!skipLocalDupDetection) {
+        // Build up information about local device contacts, so we can detect matches
+        // in order to correctly set the appropriate ContactId in the imported contacts
+        // prior to save (thereby ensuring correct add vs update save semantics).
+        builder->buildLocalDeviceContactIndexes();
 
-    // Find any imported contacts that match contacts we already have
-    QMap<QContactId, int> existingIds;
-    it = importedContacts.begin();
-    while (it != importedContacts.end()) {
-        QContactId existingId = builder->matchingLocalContactId(*it);
-        if (!existingId.isNull()) {
-            QMap<QContactId, int>::iterator eit = existingIds.find(existingId);
-            if (eit == existingIds.end()) {
-                // this match hasn't been seen before.
-                existingIds.insert(existingId, (it - importedContacts.begin()));
+        // Find any imported contacts that match contacts we already have
+        QMap<QContactId, int> existingIds;
+        it = importedContacts.begin();
+        while (it != importedContacts.end()) {
+            QContactId existingId = builder->matchingLocalContactId(*it);
+            if (!existingId.isNull()) {
+                QMap<QContactId, int>::iterator eit = existingIds.find(existingId);
+                if (eit == existingIds.end()) {
+                    // this match hasn't been seen before.
+                    existingIds.insert(existingId, (it - importedContacts.begin()));
+                    ++it;
+                } else {
+                    // another import contact which matches that local contact has
+                    // been seen already. Merge these both-matching import contacts.
+                    QContact &previous(importedContacts[*eit]);
+                    builder->mergeImportIntoImport(previous, *it, &eraseMatch);
+                    if (eraseMatch) {
+                        it = importedContacts.erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
+            } else {
                 ++it;
-            } else {
-                // another import contact which matches that local contact has
-                // been seen already. Merge these both-matching import contacts.
-                QContact &previous(importedContacts[*eit]);
-                builder->mergeImportIntoImport(previous, *it, &eraseMatch);
-                if (eraseMatch) {
-                    it = importedContacts.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-        } else {
-            ++it;
-        }
-    }
-
-    int existingCount(existingIds.count());
-    if (existingCount > 0) {
-        // Retrieve all the contacts that we have matches for
-        QContactIdFilter idFilter;
-        idFilter.setIds(existingIds.keys());
-
-        QSet<QContactId> modifiedContacts;
-        QSet<QContactId> unmodifiedContacts;
-        QHash<QContactId, bool> unmodifiedErase;
-
-        foreach (const QContact &contact, builder->manager()->contacts(idFilter & builder->mergeSubsetFilter(), QList<QContactSortOrder>(), basicFetchHint())) {
-            QMap<QContactId, int>::const_iterator it = existingIds.find(contact.id());
-            if (it != existingIds.end()) {
-                // Update the existing version of the contact with any new details
-                QContact &importContact(importedContacts[*it]);
-                bool modified = builder->mergeLocalIntoImport(importContact, contact, &eraseMatch);
-                if (modified) {
-                    modifiedContacts.insert(importContact.id());
-                } else {
-                    unmodifiedContacts.insert(importContact.id());
-                    unmodifiedErase.insert(importContact.id(), eraseMatch);
-                }
-            } else {
-                qWarning() << "unable to update existing contact:" << contact.id();
             }
         }
 
-        if (!unmodifiedContacts.isEmpty()) {
-            QList<QContact>::iterator it = importedContacts.begin();
-            while (it != importedContacts.end()) {
-                const QContact &importContact(*it);
-                const QContactId contactId(importContact.id());
+        existingCount = existingIds.count();
+        if (existingCount > 0) {
+            // Retrieve all the contacts that we have matches for
+            QContactIdFilter idFilter;
+            idFilter.setIds(existingIds.keys());
 
-                if (!modifiedContacts.contains(contactId) && unmodifiedContacts.contains(contactId) && unmodifiedErase.value(contactId, false) == true) {
-                    // This contact was not modified by import and should be erased from the import list - don't update it
-                    it = importedContacts.erase(it);
-                    --existingCount;
+            QSet<QContactId> modifiedContacts;
+            QSet<QContactId> unmodifiedContacts;
+            QHash<QContactId, bool> unmodifiedErase;
+
+            foreach (const QContact &contact, builder->manager()->contacts(idFilter & builder->mergeSubsetFilter(), QList<QContactSortOrder>(), basicFetchHint())) {
+                QMap<QContactId, int>::const_iterator it = existingIds.find(contact.id());
+                if (it != existingIds.end()) {
+                    // Update the existing version of the contact with any new details
+                    QContact &importContact(importedContacts[*it]);
+                    bool modified = builder->mergeLocalIntoImport(importContact, contact, &eraseMatch);
+                    if (modified) {
+                        modifiedContacts.insert(importContact.id());
+                    } else {
+                        unmodifiedContacts.insert(importContact.id());
+                        unmodifiedErase.insert(importContact.id(), eraseMatch);
+                    }
                 } else {
-                    ++it;
+                    qWarning() << "unable to update existing contact:" << contact.id();
+                }
+            }
+
+            if (!unmodifiedContacts.isEmpty()) {
+                QList<QContact>::iterator it = importedContacts.begin();
+                while (it != importedContacts.end()) {
+                    const QContact &importContact(*it);
+                    const QContactId contactId(importContact.id());
+
+                    if (!modifiedContacts.contains(contactId) && unmodifiedContacts.contains(contactId) && unmodifiedErase.value(contactId, false) == true) {
+                        // This contact was not modified by import and should be erased from the import list - don't update it
+                        it = importedContacts.erase(it);
+                        --existingCount;
+                    } else {
+                        ++it;
+                    }
                 }
             }
         }
