@@ -43,6 +43,8 @@
 #include "seasidefilteredmodel.h"
 #include "seasidedisplaylabelgroupmodel.h"
 #include "seasidevcardmodel.h"
+#include "seasideconstituentmodel.h"
+#include "seasidemergecandidatemodel.h"
 #include "knowncontacts.h"
 
 template <typename T> static QObject *singletonApiCallback(QQmlEngine *engine, QJSEngine *) {
@@ -93,6 +95,8 @@ public:
         qmlRegisterType<SeasidePersonAttached>();
         qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
         qmlRegisterType<SeasideVCardModel>(uri, 1, 0, "PeopleVCardModel");
+        qmlRegisterType<SeasideConstituentModel>(uri, 1, 0, "ConstituentModel");
+        qmlRegisterType<SeasideMergeCandidateModel>(uri, 1, 0, "MergeCandidateModel");
         qmlRegisterUncreatableType<SeasideAddressBook>(uri, 1, 0, "AddressBook", "");
         qmlRegisterSingletonType<KnownContacts>(uri, 1, 0, "KnownContacts", singletonApiCallback<KnownContacts>);
     }
