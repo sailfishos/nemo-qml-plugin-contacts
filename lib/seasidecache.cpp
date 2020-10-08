@@ -630,6 +630,9 @@ SeasideCache::~SeasideCache()
 
 void SeasideCache::checkForExpiry()
 {
+    if (!instancePtr)
+        return;
+
     if (instancePtr->m_users.isEmpty() && !QCoreApplication::closingDown()) {
         bool unused = true;
         for (int i = 0; i < FilterTypesCount; ++i) {
@@ -661,6 +664,9 @@ void SeasideCache::registerModel(ListModel *model, FilterType type, FetchDataTyp
 
 void SeasideCache::unregisterModel(ListModel *model)
 {
+    if (!instancePtr)
+        return;
+
     for (int i = 0; i < FilterTypesCount; ++i)
         instancePtr->m_models[i].removeAll(model);
 
@@ -678,6 +684,9 @@ void SeasideCache::registerUser(QObject *user)
 
 void SeasideCache::unregisterUser(QObject *user)
 {
+    if (!instancePtr)
+        return;
+
     instancePtr->m_users.remove(user);
 
     checkForExpiry();
@@ -813,6 +822,9 @@ SeasideCache::CacheItem *SeasideCache::itemById(const QContactId &id, bool requi
     if (!validId(id))
         return 0;
 
+    // Ensure the cache has been instantiated
+    instance();
+
     quint32 iid = internalId(id);
 
     CacheItem *item = 0;
@@ -854,6 +866,9 @@ SeasideCache::CacheItem *SeasideCache::existingItem(const QContactId &id)
 
 SeasideCache::CacheItem *SeasideCache::existingItem(quint32 iid)
 {
+    // Ensure the cache has been instantiated
+    instance();
+
     QHash<quint32, CacheItem>::iterator it = instancePtr->m_people.find(iid);
     return it != instancePtr->m_people.end()
             ? &(*it)
@@ -862,6 +877,9 @@ SeasideCache::CacheItem *SeasideCache::existingItem(quint32 iid)
 
 QContact SeasideCache::contactById(const QContactId &id)
 {
+    // Ensure the cache has been instantiated
+    instance();
+
     quint32 iid = internalId(id);
     return instancePtr->m_people.value(iid, CacheItem()).contact;
 }
@@ -875,6 +893,9 @@ void SeasideCache::ensureCompletion(CacheItem *cacheItem)
 
 void SeasideCache::refreshContact(CacheItem *cacheItem)
 {
+    // Ensure the cache has been instantiated
+    instance();
+
     cacheItem->contactState = ContactRequested;
     instancePtr->m_changedContacts.append(cacheItem->apiId());
     instancePtr->fetchContacts();
@@ -885,6 +906,9 @@ SeasideCache::CacheItem *SeasideCache::itemByPhoneNumber(const QString &number, 
     const QString normalized(normalizePhoneNumber(number));
     if (normalized.isEmpty())
         return 0;
+
+    // Ensure the cache has been instantiated
+    instance();
 
     const QChar plus(QChar::fromLatin1('+'));
     if (normalized.startsWith(plus)) {
@@ -910,6 +934,9 @@ SeasideCache::CacheItem *SeasideCache::itemByEmailAddress(const QString &email, 
     if (email.trimmed().isEmpty())
         return 0;
 
+    // Ensure the cache has been instantiated
+    instance();
+
     QHash<QString, quint32>::const_iterator it = instancePtr->m_emailAddressIds.find(email.toLower());
     if (it != instancePtr->m_emailAddressIds.end())
         return itemById(*it, requireComplete);
@@ -921,6 +948,9 @@ SeasideCache::CacheItem *SeasideCache::itemByOnlineAccount(const QString &localU
 {
     if (localUid.trimmed().isEmpty() || remoteUid.trimmed().isEmpty())
         return 0;
+
+    // Ensure the cache has been instantiated
+    instance();
 
     QPair<QString, QString> address = qMakePair(localUid, remoteUid.toLower());
 
@@ -1006,6 +1036,9 @@ bool SeasideCache::saveContact(const QContact &contact)
 
 bool SeasideCache::saveContacts(const QList<QContact> &contacts)
 {
+    // Ensure the cache has been instantiated
+    instance();
+
     for (const QContact &contact : contacts) {
         const QContactId id = apiId(contact);
         if (validId(id)) {
@@ -1046,6 +1079,9 @@ bool SeasideCache::removeContact(const QContact &contact)
 
 bool SeasideCache::removeContacts(const QList<QContact> &contacts)
 {
+    // Ensure the cache has been instantiated
+    instance();
+
     bool allSucceeded = true;
     QSet<QString> modifiedDisplayLabelGroups;
     for (const QContact &contact : contacts) {
@@ -1096,6 +1132,9 @@ bool SeasideCache::fetchConstituents(const QContact &contact)
     if (!validId(personId))
         return false;
 
+    // Ensure the cache has been instantiated
+    instance();
+
     if (!instancePtr->m_contactsToFetchConstituents.contains(personId)) {
         instancePtr->m_contactsToFetchConstituents.append(personId);
         instancePtr->requestUpdate();
@@ -1109,6 +1148,9 @@ bool SeasideCache::fetchMergeCandidates(const QContact &contact)
     if (!validId(personId))
         return false;
 
+    // Ensure the cache has been instantiated
+    instance();
+
     if (!instancePtr->m_contactsToFetchCandidates.contains(personId)) {
         instancePtr->m_contactsToFetchCandidates.append(personId);
         instancePtr->requestUpdate();
@@ -1118,11 +1160,17 @@ bool SeasideCache::fetchMergeCandidates(const QContact &contact)
 
 const QList<quint32> *SeasideCache::contacts(FilterType type)
 {
+    // Ensure the cache has been instantiated
+    instance();
+
     return &instancePtr->m_contacts[type];
 }
 
 bool SeasideCache::isPopulated(FilterType filterType)
 {
+    if (!instancePtr)
+        return false;
+
     return instancePtr->m_populated & (1 << filterType);
 }
 
@@ -3098,6 +3146,9 @@ int SeasideCache::importContacts(const QString &path)
         return 0;
     }
 
+    // Ensure the cache has been instantiated
+    instance();
+
     // TODO: thread
     QVersitReader reader(&vcf);
     reader.startReading();
@@ -3116,6 +3167,9 @@ int SeasideCache::importContacts(const QString &path)
 
 QString SeasideCache::exportContacts()
 {
+    // Ensure the cache has been instantiated
+    instance();
+
     QVersitContactExporter exporter;
 
     QList<QContact> contacts;
@@ -3210,6 +3264,9 @@ void SeasideCache::keepPopulated(quint32 requiredTypes, quint32 extraTypes)
 // contact and the constituents of the second contact.
 void SeasideCache::aggregateContacts(const QContact &contact1, const QContact &contact2)
 {
+    // Ensure the cache has been instantiated
+    instance();
+
     instancePtr->m_contactPairsToLink.append(qMakePair(
               ContactLinkRequest(apiId(contact1)),
               ContactLinkRequest(apiId(contact2))));
@@ -3221,6 +3278,9 @@ void SeasideCache::aggregateContacts(const QContact &contact1, const QContact &c
 // the existing aggregate relationships between the two contacts.
 void SeasideCache::disaggregateContacts(const QContact &contact1, const QContact &contact2)
 {
+    // Ensure the cache has been instantiated
+    instance();
+
     instancePtr->m_relationshipsToRemove.append(makeRelationship(aggregateRelationshipType, contact1.id(), contact2.id()));
     instancePtr->m_relationshipsToSave.append(makeRelationship(isNotRelationshipType, contact1.id(), contact2.id()));
 
