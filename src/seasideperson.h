@@ -416,6 +416,7 @@ public slots:
     void recalculateDisplayLabel(SeasideCache::DisplayLabelOrder order = SeasideCache::displayLabelOrder()) const;
 
 private:
+    void refreshContactDetails();
     void updateContactDetails(const QContact &oldContact);
     void emitChangeSignals();
     static QDateTime birthday(const QContact &contact);
