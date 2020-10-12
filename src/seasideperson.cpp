@@ -121,31 +121,30 @@ SeasidePerson::SeasidePerson(QObject *parent)
     , mAttachState(Unattached)
     , mItem(0)
 {
-    setAddressBook(SeasideAddressBook::fromCollectionId(SeasideCache::localCollectionId()));
+    mContact->setCollectionId(SeasideCache::localCollectionId());
+    refreshContactDetails();
 }
 
 SeasidePerson::SeasidePerson(const QContact &contact, QObject *parent)
     : QObject(parent)
     , mContact(new QContact(contact))
-    , mAddressBook(SeasideAddressBook::fromCollectionId(contact.collectionId()))
     , mComplete(true)
     , mResolving(false)
     , mAttachState(Unattached)
     , mItem(0)
 {
-    recalculateDisplayLabel();
+    refreshContactDetails();
 }
 
 SeasidePerson::SeasidePerson(QContact *contact, bool complete, QObject *parent)
     : QObject(parent)
     , mContact(contact)
-    , mAddressBook(SeasideAddressBook::fromCollectionId(contact->collectionId()))
     , mComplete(complete)
     , mResolving(false)
     , mAttachState(Attached)
     , mItem(0)
 {
-    recalculateDisplayLabel();
+    refreshContactDetails();
 }
 
 SeasidePerson::~SeasidePerson()
@@ -1932,8 +1931,14 @@ void SeasidePerson::setContact(const QContact &contact)
     QContact oldContact = *mContact;
     *mContact = contact;
 
-    recalculateDisplayLabel();
+    refreshContactDetails();
     updateContactDetails(oldContact);
+}
+
+void SeasidePerson::refreshContactDetails()
+{
+    recalculateDisplayLabel();
+    mAddressBook = SeasideAddressBook::fromCollectionId(mContact->collectionId());
 }
 
 void SeasidePerson::updateContactDetails(const QContact &oldContact)
@@ -1942,6 +1947,9 @@ void SeasidePerson::updateContactDetails(const QContact &oldContact)
 
     if (oldContact.id() != mContact->id())
         emitChangeSignal(&SeasidePerson::contactChanged);
+
+    if (oldContact.collectionId() != mContact->collectionId())
+        emitChangeSignal(&SeasidePerson::addressBookChanged);
 
     if (getPrimaryName(oldContact) != primaryName())
         emitChangeSignal(&SeasidePerson::primaryNameChanged);
@@ -2121,7 +2129,7 @@ void SeasidePerson::setContactData(const QVariant &data)
     // We don't know if this contact is complete or not - assume it isn't if it has an ID
     mComplete = (id() == 0);
 
-    recalculateDisplayLabel();
+    refreshContactDetails();
 }
 
 void SeasidePerson::resetContactData()
@@ -2393,7 +2401,7 @@ void SeasidePerson::addressResolved(const QString &, const QString &, SeasideCac
 
             // Attach to the contact in the cache item
             mContact = &item->contact;
-            recalculateDisplayLabel();
+            refreshContactDetails();
             updateContactDetails(*oldContact);
 
             // Release our previous contact info
@@ -2442,7 +2450,7 @@ void SeasidePerson::itemAboutToBeRemoved(SeasideCache::CacheItem *item)
             mContact->saveDetail(&account);
         }
 
-        recalculateDisplayLabel();
+        refreshContactDetails();
         updateContactDetails(item->contact);
     }
 }
