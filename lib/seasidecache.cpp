@@ -2298,6 +2298,11 @@ void SeasideCache::resolveUnknownAddresses(const QString &first, const QString &
 
 bool SeasideCache::updateContactIndexing(const QContact &oldContact, const QContact &contact, quint32 iid, const QSet<QContactDetail::DetailType> &queryDetailTypes, CacheItem *item)
 {
+    if (oldContact.collectionId() != aggregateCollectionId()
+            && contact.collectionId() != aggregateCollectionId()) {
+        return false;
+    }
+
     bool modified = false;
 
     QSet<StringPair> oldAddresses;
@@ -2325,8 +2330,10 @@ bool SeasideCache::updateContactIndexing(const QContact &oldContact, const QCont
 
                 CachedPhoneNumber cachedPhoneNumber(normalizePhoneNumber(phoneNumber.number()), iid);
 
-                if (!m_phoneNumberIds.contains(address.second, cachedPhoneNumber))
-                    m_phoneNumberIds.insert(address.second, cachedPhoneNumber);
+                if (contact.collectionId() == aggregateCollectionId()) {
+                    if (!m_phoneNumberIds.contains(address.second, cachedPhoneNumber))
+                        m_phoneNumberIds.insert(address.second, cachedPhoneNumber);
+                }
             }
         }
 
@@ -2357,7 +2364,9 @@ bool SeasideCache::updateContactIndexing(const QContact &oldContact, const QCont
                 resolveUnknownAddresses(address.first, address.second, item);
             }
 
-            m_emailAddressIds[address.first] = iid;
+            if (contact.collectionId() == aggregateCollectionId()) {
+                m_emailAddressIds[address.first] = iid;
+            }
         }
 
         if (!oldAddresses.isEmpty()) {
@@ -2389,7 +2398,9 @@ bool SeasideCache::updateContactIndexing(const QContact &oldContact, const QCont
                 resolveUnknownAddresses(address.first, address.second, item);
             }
 
-            m_onlineAccountIds[address] = iid;
+            if (contact.collectionId() == aggregateCollectionId()) {
+                m_onlineAccountIds[address] = iid;
+            }
             hasValid = true;
         }
 
@@ -3393,6 +3404,8 @@ void SeasideCache::resolveAddress(ResolveListener *listener, const QString &firs
             this, SLOT(addressRequestStateChanged(QContactAbstractRequest::State)));
         m_resolveAddresses[request] = data;
         m_pendingResolve.insert(data);
+
+        request->setFilter(request->filter() & aggregateFilter());
         request->start();
     }
 }
@@ -3441,6 +3454,9 @@ SeasideCache::CacheItem *SeasideCache::itemMatchingPhoneNumber(const QString &nu
     CacheItem *matchItem = 0;
     for (QHash<QString, quint32>::const_iterator matchingIt = possibleMatches.begin(); matchingIt != possibleMatches.end(); ++matchingIt) {
         if (CacheItem *item = existingItem(*matchingIt)) {
+            if (item->contact.collectionId() != aggregateCollectionId()) {
+                continue;
+            }
             int matchLength = bestPhoneNumberMatchLength(item->contact, normalized);
             if (matchLength > bestMatchLength) {
                 bestMatchLength = matchLength;
