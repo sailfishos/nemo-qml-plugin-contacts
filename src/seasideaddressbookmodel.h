@@ -34,15 +34,19 @@
 
 #include "seasideaddressbook.h"
 
+#include <QContactRelationshipFetchRequest>
+
 #include <QAbstractListModel>
 #include <QList>
+#include <QQmlParserStatus>
 
 QTCONTACTS_USE_NAMESPACE
 
-class SeasideAddressBookModel : public QAbstractListModel
+class SeasideAddressBookModel : public QAbstractListModel, public QQmlParserStatus
 {
     Q_OBJECT
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
+    Q_PROPERTY(int contactId READ contactId WRITE setContactId NOTIFY contactIdChanged)
 
 public:
     enum Role {
@@ -53,6 +57,9 @@ public:
     SeasideAddressBookModel(QObject *parent = 0);
     ~SeasideAddressBookModel();
 
+    void setContactId(int contactId);
+    int contactId() const;
+
     Q_INVOKABLE SeasideAddressBook addressBookAt(int index) const;
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -61,14 +68,29 @@ public:
 
 signals:
     void countChanged();
+    void contactIdChanged();
+
+protected:
+    void classBegin() override;
+    void componentComplete() override;
 
 private:
     void collectionsAdded(const QList<QContactCollectionId> &collectionIds);
     void collectionsRemoved(const QList<QContactCollectionId> &collectionIds);
     void collectionsChanged(const QList<QContactCollectionId> &collectionIds);
     int findCollection(const QContactCollectionId &id) const;
+    int findFilteredCollection(const QContactCollectionId &id) const;
+    bool matchesFilter(const QContactCollectionId &id) const;
+    void refilter();
+    void filteredCollectionsChanged();
+    void requestStateChanged(QContactAbstractRequest::State state);
 
     QList<SeasideAddressBook> m_addressBooks;
+    QList<SeasideAddressBook> m_filteredAddressBooks;
+    QList<QContactCollectionId> m_allowedCollections;
+    QContactRelationshipFetchRequest *m_relationshipsFetch = nullptr;
+    int m_contactId = -1;
+    bool m_complete = false;
  };
 
 #endif

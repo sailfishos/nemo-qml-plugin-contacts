@@ -34,6 +34,7 @@
 #include <seasidecache.h>
 
 #include <QtDebug>
+#include <QQmlInfo>
 
 SeasideAddressBookModel::SeasideAddressBookModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -49,15 +50,31 @@ SeasideAddressBookModel::SeasideAddressBookModel(QObject *parent)
             this, &SeasideAddressBookModel::collectionsRemoved);
     connect(SeasideCache::manager(), &QContactManager::collectionsChanged,
             this, &SeasideAddressBookModel::collectionsChanged);
+
+    refilter();
 }
 
 SeasideAddressBookModel::~SeasideAddressBookModel()
 {
 }
 
+void SeasideAddressBookModel::setContactId(int contactId)
+{
+    if (m_contactId != contactId) {
+        m_contactId = contactId;
+        refilter();
+        emit contactIdChanged();
+    }
+}
+
+int SeasideAddressBookModel::contactId() const
+{
+    return m_contactId;
+}
+
 SeasideAddressBook SeasideAddressBookModel::addressBookAt(int index) const
 {
-    return m_addressBooks.value(index);
+    return m_filteredAddressBooks.value(index);
 }
 
 QHash<int, QByteArray> SeasideAddressBookModel::roleNames() const
@@ -70,42 +87,74 @@ QHash<int, QByteArray> SeasideAddressBookModel::roleNames() const
 int SeasideAddressBookModel::rowCount(const QModelIndex &parent) const
 {
     return !parent.isValid()
-            ? m_addressBooks.count()
+            ? m_filteredAddressBooks.count()
             : 0;
 }
 
 QVariant SeasideAddressBookModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid() || index.row() < 0 || index.row() >= m_addressBooks.count())
+    if (!index.isValid() || index.row() < 0 || index.row() >= m_filteredAddressBooks.count())
         return QVariant();
 
     switch (role) {
     case AddressBookRole:
-        return QVariant::fromValue(m_addressBooks.at(index.row()));
+        return QVariant::fromValue(m_filteredAddressBooks.at(index.row()));
     }
 
     return QVariant();
 }
 
+void SeasideAddressBookModel::classBegin()
+{
+}
+
+void SeasideAddressBookModel::componentComplete()
+{
+    m_complete = true;
+    refilter();
+}
+
 void SeasideAddressBookModel::collectionsAdded(const QList<QContactCollectionId> &collectionIds)
 {
-    beginInsertRows(QModelIndex(), m_addressBooks.count(), m_addressBooks.count() + collectionIds.count() - 1);
+    QList<QContactCollectionId> collectionsMatchingFilter;
+    for (const QContactCollectionId &id : collectionIds) {
+        if (matchesFilter(id)) {
+            collectionsMatchingFilter.append(id);
+        }
+    }
+
+    if (collectionsMatchingFilter.count() > 0) {
+        beginInsertRows(QModelIndex(),
+                        m_filteredAddressBooks.count(),
+                        m_filteredAddressBooks.count() + collectionsMatchingFilter.count() - 1);
+    }
+    for (const QContactCollectionId &id : collectionsMatchingFilter) {
+        m_filteredAddressBooks.append(SeasideAddressBook::fromCollectionId(id));
+    }
     for (const QContactCollectionId &id : collectionIds) {
         m_addressBooks.append(SeasideAddressBook::fromCollectionId(id));
     }
-    endInsertRows();
-    emit countChanged();
+    if (collectionsMatchingFilter.count() > 0) {
+        endInsertRows();
+        emit countChanged();
+    }
 }
 
 void SeasideAddressBookModel::collectionsRemoved(const QList<QContactCollectionId> &collectionIds)
 {
     for (const QContactCollectionId &id : collectionIds) {
-        int i = findCollection(id);
+        const int i = findCollection(id);
         if (i >= 0) {
-            beginRemoveRows(QModelIndex(), i, i);
-            m_addressBooks.removeAt (i);
-            endRemoveRows();
-            emit countChanged();
+            const int filteredIndex = findFilteredCollection(id);
+            if (filteredIndex >= 0) {
+                beginRemoveRows(QModelIndex(), filteredIndex, filteredIndex);
+                m_filteredAddressBooks.removeAt(filteredIndex);
+            }
+            m_addressBooks.removeAt(i);
+            if (filteredIndex >= 0) {
+                endRemoveRows();
+                emit countChanged();
+            }
         }
     }
 }
@@ -114,23 +163,124 @@ void SeasideAddressBookModel::collectionsChanged(const QList<QContactCollectionI
 {
     int startRow = 0;
     int endRow = 0;
+    bool emitDataChanged = false;
+
     for (const QContactCollectionId &id : collectionIds) {
-        int i = findCollection(id);
+        const int i = findCollection(id);
         if (i >= 0) {
-            startRow = qMin(i, startRow);
-            endRow = qMax(i, endRow);
+            const int filteredIndex = findFilteredCollection(id);
+            if (filteredIndex >= 0) {
+                startRow = qMin(filteredIndex, startRow);
+                endRow = qMax(filteredIndex, endRow);
+                emitDataChanged = true;
+            }
             m_addressBooks.replace(i, SeasideAddressBook::fromCollectionId(id));
         }
     }
 
-    static const QVector<int> roles = QVector<int>() << AddressBookRole;
-    emit dataChanged(createIndex(startRow, 0), createIndex(endRow, 0), roles);
+    if (emitDataChanged) {
+        static const QVector<int> roles = QVector<int>() << AddressBookRole;
+        emit dataChanged(createIndex(startRow, 0), createIndex(endRow, 0), roles);
+    }
+}
+
+bool SeasideAddressBookModel::matchesFilter(const QContactCollectionId &id) const
+{
+    if (m_contactId <= 0) {
+        // No contact filter set, so add all available collections to the model.
+        return true;
+    }
+
+    if (m_allowedCollections.isEmpty()) {
+        // A filter has been set but the constituents have not yet been fetched.
+        return true;
+    }
+
+    return m_allowedCollections.contains(id);
+}
+
+void SeasideAddressBookModel::refilter()
+{
+    if (!m_complete) {
+        return;
+    }
+
+    if (m_contactId <= 0) {
+        // No filter set, so update immediately
+        filteredCollectionsChanged();
+    } else {
+        // Find the constituents of the contact
+        if (!m_relationshipsFetch) {
+            m_relationshipsFetch = new QContactRelationshipFetchRequest(this);
+            m_relationshipsFetch->setManager(SeasideCache::manager());
+            m_relationshipsFetch->setRelationshipType(QContactRelationship::Aggregates());
+            connect(m_relationshipsFetch, &QContactAbstractRequest::stateChanged,
+                    this, &SeasideAddressBookModel::requestStateChanged);
+        }
+        if (m_relationshipsFetch->state() == QContactAbstractRequest::ActiveState
+                && !m_relationshipsFetch->cancel()) {
+            qmlInfo(this) << "Unable to filter address books, cannot cancel active relationship request";
+            return;
+        }
+        m_allowedCollections.clear();
+        m_relationshipsFetch->setFirst(SeasideCache::apiId(m_contactId));
+        m_relationshipsFetch->start();
+    }
+}
+
+void SeasideAddressBookModel::requestStateChanged(QContactAbstractRequest::State state)
+{
+    if (state != QContactAbstractRequest::FinishedState)
+        return;
+
+    // For each constituent of the contact, add the constituent's collections to the list of
+    // (unique) allowed collections.
+    for (const QContactRelationship &rel : m_relationshipsFetch->relationships()) {
+        if (rel.relationshipType() == QContactRelationship::Aggregates()) {
+            const QContactId constituentId = rel.second();
+            const QContactCollectionId collectionId =
+                    SeasideCache::manager()->contact(constituentId).collectionId();
+            if (!m_allowedCollections.contains(collectionId)) {
+                m_allowedCollections.append(collectionId);
+            }
+        }
+    }
+
+    filteredCollectionsChanged();
+}
+
+void SeasideAddressBookModel::filteredCollectionsChanged()
+{
+    const int prevCount = rowCount();
+    beginResetModel();
+    m_filteredAddressBooks.clear();
+
+    for (const SeasideAddressBook &addressBook : m_addressBooks) {
+        if (matchesFilter(addressBook.collectionId)) {
+            m_filteredAddressBooks.append(addressBook);
+        }
+    }
+
+    endResetModel();
+    if (prevCount != rowCount()) {
+        emit countChanged();
+    }
 }
 
 int SeasideAddressBookModel::findCollection(const QContactCollectionId &id) const
 {
     for (int i = 0; i < m_addressBooks.count(); ++i) {
         if (m_addressBooks.at(i).collectionId == id) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int SeasideAddressBookModel::findFilteredCollection(const QContactCollectionId &id) const
+{
+    for (int i = 0; i < m_filteredAddressBooks.count(); ++i) {
+        if (m_filteredAddressBooks.at(i).collectionId == id) {
             return i;
         }
     }
