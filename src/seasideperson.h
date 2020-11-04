@@ -421,9 +421,6 @@ private:
     void emitChangeSignals();
     static QDateTime birthday(const QContact &contact);
 
-    QString getPrimaryName(const QContact &contact) const;
-    QString getSecondaryName(const QContact &contact) const;
-
     enum AttachState {
         Unattached = 0,
         Attached,

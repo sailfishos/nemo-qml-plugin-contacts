@@ -417,6 +417,16 @@ bool SeasideCache::isPopulated(FilterType filterType)
     return instancePtr->m_populated[filterType];
 }
 
+QString SeasideCache::getPrimaryName(const QContact &contact)
+{
+    return QString();
+}
+
+QString SeasideCache::getSecondaryName(const QContact &contact)
+{
+    return QString();
+}
+
 QString SeasideCache::primaryName(const QString &, const QString &)
 {
     return QString();

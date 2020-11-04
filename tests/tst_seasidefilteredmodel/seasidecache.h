@@ -208,6 +208,9 @@ public:
     static const QList<quint32> *contacts(FilterType filterType);
     static bool isPopulated(FilterType filterType);
 
+    static QString getPrimaryName(const QContact &contact);
+    static QString getSecondaryName(const QContact &contact);
+
     static QString primaryName(const QString &firstName, const QString &lastName);
     static QString secondaryName(const QString &firstName, const QString &lastName);
 

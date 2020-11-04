@@ -311,7 +311,7 @@ QString SeasidePerson::displayLabel() const
 
 QString SeasidePerson::primaryName() const
 {
-    QString primaryName(getPrimaryName(*mContact));
+    QString primaryName(SeasideCache::getPrimaryName(*mContact));
     if (!primaryName.isEmpty())
         return primaryName;
 
@@ -325,7 +325,7 @@ QString SeasidePerson::primaryName() const
 
 QString SeasidePerson::secondaryName() const
 {
-    return getSecondaryName(*mContact);
+    return SeasideCache::getSecondaryName(*mContact);
 }
 
 QString SeasidePerson::sectionBucket() const
@@ -1951,10 +1951,10 @@ void SeasidePerson::updateContactDetails(const QContact &oldContact)
     if (oldContact.collectionId() != mContact->collectionId())
         emitChangeSignal(&SeasidePerson::addressBookChanged);
 
-    if (getPrimaryName(oldContact) != primaryName())
+    if (SeasideCache::getPrimaryName(oldContact) != primaryName())
         emitChangeSignal(&SeasidePerson::primaryNameChanged);
 
-    if (getSecondaryName(oldContact) != secondaryName())
+    if (SeasideCache::getSecondaryName(oldContact) != secondaryName())
         emitChangeSignal(&SeasidePerson::secondaryNameChanged);
 
     QContactName oldName = oldContact.detail<QContactName>();
@@ -2082,18 +2082,6 @@ void SeasidePerson::emitChangeSignals()
     emitChangeSignal(&SeasidePerson::anniversaryDetailsChanged);
     emitChangeSignal(&SeasidePerson::noteDetailsChanged);
     emit dataChanged();
-}
-
-QString SeasidePerson::getPrimaryName(const QContact &contact) const
-{
-    const QContactName nameDetail = contact.detail<QContactName>();
-    return SeasideCache::primaryName(nameDetail.firstName(), nameDetail.lastName());
-}
-
-QString SeasidePerson::getSecondaryName(const QContact &contact) const
-{
-    const QContactName nameDetail = contact.detail<QContactName>();
-    return SeasideCache::secondaryName(nameDetail.firstName(), nameDetail.lastName());
 }
 
 void SeasidePerson::ensureComplete()

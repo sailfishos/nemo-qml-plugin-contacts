@@ -43,6 +43,8 @@ namespace {
 const QByteArray idRole("id");
 const QByteArray addressBookRole("addressBook");
 const QByteArray displayLabelRole("displayLabel");
+const QByteArray primaryNameRole("primaryName");
+const QByteArray secondaryNameRole("secondaryName");
 
 }
 
@@ -77,6 +79,8 @@ QHash<int, QByteArray> SeasideSimpleContactModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
     roles.insert(IdRole, idRole);
+    roles.insert(PrimaryNameRole, primaryNameRole);
+    roles.insert(SecondaryNameRole, secondaryNameRole);
     roles.insert(DisplayLabelRole, displayLabelRole);
     roles.insert(AddressBookRole, addressBookRole);
     return roles;
@@ -98,6 +102,10 @@ QVariant SeasideSimpleContactModel::data(const QModelIndex &index, int role) con
     switch (role) {
     case IdRole:
         return contactInfo.cacheItem->iid;
+    case PrimaryNameRole:
+        return getPrimaryName(contactInfo.cacheItem);
+    case SecondaryNameRole:
+        return SeasideCache::getSecondaryName(contactInfo.cacheItem->contact);
     case DisplayLabelRole:
         return contactInfo.cacheItem->displayLabel;
     case AddressBookRole:
@@ -207,6 +215,12 @@ void SeasideSimpleContactModel::itemUpdated(SeasideCache::CacheItem *item)
             if (m_contacts[i].cacheItem->iid != item->iid) {
                 roles << IdRole;
             }
+            if (getPrimaryName(m_contacts[i].cacheItem) != getPrimaryName(item)) {
+                roles << PrimaryNameRole;
+            }
+            if (SeasideCache::getSecondaryName(m_contacts[i].cacheItem->contact) != SeasideCache::getSecondaryName(item->contact)) {
+                roles << SecondaryNameRole;
+            }
             if (m_contacts[i].cacheItem->displayLabel != item->displayLabel) {
                 roles << DisplayLabelRole;
             }
@@ -229,4 +243,10 @@ void SeasideSimpleContactModel::itemAboutToBeRemoved(SeasideCache::CacheItem *it
             break;
         }
     }
+}
+
+QString SeasideSimpleContactModel::getPrimaryName(SeasideCache::CacheItem *item)
+{
+    const QString primaryName = SeasideCache::getPrimaryName(item->contact);
+    return !primaryName.isEmpty() ? primaryName : item->displayLabel;
 }
