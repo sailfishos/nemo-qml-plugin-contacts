@@ -54,6 +54,8 @@ class SeasideSimpleContactModel : public QAbstractListModel,
 public:
     enum Role {
         IdRole = Qt::UserRole,
+        PrimaryNameRole,
+        SecondaryNameRole,
         DisplayLabelRole,
         AddressBookRole,
     };
@@ -92,6 +94,8 @@ protected:
     virtual void itemAboutToBeRemoved(SeasideCache::CacheItem *item);
     void setContactIds(const QList<int> &contactIds);
     void updateOrReset(const QList<int> &newContactIds);
+
+    static QString getPrimaryName(SeasideCache::CacheItem *item);
 
     QList<ContactInfo> m_contacts;
     bool m_complete = false;
