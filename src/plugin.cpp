@@ -39,6 +39,7 @@
 
 #include "seasideaddressbook.h"
 #include "seasideaddressbookmodel.h"
+#include "seasideaddressbookutil.h"
 #include "seasideperson.h"
 #include "seasidefilteredmodel.h"
 #include "seasidedisplaylabelgroupmodel.h"
@@ -99,6 +100,7 @@ public:
         qmlRegisterType<SeasideMergeCandidateModel>(uri, 1, 0, "MergeCandidateModel");
         qmlRegisterUncreatableType<SeasideAddressBook>(uri, 1, 0, "AddressBook", "");
         qmlRegisterSingletonType<KnownContacts>(uri, 1, 0, "KnownContacts", singletonApiCallback<KnownContacts>);
+        qmlRegisterSingletonType<SeasideAddressBookUtil>(uri, 1, 0, "AddressBookUtil", singletonApiCallback<SeasideAddressBookUtil>);
     }
 };
 
