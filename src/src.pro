@@ -34,6 +34,7 @@ QMAKE_EXTRA_TARGETS += qmltypes
 SOURCES += $$PWD/plugin.cpp \
            $$PWD/seasideaddressbook.cpp \
            $$PWD/seasideaddressbookmodel.cpp \
+           $$PWD/seasideaddressbookutil.cpp \
            $$PWD/seasideperson.cpp \
            $$PWD/seasidefilteredmodel.cpp \
            $$PWD/seasidedisplaylabelgroupmodel.cpp \
@@ -47,6 +48,7 @@ SOURCES += $$PWD/plugin.cpp \
 HEADERS += $$PWD/seasideperson.h \
            $$PWD/seasideaddressbook.h \
            $$PWD/seasideaddressbookmodel.h \
+           $$PWD/seasideaddressbookutil.h \
            $$PWD/seasidefilteredmodel.h \
            $$PWD/seasidedisplaylabelgroupmodel.h \
            $$PWD/seasidestringlistcompressor.h \
