@@ -60,7 +60,7 @@ public:
     void setContactId(int contactId);
     int contactId() const;
 
-    Q_INVOKABLE SeasideAddressBook addressBookAt(int index) const;
+    Q_INVOKABLE QVariant addressBookAt(int index) const;
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role) const override;
