@@ -72,9 +72,9 @@ int SeasideAddressBookModel::contactId() const
     return m_contactId;
 }
 
-SeasideAddressBook SeasideAddressBookModel::addressBookAt(int index) const
+QVariant SeasideAddressBookModel::addressBookAt(int index) const
 {
-    return m_filteredAddressBooks.value(index);
+    return QVariant::fromValue(m_filteredAddressBooks.value(index));
 }
 
 QHash<int, QByteArray> SeasideAddressBookModel::roleNames() const
