@@ -87,6 +87,7 @@ protected:
 
         SeasideAddressBook addressBook;
         SeasideCache::CacheItem *cacheItem = nullptr;
+        QString displayLabel;
     };
 
     virtual void reset() = 0;
@@ -95,7 +96,7 @@ protected:
     void setContactIds(const QList<int> &contactIds);
     void updateOrReset(const QList<int> &newContactIds);
 
-    static QString getPrimaryName(SeasideCache::CacheItem *item);
+    static QString getPrimaryName(SeasideCache::CacheItem *item, const QString &displayLabel);
 
     QList<ContactInfo> m_contacts;
     bool m_complete = false;
