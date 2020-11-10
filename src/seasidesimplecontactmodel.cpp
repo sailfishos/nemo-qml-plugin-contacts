@@ -53,6 +53,7 @@ SeasideSimpleContactModel::ContactInfo::ContactInfo(SeasideCache::CacheItem *cac
 {
     if (cacheItem) {
         addressBook = SeasideAddressBook::fromCollectionId(cacheItem->contact.collectionId());
+        displayLabel = cacheItem->displayLabel;
     } else {
         qWarning() << "Invalid ContactInfo cache item!";
     }
@@ -103,11 +104,11 @@ QVariant SeasideSimpleContactModel::data(const QModelIndex &index, int role) con
     case IdRole:
         return contactInfo.cacheItem->iid;
     case PrimaryNameRole:
-        return getPrimaryName(contactInfo.cacheItem);
+        return getPrimaryName(contactInfo.cacheItem, contactInfo.displayLabel);
     case SecondaryNameRole:
         return SeasideCache::getSecondaryName(contactInfo.cacheItem->contact);
     case DisplayLabelRole:
-        return contactInfo.cacheItem->displayLabel;
+        return contactInfo.displayLabel;
     case AddressBookRole:
         return QVariant::fromValue(contactInfo.addressBook);
     }
@@ -210,21 +211,22 @@ void SeasideSimpleContactModel::setContactIds(const QList<int> &contactIds)
 void SeasideSimpleContactModel::itemUpdated(SeasideCache::CacheItem *item)
 {
     for (int i = 0; i < m_contacts.count(); ++i) {
-        if (m_contacts[i].cacheItem == item) {
+        if (m_contacts[i].cacheItem->iid == item->iid) {
             QVector<int> roles;
-            if (m_contacts[i].cacheItem->iid != item->iid) {
-                roles << IdRole;
-            }
-            if (getPrimaryName(m_contacts[i].cacheItem) != getPrimaryName(item)) {
+            if (getPrimaryName(m_contacts[i].cacheItem, m_contacts[i].displayLabel)
+                    != getPrimaryName(item, item->displayLabel)) {
                 roles << PrimaryNameRole;
             }
             if (SeasideCache::getSecondaryName(m_contacts[i].cacheItem->contact) != SeasideCache::getSecondaryName(item->contact)) {
                 roles << SecondaryNameRole;
             }
-            if (m_contacts[i].cacheItem->displayLabel != item->displayLabel) {
+            if (m_contacts[i].displayLabel != item->displayLabel) {
+                m_contacts[i].displayLabel = item->displayLabel;
                 roles << DisplayLabelRole;
             }
-            if (m_contacts[i].addressBook != SeasideAddressBook::fromCollectionId(item->contact.collectionId())) {
+            const SeasideAddressBook addressBook = SeasideAddressBook::fromCollectionId(item->contact.collectionId());
+            if (m_contacts[i].addressBook != addressBook) {
+                m_contacts[i].addressBook = addressBook;
                 roles << AddressBookRole;
             }
             emit dataChanged(createIndex(i, 0), createIndex(i, 0), roles);
@@ -245,8 +247,8 @@ void SeasideSimpleContactModel::itemAboutToBeRemoved(SeasideCache::CacheItem *it
     }
 }
 
-QString SeasideSimpleContactModel::getPrimaryName(SeasideCache::CacheItem *item)
+QString SeasideSimpleContactModel::getPrimaryName(SeasideCache::CacheItem *item, const QString &displayLabel)
 {
     const QString primaryName = SeasideCache::getPrimaryName(item->contact);
-    return !primaryName.isEmpty() ? primaryName : item->displayLabel;
+    return !primaryName.isEmpty() ? primaryName : displayLabel;
 }
