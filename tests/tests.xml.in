@@ -5,13 +5,16 @@
        <set name="contactcache-test0" feature="Contacts">
            <description>Contact cache automatic tests</description>
            <case manual="false" name="synchronizelists">
-               <step>LIBCONTACTS_TEST_MODE=1 /usr/sbin/run-blts-root /bin/su -g privileged -c '/opt/tests/@PACKAGENAME@/tst_synchronizelists' nemo</step>
+               <step>/opt/tests/@BASENAME@/contacts/run_test.sh @BASENAME@ tst_synchronizelists</step>
            </case>
            <case manual="false" name="seasideimport">
-               <step>LIBCONTACTS_TEST_MODE=1 /usr/sbin/run-blts-root /bin/su -g privileged -c '/opt/tests/@PACKAGENAME@/tst_seasideimport' nemo</step>
+               <step>/opt/tests/@BASENAME@/contacts/run_test.sh @BASENAME@ tst_seasideimport</step>
            </case>
            <case manual="false" name="resolve">
-               <step>LIBCONTACTS_TEST_MODE=1 /usr/sbin/run-blts-root /bin/su -g privileged -c '/opt/tests/@PACKAGENAME@/tst_resolve' nemo</step>
+               <step>/opt/tests/@BASENAME@/contacts/run_test.sh @BASENAME@ tst_resolve</step>
+           </case>
+           <case manual="false" name="seasidestringlistcompressor">
+               <step>/opt/tests/@BASENAME@/contacts/run_test.sh @BASENAME@ tst_seasidestringlistcompressor</step>
            </case>
        </set>
    </suite>
@@ -20,10 +23,10 @@
        <set name="@BASENAME@-contacts-test0" feature="QML Contacts">
            <description>Contacts QML plugin automatic tests</description>
            <case manual="false" name="seasideperson" timeout="600">
-               <step>/opt/tests/@BASENAME@/contacts/tst_seasideperson</step>
+               <step>/opt/tests/@BASENAME@/contacts/run_test.sh @BASENAME@ tst_seasideperson</step>
            </case>
            <case manual="false" name="seasidefilteredmodel">
-               <step>/opt/tests/@BASENAME@/contacts/tst_seasidefilteredmodel</step>
+               <step>/opt/tests/@BASENAME@/contacts/run_test.sh @BASENAME@ tst_seasidefilteredmodel</step>
            </case>
        </set>
    </suite>

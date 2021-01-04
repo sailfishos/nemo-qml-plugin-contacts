@@ -547,21 +547,23 @@ void tst_SeasideFilteredModel::filterCharacters()
         QSKIP("Character matching is not testable with unknown locale");
     }
 
-    // 1 2 3 4
+    // 1 2 3 4 5 - note that Ælvis will match due to NameDetails.Contains match rule with diacritic decomposition
     model.setFilterPattern("Elvis");
-    QCOMPARE(model.rowCount(), 4);
+    QCOMPARE(model.rowCount(), 5);
     QCOMPARE(model.index(QModelIndex(), 0, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 1);
     QCOMPARE(model.index(QModelIndex(), 1, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 2);
     QCOMPARE(model.index(QModelIndex(), 2, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 3);
     QCOMPARE(model.index(QModelIndex(), 3, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 4);
+    QCOMPARE(model.index(QModelIndex(), 4, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 5);
 
-    // 1 2 3 4
+    // 1 2 3 4 5 - note that Ælvis will match due to NameDetails.Contains match rule with diacritic decomposition
     model.setFilterPattern("elvis");
-    QCOMPARE(model.rowCount(), 4);
+    QCOMPARE(model.rowCount(), 5);
     QCOMPARE(model.index(QModelIndex(), 0, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 1);
     QCOMPARE(model.index(QModelIndex(), 1, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 2);
     QCOMPARE(model.index(QModelIndex(), 2, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 3);
     QCOMPARE(model.index(QModelIndex(), 3, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 4);
+    QCOMPARE(model.index(QModelIndex(), 4, 0).data(SeasideFilteredModel::ContactIdRole).toInt(), 5);
 
     // 3
     model.setFilterPattern(QString::fromUtf8(u8"\u00CBlvis")); // 'Ëlvis'
