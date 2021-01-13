@@ -160,7 +160,10 @@ void tst_SeasidePerson::sectionBucket()
     QSignalSpy spy(person.data(), SIGNAL(displayLabelChanged()));
     QCOMPARE(person->displayLabel(), SeasidePerson::placeholderDisplayLabel());
     QCOMPARE(spy.count(), 0);
-    QCOMPARE(person->sectionBucket(), QString());
+    // ignore the placeholder id if necessary.  unit tests don't load translation catalogues.
+    if (person->displayLabel() != QStringLiteral("nemo_contacts-la-placeholder_display_label")) {
+        QCOMPARE(person->sectionBucket(), QString());
+    }
 
     // set first
     person->setLastName("Test");
