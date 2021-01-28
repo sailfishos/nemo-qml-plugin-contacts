@@ -9,7 +9,7 @@ CONFIG += qt plugin hide_symbols
 QT = \
     core  \
     qml
-PKGCONFIG += mlocale5
+PKGCONFIG += mlocale5 accounts-qt5
 
 packagesExist(mlite5) {
     PKGCONFIG += mlite5

@@ -33,15 +33,57 @@
 
 #include <seasidecache.h>
 
+#include <qtcontacts-extensions_manager_impl.h>
+#include <QContactCollection>
+
+#include <Accounts/Manager>
+#include <Accounts/AccountService>
+#include <Accounts/Account>
+#include <Accounts/Service>
+
 #include <QtDebug>
 #include <QQmlInfo>
 
+namespace {
+    bool accountIsEnabled(Accounts::Account *account)
+    {
+        Accounts::Service srv;
+        const Accounts::ServiceList &services = account->services();
+        for (const Accounts::Service &s : services) {
+            if (s.serviceType().toLower() == QStringLiteral("carddav")
+                    || s.name().toLower().contains(QStringLiteral("carddav"))
+                    || s.name().toLower().contains(QStringLiteral("contacts"))) {
+                srv = s;
+                break;
+            }
+        }
+
+        Accounts::AccountService globalSrv(account, Accounts::Service());
+        if (srv.isValid()) {
+            Accounts::AccountService accSrv(account, srv);
+            return globalSrv.isEnabled() && accSrv.isEnabled();
+        } else {
+            return globalSrv.isEnabled();
+        }
+    }
+
+    bool addressBookIsEnabled(const QContactCollection &col, Accounts::Manager *accountManager)
+    {
+        const Accounts::AccountId accountId = col.extendedMetaData(COLLECTION_EXTENDEDMETADATA_KEY_ACCOUNTID).toInt();
+        Accounts::Account *account = (accountId > 0) ? accountManager->account(accountId) : nullptr;
+        return !account || accountIsEnabled(account);
+    }
+}
+
 SeasideAddressBookModel::SeasideAddressBookModel(QObject *parent)
     : QAbstractListModel(parent)
+    , m_accountManager(new Accounts::Manager(this))
 {
     const QList<QContactCollection> collections = SeasideCache::manager()->collections();
     for (const QContactCollection &collection : collections) {
-        m_addressBooks.append(SeasideAddressBook::fromCollectionId(collection.id()));
+        if (addressBookIsEnabled(collection, m_accountManager)) {
+            m_addressBooks.append(SeasideAddressBook::fromCollectionId(collection.id()));
+        }
     }
 
     connect(SeasideCache::manager(), &QContactManager::collectionsAdded,
@@ -119,7 +161,9 @@ void SeasideAddressBookModel::collectionsAdded(const QList<QContactCollectionId>
     QList<QContactCollectionId> collectionsMatchingFilter;
     for (const QContactCollectionId &id : collectionIds) {
         if (matchesFilter(id)) {
-            collectionsMatchingFilter.append(id);
+            if (addressBookIsEnabled(SeasideCache::manager()->collection(id), m_accountManager)) {
+                collectionsMatchingFilter.append(id);
+            }
         }
     }
 
@@ -132,7 +176,9 @@ void SeasideAddressBookModel::collectionsAdded(const QList<QContactCollectionId>
         m_filteredAddressBooks.append(SeasideAddressBook::fromCollectionId(id));
     }
     for (const QContactCollectionId &id : collectionIds) {
-        m_addressBooks.append(SeasideAddressBook::fromCollectionId(id));
+        if (addressBookIsEnabled(SeasideCache::manager()->collection(id), m_accountManager)) {
+            m_addressBooks.append(SeasideAddressBook::fromCollectionId(id));
+        }
     }
     if (collectionsMatchingFilter.count() > 0) {
         endInsertRows();
