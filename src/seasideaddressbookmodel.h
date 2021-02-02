@@ -40,6 +40,8 @@
 #include <QList>
 #include <QQmlParserStatus>
 
+#include <Accounts/Manager>
+
 QTCONTACTS_USE_NAMESPACE
 
 class SeasideAddressBookModel : public QAbstractListModel, public QQmlParserStatus
@@ -89,6 +91,7 @@ private:
     QList<SeasideAddressBook> m_filteredAddressBooks;
     QList<QContactCollectionId> m_allowedCollections;
     QContactRelationshipFetchRequest *m_relationshipsFetch = nullptr;
+    Accounts::Manager *m_accountManager = nullptr;
     int m_contactId = -1;
     bool m_complete = false;
  };
