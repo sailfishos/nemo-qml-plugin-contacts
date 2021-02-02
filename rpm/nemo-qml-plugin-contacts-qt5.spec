@@ -1,7 +1,7 @@
 Name:       nemo-qml-plugin-contacts-qt5
 
 Summary:    Nemo QML contacts library
-Version:    0.3.10
+Version:    0.3.13
 Release:    1
 License:    BSD
 URL:        https://git.merproject.org/mer-core/nemo-qml-plugin-contacts
