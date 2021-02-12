@@ -55,6 +55,7 @@
 #include <QVersitWriter>
 #include <QVersitContactExporter>
 
+#include <QFile>
 #include <QDebug>
 
 QTVERSIT_USE_NAMESPACE
@@ -464,10 +465,13 @@ void SeasidePerson::setAvatarUrl(QUrl avatarUrl)
             } else {
                 // We can only have one local avatar
                 QContactAvatar obsoleteAvatar(avatar);
+                SeasideCache::removeLocalAvatarFile(*mContact, obsoleteAvatar);
                 mContact->removeDetail(&obsoleteAvatar);
             }
         }
     }
+
+    SeasideCache::removeLocalAvatarFile(*mContact, localAvatar);
 
     localAvatar.setImageUrl(avatarUrl);
     localAvatar.setValue(QContactAvatar::FieldMetaData, localMetadata);

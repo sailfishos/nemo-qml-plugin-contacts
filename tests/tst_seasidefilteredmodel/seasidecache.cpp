@@ -460,6 +460,11 @@ QUrl SeasideCache::filteredAvatarUrl(const QContact &contact, const QStringList 
     return QUrl();
 }
 
+bool SeasideCache::removeLocalAvatarFile(const QContact &, const QContactAvatar &)
+{
+    return false;
+}
+
 QString SeasideCache::normalizePhoneNumber(const QString &input, bool)
 {
     return input;
