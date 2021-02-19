@@ -1990,10 +1990,7 @@ void SeasidePerson::updateContactDetails(const QContact &oldContact)
     if (oldFavorite.isFavorite() != newFavorite.isFavorite())
         emitChangeSignal(&SeasidePerson::favoriteChanged);
 
-    QContactAvatar oldAvatar = oldContact.detail<QContactAvatar>();
-    QContactAvatar newAvatar = mContact->detail<QContactAvatar>();
-
-    if (oldAvatar.imageUrl() != newAvatar.imageUrl()) {
+    if (SeasideCache::filteredAvatarUrl(oldContact) != SeasideCache::filteredAvatarUrl(*mContact)) {
         emitChangeSignal(&SeasidePerson::avatarUrlChanged);
         emitChangeSignal(&SeasidePerson::avatarPathChanged);
     }
