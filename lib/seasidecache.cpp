@@ -1391,10 +1391,10 @@ static bool avatarUrlWithMetadata(const QContact &contact, QUrl &matchingUrl, co
     static const QString localMetadata(QString::fromLatin1("local"));
     static const QString fileScheme(QString::fromLatin1("file"));
 
-    int fallbackScore = 0;
-    QUrl fallbackUrl;
-
     QList<QContactAvatar> avatarDetails = contact.details<QContactAvatar>();
+    QMap<QString, QContactAvatar> newestAvatarsMap;
+
+    // Find the last modified avatar for each metadata type.
     for (int i = 0; i < avatarDetails.size(); ++i) {
         const QContactAvatar &av(avatarDetails[i]);
 
@@ -1404,6 +1404,26 @@ static bool avatarUrlWithMetadata(const QContact &contact, QUrl &matchingUrl, co
             continue;
         }
 
+        auto latestAvatarIt = newestAvatarsMap.find(metadata);
+        if (latestAvatarIt == newestAvatarsMap.end()) {
+            newestAvatarsMap.insert(metadata, av);
+        } else {
+            if (av.value(QContactDetail__FieldModified).toDateTime() >
+                    latestAvatarIt.value().value(QContactDetail__FieldModified).toDateTime()) {
+                latestAvatarIt.value() = av;
+            }
+        }
+    }
+
+    int fallbackScore = 0;
+    QUrl fallbackUrl;
+
+    // Select an appropriate avatar from the list of last modified avatars.
+    QList<QContactAvatar> latestAvatars = newestAvatarsMap.values();
+
+    for (int i = 0; i < latestAvatars.size(); ++i) {
+        const QContactAvatar &av(latestAvatars[i]);
+        const QString metadata(av.value(QContactAvatar::FieldMetaData).toString());
         const QUrl avatarImageUrl = av.imageUrl();
 
         if (metadata == localMetadata) {
