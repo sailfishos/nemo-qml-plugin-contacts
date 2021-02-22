@@ -8,6 +8,7 @@
 #include <QContactId>
 #include <QContactManager>
 #include <QContactCollection>
+#include <QContactAvatar>
 
 #include <QAbstractListModel>
 
@@ -218,6 +219,7 @@ public:
     static QString generateDisplayLabel(const QContact &contact, DisplayLabelOrder order = FirstNameFirst);
     static QString generateDisplayLabelFromNonNameDetails(const QContact &contact);
     static QUrl filteredAvatarUrl(const QContact &contact, const QStringList &metadataFragments = QStringList());
+    static bool removeLocalAvatarFile(const QContact &, const QContactAvatar &);
 
     static QString normalizePhoneNumber(const QString &input, bool validate = false);
     static QString minimizePhoneNumber(const QString &input, bool validate = false);

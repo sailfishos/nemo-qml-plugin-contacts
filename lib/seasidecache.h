@@ -53,6 +53,7 @@
 #include <QContactIdFetchRequest>
 #include <QContactName>
 #include <QContactCollectionId>
+#include <QContactAvatar>
 
 #include <QTranslator>
 #include <QBasicTimer>
@@ -363,6 +364,7 @@ public:
     static QString generateDisplayLabel(const QContact &contact, DisplayLabelOrder order = FirstNameFirst, bool fallbackToNonNameDetails = true);
     static QString generateDisplayLabelFromNonNameDetails(const QContact &contact);
     static QUrl filteredAvatarUrl(const QContact &contact, const QStringList &metadataFragments = QStringList());
+    static bool removeLocalAvatarFile(const QContact &contact, const QContactAvatar &avatar);
 
     static QString normalizePhoneNumber(const QString &input, bool validate = false);
     static QString minimizePhoneNumber(const QString &input, bool validate = false);

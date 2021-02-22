@@ -35,6 +35,11 @@
 // Qt
 #include <QCoreApplication>
 #include <QTextStream>
+#include <QFile>
+#include <QDir>
+#include <QStandardPaths>
+#include <QUrl>
+#include <QFileInfo>
 #include <QDebug>
 
 // Contacts
@@ -92,7 +97,8 @@ void invalidUsage(const QString &app)
         "  links <ID...>        - lists links for contacts matching the supplied ID list\n"
         "  delete <ID...>       - removes contacts matching the supplied ID list\n"
         "  dump [ID...]         - displays contact details in debug format\n"
-        "  collections          - lists all contact collections"
+        "  remove-stale-files   - deletes contact file assets that are no longer used by any contacts\n"
+        "  collections          - lists all contact collections\n"
         "  help                 - show this command summary\n"
         "  version              - show the application version\n"
         "\n"
@@ -812,6 +818,76 @@ int dumpCollections()
     return 0;
 }
 
+QString localFilePathWithoutScheme(const QString &filePath)
+{
+    QString path;
+    QUrl url(filePath);
+    if (url.isLocalFile()) {
+        path = url.isLocalFile();
+    } else {
+        path = filePath;
+    }
+    return path.startsWith('/')
+            ? path.replace(QLatin1String("//"), QLatin1String("/"))    // remove redundant chars
+            : QString();
+}
+
+void removeStaleAvatars(QContactManager *manager, const QString &avatarDirPath)
+{
+    QContactFetchHint fetchHint;
+    fetchHint.setOptimizationHints(QContactFetchHint::NoRelationships);
+    fetchHint.setDetailTypesHint(QList<QContactDetail::DetailType>()
+                                 << QContactDetail::TypeAvatar);
+    QContactDetailFilter hasAvatarFilter;
+    hasAvatarFilter.setDetailType(QContactDetail::TypeAvatar);
+
+    QSet<QString> avatarImageUrls;
+    const QList<QContact> contacts = manager->contacts(hasAvatarFilter, QList<QContactSortOrder>(), fetchHint);
+    for (const QContact &contact : contacts) {
+        const QList<QContactAvatar> avatars = contact.details<QContactAvatar>();
+        for (const QContactAvatar &avatar : avatars) {
+            const QString localFilePath = localFilePathWithoutScheme(avatar.imageUrl().toString());
+            if (!localFilePath.isEmpty()) {
+                avatarImageUrls.insert(localFilePath);
+            }
+        }
+    }
+
+    QDir avatarDir(avatarDirPath);
+    QStringList removedFiles;
+    const QStringList avatarFileNames = avatarDir.entryList(QDir::Files);
+    for (const QString &avatarFileName : avatarFileNames) {
+        const QString avatarFilePath = localFilePathWithoutScheme(avatarDir.absoluteFilePath(avatarFileName));
+        if (!avatarImageUrls.remove(avatarFilePath)) {
+            removedFiles.append(avatarFilePath);
+            QFile::remove(avatarFilePath);
+        }
+    }
+
+    QTextStream output(stdout);
+    if (removedFiles.count()) {
+        output << "Removed unused avatars:\n  " << removedFiles.join("\n  ") << "\n";
+    } else {
+        output << "Nothing to remove, no unused avatars found in " << avatarDirPath << "\n";
+    }
+}
+
+int removeStaleFiles()
+{
+    const QString dataPath = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation).value(0);
+
+    // For non-privileged contact manager
+    QMap<QString, QString> parameters;
+    parameters.insert(QString::fromLatin1("nonprivileged"), QString::fromLatin1("true"));
+    QContactManager mgr(QString::fromLatin1("org.nemomobile.contacts.sqlite"), parameters);
+    removeStaleAvatars(&mgr, QString("%1/system/Contacts/avatars").arg(dataPath));
+
+    // For privileged contact manager
+    removeStaleAvatars(&manager(), QString("%1/data/avatars").arg(dataPath));
+
+    return 0;
+}
+
 }
 
 int main(int argc, char **argv)
@@ -860,6 +936,9 @@ int main(int argc, char **argv)
     }
     if (command == QString::fromLatin1("dump")) {
         return dumpContacts(remaining, end);
+    }
+    if (command == QString::fromLatin1("remove-stale-files")) {
+        return removeStaleFiles();
     }
     if (command == QString::fromLatin1("collections")) {
         return dumpCollections();

@@ -1475,6 +1475,29 @@ QUrl SeasideCache::filteredAvatarUrl(const QContact &contact, const QStringList 
     return QUrl();
 }
 
+bool SeasideCache::removeLocalAvatarFile(const QContact &contact, const QContactAvatar &avatar)
+{
+    if (avatar.isEmpty() || contact.collectionId() != localCollectionId()) {
+        return false;
+    }
+
+    const QString avatarPath = avatar.imageUrl().isLocalFile()
+            ? avatar.imageUrl().toLocalFile()
+            : avatar.imageUrl().toString();
+
+    // Check that the avatar is a system-generated file before deleting it, to avoid deleting
+    // user-created files.
+    static const QString dataPath = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation).value(0);
+    static const QString avatarCachePath = QString("%1/data/avatars").arg(dataPath);
+    static const QString avatarSystemPath = QString("%1/system").arg(dataPath);
+
+    if (avatarPath.startsWith(avatarCachePath) || avatarPath.startsWith(avatarSystemPath)) {
+        return QFile::remove(avatarPath);
+    }
+
+    return false;
+}
+
 QString SeasideCache::normalizePhoneNumber(const QString &input, bool validate)
 {
     QtContactsSqliteExtensions::NormalizePhoneNumberFlags normalizeFlags(QtContactsSqliteExtensions::KeepPhoneNumberDialString);
@@ -2143,6 +2166,11 @@ void SeasideCache::contactsRemoved(const QList<QContactId> &ids)
 
             // Remove the links to addressible details
             updateContactIndexing(item->contact, QContact(), item->iid, QSet<QContactDetail::DetailType>(), item);
+
+            // Delete the avatar file assets of removed local contacts.
+            foreach (const QContactAvatar &avatar, item->contact.details<QContactAvatar>()) {
+                removeLocalAvatarFile(item->contact, avatar);
+            }
 
             if (!m_keepPopulated) {
                 presentIds.append(id);
