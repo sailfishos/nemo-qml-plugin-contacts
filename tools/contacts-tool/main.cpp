@@ -57,7 +57,6 @@
 #include <QContactFavorite>
 #include <QContactGender>
 #include <QContactGeoLocation>
-#include <QContactGlobalPresence>
 #include <QContactGuid>
 #include <QContactHobby>
 #include <QContactName>
@@ -317,17 +316,6 @@ QString print(const QContactGeoLocation &detail)
 QString print(const QContactGender &detail)
 {
     return QString::fromLatin1("Gender:\t") + QString::number(detail.gender());
-}
-
-QString print(const QContactGlobalPresence &detail)
-{
-    QStringList list;
-    list.append(QString::number(detail.presenceState()));
-    list.append(detail.customMessage());
-    list.append(detail.nickname());
-    list.append(detail.timestamp().toString(Qt::ISODate));
-    list.append(detail.linkedDetailUris().join(QChar::fromLatin1('|')));
-    return QString::fromLatin1("GlobalPresence:\t") + list.join(QChar::fromLatin1(';'));
 }
 
 QString print(const QContactGuid &detail)
