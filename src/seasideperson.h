@@ -91,6 +91,40 @@ class SeasidePerson
     Q_ENUMS(AddressField)
     Q_ENUMS(DetailLabel)
     Q_ENUMS(PresenceState)
+    Q_PROPERTY(int id READ id NOTIFY contactChanged)
+    Q_PROPERTY(bool complete READ isComplete NOTIFY completeChanged)
+    Q_PROPERTY(QString firstName READ firstName WRITE setFirstName NOTIFY firstNameChanged)
+    Q_PROPERTY(QString lastName READ lastName WRITE setLastName NOTIFY lastNameChanged)
+    Q_PROPERTY(QString middleName READ middleName WRITE setMiddleName NOTIFY middleNameChanged)
+    Q_PROPERTY(QString namePrefix READ namePrefix WRITE setNamePrefix NOTIFY namePrefixChanged)
+    Q_PROPERTY(QString nameSuffix READ nameSuffix WRITE setNameSuffix NOTIFY nameSuffixChanged)
+    Q_PROPERTY(QString sectionBucket READ sectionBucket NOTIFY displayLabelChanged)
+    Q_PROPERTY(QString displayLabel READ displayLabel NOTIFY displayLabelChanged)
+    Q_PROPERTY(QString primaryName READ primaryName NOTIFY primaryNameChanged)
+    Q_PROPERTY(QString secondaryName READ secondaryName NOTIFY secondaryNameChanged)
+    Q_PROPERTY(QString companyName READ companyName WRITE setCompanyName NOTIFY companyNameChanged)
+    Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged)
+    Q_PROPERTY(QString role READ role WRITE setRole NOTIFY roleChanged)
+    Q_PROPERTY(QString department READ department WRITE setDepartment NOTIFY departmentChanged)
+    Q_PROPERTY(bool favorite READ favorite WRITE setFavorite NOTIFY favoriteChanged)
+    Q_PROPERTY(QUrl avatarPath READ avatarPath WRITE setAvatarPath NOTIFY avatarPathChanged)
+    Q_PROPERTY(QUrl avatarUrl READ avatarUrl WRITE setAvatarUrl NOTIFY avatarUrlChanged)
+    Q_PROPERTY(QVariantList nicknameDetails READ nicknameDetails WRITE setNicknameDetails NOTIFY nicknameDetailsChanged)
+    Q_PROPERTY(QVariantList phoneDetails READ phoneDetails WRITE setPhoneDetails NOTIFY phoneDetailsChanged)
+    Q_PROPERTY(QVariantList emailDetails READ emailDetails WRITE setEmailDetails NOTIFY emailDetailsChanged)
+    Q_PROPERTY(QVariantList addressDetails READ addressDetails WRITE setAddressDetails NOTIFY addressDetailsChanged)
+    Q_PROPERTY(QVariantList websiteDetails READ websiteDetails WRITE setWebsiteDetails NOTIFY websiteDetailsChanged)
+    Q_PROPERTY(QDateTime birthday READ birthday WRITE setBirthday NOTIFY birthdayChanged RESET resetBirthday)
+    Q_PROPERTY(QVariantMap birthdayDetail READ birthdayDetail NOTIFY birthdayChanged)
+    Q_PROPERTY(QVariantList anniversaryDetails READ anniversaryDetails WRITE setAnniversaryDetails NOTIFY anniversaryDetailsChanged)
+    Q_PROPERTY(PresenceState globalPresenceState READ globalPresenceState NOTIFY globalPresenceStateChanged)
+    Q_PROPERTY(QVariantList accountDetails READ accountDetails WRITE setAccountDetails NOTIFY accountDetailsChanged)
+    Q_PROPERTY(QVariantList noteDetails READ noteDetails WRITE setNoteDetails NOTIFY noteDetailsChanged)
+    Q_PROPERTY(QString syncTarget READ syncTarget CONSTANT)
+    Q_PROPERTY(SeasideAddressBook addressBook READ addressBook WRITE setAddressBook NOTIFY addressBookChanged)
+    Q_PROPERTY(QList<int> constituents READ constituents NOTIFY constituentsChanged)
+    Q_PROPERTY(QList<int> mergeCandidates READ mergeCandidates NOTIFY mergeCandidatesChanged)
+    Q_PROPERTY(bool resolving READ resolving NOTIFY resolvingChanged)
 
 public:
     /**
@@ -183,133 +217,99 @@ public:
 
     ~SeasidePerson();
 
-    Q_PROPERTY(int id READ id NOTIFY contactChanged)
     int id() const;
 
-    Q_PROPERTY(bool complete READ isComplete NOTIFY completeChanged)
     bool isComplete() const;
     void setComplete(bool complete);
 
-    Q_PROPERTY(QString firstName READ firstName WRITE setFirstName NOTIFY firstNameChanged)
     QString firstName() const;
     void setFirstName(const QString &name);
 
-    Q_PROPERTY(QString lastName READ lastName WRITE setLastName NOTIFY lastNameChanged)
     QString lastName() const;
     void setLastName(const QString &name);
 
-    Q_PROPERTY(QString middleName READ middleName WRITE setMiddleName NOTIFY middleNameChanged)
     QString middleName() const;
     void setMiddleName(const QString &name);
 
-    Q_PROPERTY(QString namePrefix READ namePrefix WRITE setNamePrefix NOTIFY namePrefixChanged)
     QString namePrefix() const;
     void setNamePrefix(const QString &prefix);
 
-    Q_PROPERTY(QString nameSuffix READ nameSuffix WRITE setNameSuffix NOTIFY nameSuffixChanged)
     QString nameSuffix() const;
     void setNameSuffix(const QString &suffix);
 
-    Q_PROPERTY(QString sectionBucket READ sectionBucket NOTIFY displayLabelChanged)
     QString sectionBucket() const;
 
-    Q_PROPERTY(QString displayLabel READ displayLabel NOTIFY displayLabelChanged)
     QString displayLabel() const;
 
-    Q_PROPERTY(QString primaryName READ primaryName NOTIFY primaryNameChanged)
     QString primaryName() const;
 
-    Q_PROPERTY(QString secondaryName READ secondaryName NOTIFY secondaryNameChanged)
     QString secondaryName() const;
 
-    Q_PROPERTY(QString companyName READ companyName WRITE setCompanyName NOTIFY companyNameChanged)
     QString companyName() const;
     void setCompanyName(const QString &name);
 
-    Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged)
     QString title() const;
     void setTitle(const QString &title);
 
-    Q_PROPERTY(QString role READ role WRITE setRole NOTIFY roleChanged)
     QString role() const;
     void setRole(const QString &role);
 
-    Q_PROPERTY(QString department READ department WRITE setDepartment NOTIFY departmentChanged)
     QString department() const;
     void setDepartment(const QString &department);
 
-    Q_PROPERTY(bool favorite READ favorite WRITE setFavorite NOTIFY favoriteChanged)
     bool favorite() const;
     void setFavorite(bool favorite);
 
-    Q_PROPERTY(QUrl avatarPath READ avatarPath WRITE setAvatarPath NOTIFY avatarPathChanged)
     QUrl avatarPath() const;
     void setAvatarPath(QUrl avatarPath);
 
-    Q_PROPERTY(QUrl avatarUrl READ avatarUrl WRITE setAvatarUrl NOTIFY avatarUrlChanged)
     QUrl avatarUrl() const;
     void setAvatarUrl(QUrl avatarUrl);
     Q_INVOKABLE QUrl filteredAvatarUrl(const QStringList &metadataFragments = QStringList()) const;
 
-    Q_PROPERTY(QVariantList nicknameDetails READ nicknameDetails WRITE setNicknameDetails NOTIFY nicknameDetailsChanged)
     QVariantList nicknameDetails() const;
     void setNicknameDetails(const QVariantList &nicknameDetails);
 
-    Q_PROPERTY(QVariantList phoneDetails READ phoneDetails WRITE setPhoneDetails NOTIFY phoneDetailsChanged)
     QVariantList phoneDetails() const;
     void setPhoneDetails(const QVariantList &phoneDetails);
 
-    Q_PROPERTY(QVariantList emailDetails READ emailDetails WRITE setEmailDetails NOTIFY emailDetailsChanged)
     QVariantList emailDetails() const;
     void setEmailDetails(const QVariantList &emailDetails);
 
-    Q_PROPERTY(QVariantList addressDetails READ addressDetails WRITE setAddressDetails NOTIFY addressDetailsChanged)
     QVariantList addressDetails() const;
     void setAddressDetails(const QVariantList &addressDetails);
 
-    Q_PROPERTY(QVariantList websiteDetails READ websiteDetails WRITE setWebsiteDetails NOTIFY websiteDetailsChanged)
     QVariantList websiteDetails() const;
     void setWebsiteDetails(const QVariantList &websiteDetails);
 
-    Q_PROPERTY(QDateTime birthday READ birthday WRITE setBirthday NOTIFY birthdayChanged RESET resetBirthday)
     QDateTime birthday() const;
     void setBirthday(const QDateTime &bd);
     void resetBirthday();
 
-    Q_PROPERTY(QVariantMap birthdayDetail READ birthdayDetail NOTIFY birthdayChanged)
     QVariantMap birthdayDetail() const;
 
-    Q_PROPERTY(QVariantList anniversaryDetails READ anniversaryDetails WRITE setAnniversaryDetails NOTIFY anniversaryDetailsChanged)
     QVariantList anniversaryDetails() const;
     void setAnniversaryDetails(const QVariantList &anniversaryDetails);
 
-    Q_PROPERTY(PresenceState globalPresenceState READ globalPresenceState NOTIFY globalPresenceStateChanged)
     PresenceState globalPresenceState() const;
 
-    Q_PROPERTY(QVariantList accountDetails READ accountDetails WRITE setAccountDetails NOTIFY accountDetailsChanged)
     QVariantList accountDetails() const;
     void setAccountDetails(const QVariantList &accountDetails);
 
-    Q_PROPERTY(QVariantList noteDetails READ noteDetails WRITE setNoteDetails NOTIFY noteDetailsChanged)
     QVariantList noteDetails() const;
     void setNoteDetails(const QVariantList &noteDetails);
 
-    Q_PROPERTY(QString syncTarget READ syncTarget CONSTANT)
     QString syncTarget() const;
 
-    Q_PROPERTY(SeasideAddressBook addressBook READ addressBook WRITE setAddressBook NOTIFY addressBookChanged)
     SeasideAddressBook addressBook() const;
     void setAddressBook(const SeasideAddressBook &addressBook);
 
-    Q_PROPERTY(QList<int> constituents READ constituents NOTIFY constituentsChanged)
     QList<int> constituents() const;
     void setConstituents(const QList<int> &constituents);
 
-    Q_PROPERTY(QList<int> mergeCandidates READ mergeCandidates NOTIFY mergeCandidatesChanged)
     QList<int> mergeCandidates() const;
     void setMergeCandidates(const QList<int> &candidates);
 
-    Q_PROPERTY(bool resolving READ resolving NOTIFY resolvingChanged)
     bool resolving() const;
 
     QContact contact() const;
