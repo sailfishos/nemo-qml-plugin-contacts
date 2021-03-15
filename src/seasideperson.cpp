@@ -2373,6 +2373,30 @@ QVariantList SeasidePerson::removeDuplicateEmailAddresses(const QVariantList &em
     return rv;
 }
 
+QVariantMap SeasidePerson::decomposeName(const QString &name) const
+{
+    QContactName nameDetail;
+    SeasideCache::decomposeDisplayLabel(name, &nameDetail);
+
+    QVariantMap map;
+    if (!nameDetail.firstName().isEmpty()) {
+        map.insert(QStringLiteral("firstName"), nameDetail.firstName());
+    }
+    if (!nameDetail.middleName().isEmpty()) {
+        map.insert(QStringLiteral("middleName"), nameDetail.middleName());
+    }
+    if (!nameDetail.lastName().isEmpty()) {
+        map.insert(QStringLiteral("lastName"), nameDetail.lastName());
+    }
+    if (!nameDetail.prefix().isEmpty()) {
+        map.insert(QStringLiteral("namePrefix"), nameDetail.prefix());
+    }
+    if (!nameDetail.suffix().isEmpty()) {
+        map.insert(QStringLiteral("nameSuffix"), nameDetail.suffix());
+    }
+    return map;
+}
+
 void SeasidePerson::updateContact(const QContact &newContact, QContact *oldContact, SeasideCache::ContactState state)
 {
     Q_UNUSED(oldContact)

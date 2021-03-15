@@ -341,6 +341,8 @@ public:
     Q_INVOKABLE static QVariantList removeDuplicateOnlineAccounts(const QVariantList &onlineAccounts);
     Q_INVOKABLE static QVariantList removeDuplicateEmailAddresses(const QVariantList &emailAddresses);
 
+    Q_INVOKABLE QVariantMap decomposeName(const QString &name) const;
+
     void displayLabelOrderChanged(SeasideCache::DisplayLabelOrder order);
 
     void updateContact(const QContact &newContact, QContact *oldContact, SeasideCache::ContactState state);

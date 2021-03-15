@@ -442,6 +442,10 @@ QString SeasideCache::placeholderDisplayLabel()
     return QString();
 }
 
+void SeasideCache::decomposeDisplayLabel(const QString &, QContactName *)
+{
+}
+
 QString SeasideCache::generateDisplayLabel(const QContact &, DisplayLabelOrder)
 {
     return QString();
