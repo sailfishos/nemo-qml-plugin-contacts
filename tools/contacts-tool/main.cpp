@@ -811,7 +811,7 @@ QString localFilePathWithoutScheme(const QString &filePath)
     QString path;
     QUrl url(filePath);
     if (url.isLocalFile()) {
-        path = url.isLocalFile();
+        path = url.toLocalFile();
     } else {
         path = filePath;
     }
