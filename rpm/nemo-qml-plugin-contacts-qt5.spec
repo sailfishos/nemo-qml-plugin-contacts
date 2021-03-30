@@ -52,6 +52,7 @@ Obsoletes:  qmlcontacts-tools <= 0.4.9
 %package tests
 Summary:    QML contacts plugin tests
 Requires:   %{name} = %{version}-%{release}
+Requires:   blts-tools
 
 %description tests
 %{summary}.
