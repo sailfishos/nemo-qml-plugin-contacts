@@ -283,7 +283,7 @@ void SeasidePerson::recalculateDisplayLabel(SeasideCache::DisplayLabelOrder orde
     QString newDisplayLabel;
     SeasideCache::CacheItem *cacheItem = SeasideCache::existingItem(mContact->id());
     if (cacheItem) {
-        newDisplayLabel = cacheItem->displayLabel.isEmpty();
+        newDisplayLabel = cacheItem->displayLabel;
     } else {
         newDisplayLabel = generateDisplayLabel(*mContact, order);
     }
