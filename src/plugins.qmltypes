@@ -528,6 +528,11 @@ Module {
             type: "QVariantList"
             Parameter { name: "emailAddresses"; type: "QVariantList" }
         }
+        Method {
+            name: "decomposeName"
+            type: "QVariantMap"
+            Parameter { name: "name"; type: "string" }
+        }
     }
     Component {
         name: "SeasidePersonAttached"
