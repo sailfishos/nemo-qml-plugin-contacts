@@ -1,14 +1,11 @@
 Name:       nemo-qml-plugin-contacts-qt5
 
 Summary:    Nemo QML contacts library
-Version:    0.3.13
+Version:    0.3.22
 Release:    1
 License:    BSD
-URL:        https://git.merproject.org/mer-core/nemo-qml-plugin-contacts
+URL:        https://github.com/sailfishos/nemo-qml-plugin-contacts
 Source0:    %{name}-%{version}.tar.bz2
-Obsoletes:  libcontacts-qt5 <= 0.2.12
-Obsoletes:  libcontacts-qt5-tests <= 0.2.11
-Obsoletes:  libcontacts-qt5-devel <= 0.2.11
 Requires:   qtcontacts-sqlite-qt5 >= 0.1.37
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5Qml)
@@ -43,8 +40,6 @@ Summary:   Translation source for nemo-qml-plugin-contacts-qt5
 %package tools
 Summary:    Development tools for qmlcontacts
 License:    BSD
-Provides:   qmlcontacts-tools > 0.4.9
-Obsoletes:  qmlcontacts-tools <= 0.4.9
 
 %description tools
 %{summary}.
@@ -66,7 +61,6 @@ Requires:   blts-tools
 make %{?_smp_mflags}
 
 %install
-rm -rf %{buildroot}
 %qmake5_install
 
 %post -p /sbin/ldconfig
@@ -75,6 +69,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
+%license LICENSE.BSD
 %{_libdir}/libcontactcache-qt5.so*
 %{_libdir}/qt5/qml/org/nemomobile/contacts/libnemocontacts.so
 %{_libdir}/qt5/qml/org/nemomobile/contacts/plugins.qmltypes
