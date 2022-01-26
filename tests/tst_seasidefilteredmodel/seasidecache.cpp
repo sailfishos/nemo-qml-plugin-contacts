@@ -489,6 +489,11 @@ QContactCollectionId SeasideCache::localCollectionId()
     return QContactCollectionId();
 }
 
+SeasideActionPlugin *SeasideCache::actionPlugin()
+{
+    return nullptr;
+}
+
 SeasideCache::DisplayLabelOrder SeasideCache::displayLabelOrder()
 {
     return FirstNameFirst;

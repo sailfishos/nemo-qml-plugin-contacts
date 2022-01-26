@@ -63,6 +63,8 @@
 #include <QElapsedTimer>
 #include <QAbstractListModel>
 
+class SeasideActionPlugin;
+
 QTCONTACTS_USE_NAMESPACE
 
 class CONTACTCACHE_EXPORT SeasideDisplayLabelGroupChangeListener
@@ -372,6 +374,8 @@ public:
     static QContactCollection collectionFromId(const QContactCollectionId &collectionId);
     static QContactCollectionId aggregateCollectionId();
     static QContactCollectionId localCollectionId();
+
+    static SeasideActionPlugin *actionPlugin();
 
     bool event(QEvent *event);
 

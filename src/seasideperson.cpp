@@ -32,6 +32,7 @@
  */
 
 #include "seasideperson.h"
+#include <seasideactionplugin.h>
 
 #include <qtcontacts-extensions.h>
 
@@ -51,6 +52,7 @@
 #include <QContactUrl>
 #include <QContactNote>
 #include <QContactSyncTarget>
+#include <QContactAction>
 
 #include <QVersitWriter>
 #include <QVersitContactExporter>
@@ -549,6 +551,7 @@ void setDetailLabelType(QContactDetail &detail, int label)
     }
 }
 
+const QString detailId(QStringLiteral("detailId"));
 const QString detailReadOnly(QStringLiteral("readOnly"));
 const QString detailOriginId(QStringLiteral("originId"));
 const QString detailType(QStringLiteral("type"));
@@ -557,14 +560,9 @@ const QString detailSubTypes(QStringLiteral("subTypes"));
 const QString detailLabel(QStringLiteral("label"));
 const QString detailIndex(QStringLiteral("index"));
 
-QVariantMap detailProperties(const QContactDetail &detail)
+void getProvenanceParts(const QContactDetail &detail, quint32 *originIdValue, quint32 *detailIdValue)
 {
     static const QChar colon(QChar::fromLatin1(':'));
-
-    QVariantMap rv;
-
-    const bool readOnly((detail.accessConstraints() & QContactDetail::ReadOnly) == QContactDetail::ReadOnly);
-    rv.insert(detailReadOnly, readOnly);
 
     // The provenance is formatted as <collection-id>:<origin-id>:<detail-id>
     const QString provenance(detail.value(QContactDetail::FieldProvenance).toString());
@@ -574,9 +572,33 @@ QVariantMap detailProperties(const QContactDetail &detail)
         if (index != -1 && nextIndex != -1) {
             // The second field is the contact ID where this detail originates
             index++;
-            quint32 originId = provenance.mid(index, nextIndex - index).toUInt();
-            rv.insert(detailOriginId, originId);
+            if (originIdValue) {
+                *originIdValue = provenance.mid(index, nextIndex - index).toUInt();
+            }
         }
+
+        index = provenance.lastIndexOf(colon);
+        if (index != -1 && detailIdValue) {
+            *detailIdValue = provenance.mid(index + 1).toUInt();
+        }
+    }
+}
+
+QVariantMap detailProperties(const QContactDetail &detail)
+{
+    QVariantMap rv;
+
+    const bool readOnly((detail.accessConstraints() & QContactDetail::ReadOnly) == QContactDetail::ReadOnly);
+    rv.insert(detailReadOnly, readOnly);
+
+    quint32 originIdValue = 0;
+    quint32 detailIdValue = 0;
+    getProvenanceParts(detail, &originIdValue, &detailIdValue);
+    if (originIdValue > 0) {
+        rv.insert(detailOriginId, originIdValue);
+    }
+    if (detailIdValue > 0) {
+        rv.insert(detailId, detailIdValue);
     }
 
     return rv;
@@ -2395,6 +2417,119 @@ QVariantMap SeasidePerson::decomposeName(const QString &name) const
         map.insert(QStringLiteral("nameSuffix"), nameDetail.suffix());
     }
     return map;
+}
+
+int SeasidePerson::detailIdForPhoneNumber(const QString &phoneNumber)
+{
+    const QString normalizedPhoneNumber = SeasideCache::normalizePhoneNumber(phoneNumber);
+    const QList<QContactPhoneNumber> phoneNumberDetails = mContact->details<QContactPhoneNumber>();
+
+    foreach (const QContactPhoneNumber &detail, phoneNumberDetails) {
+        const QString detailNumber(detail.value(QContactPhoneNumber::FieldNumber).toString());
+        if (SeasideCache::normalizePhoneNumber(detailNumber) == normalizedPhoneNumber) {
+            quint32 detailIdValue = 0;
+            getProvenanceParts(detail, nullptr, &detailIdValue);
+            return detailIdValue;
+        }
+    }
+
+    return -1;
+}
+
+int SeasidePerson::detailIdForOnlineAccount(const QString &localUid, const QString &remoteUid)
+{
+    const QList<QContactOnlineAccount> onlineAccountDetails = mContact->details<QContactOnlineAccount>();
+
+    foreach (const QContactOnlineAccount &detail, onlineAccountDetails) {
+        const QString detailLocalUid = detail.value(QContactOnlineAccount__FieldAccountPath).toString();
+        const QString detailRemoteUid = detail.value(QContactOnlineAccount::FieldAccountUri).toString();
+        if (localUid == detailLocalUid && remoteUid == detailRemoteUid) {
+            quint32 detailIdValue = 0;
+            getProvenanceParts(detail, nullptr, &detailIdValue);
+            return detailIdValue;
+        }
+    }
+
+    return -1;
+}
+
+QVariantList SeasidePerson::supportedActions(int detailType)
+{
+    SeasideActionPlugin *actionPlugin = SeasideCache::actionPlugin();
+    if (!actionPlugin) {
+        qWarning() << "No contact action plugin found!";
+        return QVariantList();
+    }
+
+    QContactDetail::DetailType type;
+    switch (detailType) {
+    case PhoneNumberType:
+        type = QContactDetail::TypePhoneNumber;
+        break;
+    case EmailAddressType:
+        type = QContactDetail::TypeEmailAddress;
+        break;
+    case OnlineAccountType:
+        type = QContactDetail::TypeOnlineAccount;
+        break;
+    case AddressType:
+        type = QContactDetail::TypeAddress;
+        break;
+    case WebsiteType:
+        type = QContactDetail::TypeUrl;
+        break;
+    case BirthdayType:
+        type = QContactDetail::TypeBirthday;
+        break;
+    case AnniversaryType:
+        type = QContactDetail::TypeAnniversary;
+        break;
+    case GlobalPresenceStateType:
+        type = QContactDetail::TypeGlobalPresence;
+        break;
+    case NoteType:
+        type = QContactDetail::TypeNote;
+        break;
+    default:
+        qWarning() << "supportedActions(): unknown detail type:" << detailType;
+        return QVariantList();
+    }
+
+    QVariantList actions;
+    const QList<SeasideActionPlugin::ActionInfo> &supportedActions = actionPlugin->supportedActions(*mContact, type);
+    for (const SeasideActionPlugin::ActionInfo &actionInfo : supportedActions) {
+        QVariantMap map;
+        map.insert(QStringLiteral("actionType"), actionInfo.actionType);
+        map.insert(QStringLiteral("actionIcon"), actionInfo.icon);
+        actions << map;
+    }
+
+    return actions;
+}
+
+bool SeasidePerson::triggerAction(const QString &actionType, const QString &detailId, const QVariantMap &parameters)
+{
+    SeasideActionPlugin *actionPlugin = SeasideCache::actionPlugin();
+    if (!actionPlugin) {
+        qWarning() << "No contact action plugin found!";
+        return false;
+    }
+
+    const QList<QContactDetail> details = mContact->details();
+    quint32 detailIdUint = detailId.toULong();
+    QContactDetail matchingDetail;
+    for (const QContactDetail &detail : details) {
+        if (detail.value(QContactDetail__FieldDatabaseId).toUInt() == detailIdUint) {
+            matchingDetail = detail;
+            break;
+        }
+    }
+    if (matchingDetail.isEmpty()) {
+        qWarning() << "Cannot invoke contact action, cannot find contact detail" << detailId;
+        return false;
+    }
+
+    return actionPlugin->triggerAction(actionType, parameters, *mContact, matchingDetail);
 }
 
 void SeasidePerson::updateContact(const QContact &newContact, QContact *oldContact, SeasideCache::ContactState state)

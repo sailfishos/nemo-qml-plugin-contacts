@@ -343,6 +343,12 @@ public:
 
     Q_INVOKABLE QVariantMap decomposeName(const QString &name) const;
 
+    Q_INVOKABLE int detailIdForPhoneNumber(const QString &phoneNumber);
+    Q_INVOKABLE int detailIdForOnlineAccount(const QString &localUid, const QString &remoteUid);
+
+    Q_INVOKABLE QVariantList supportedActions(int detailType);
+    Q_INVOKABLE bool triggerAction(const QString &actionType, const QString &detailId, const QVariantMap &parameters = QVariantMap());
+
     void displayLabelOrderChanged(SeasideCache::DisplayLabelOrder order);
 
     void updateContact(const QContact &newContact, QContact *oldContact, SeasideCache::ContactState state);
