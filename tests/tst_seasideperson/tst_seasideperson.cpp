@@ -89,6 +89,7 @@ private slots:
     void vcard();
     void syncTarget();
     void constituents();
+    void removeDuplicatePhoneNumbers_data();
     void removeDuplicatePhoneNumbers();
     void removeDuplicateOnlineAccounts();
     void removeDuplicateEmailAddresses();
@@ -1008,8 +1009,20 @@ QVariantList reorder(const int (&indices)[N], const T &list)
     return rv;
 }
 
+void tst_SeasidePerson::removeDuplicatePhoneNumbers_data()
+{
+    // limiting the number of permutations by having only one of these at a time
+    QTest::addColumn<QString>("formattedString");
+
+    QTest::newRow("Punctuation") << QString::fromLatin1("(12) 345-678");
+    QTest::newRow("Extended") << QString::fromLatin1("00112345678");
+    QTest::newRow("Initial plus") << QString::fromLatin1("+0112345678");
+}
+
 void tst_SeasidePerson::removeDuplicatePhoneNumbers()
 {
+    QFETCH(QString, formattedString);
+
     const QString phoneDetailType(QString::fromLatin1("type"));
     const QString phoneDetailNumber(QString::fromLatin1("number"));
     const QString phoneDetailNormalizedNumber(QString::fromLatin1("normalizedNumber"));
@@ -1019,9 +1032,7 @@ void tst_SeasidePerson::removeDuplicatePhoneNumbers()
 
     QStringList numberStrings;
     numberStrings << QString::fromLatin1("12345678")          // simple
-                  << QString::fromLatin1("(12) 345-678")      // punctuation
-                  << QString::fromLatin1("00112345678")       // extended
-                  << QString::fromLatin1("+0112345678")       // initial plus
+                  << formattedString
                   << QString::fromLatin1("+1112345678");      // differing initial plus
 
     // The differing number will be returned
@@ -1063,7 +1074,7 @@ void tst_SeasidePerson::removeDuplicatePhoneNumbers()
     SeasidePerson person;
 
     // Test all possible orderings of the input set
-    int indices[10];
+    int indices[8];
     for (prepare(indices); permute(indices); ) {
         QVariantList numberList(reorder(indices, numbers));
         QVariantList deduplicated(person.removeDuplicatePhoneNumbers(numberList));
