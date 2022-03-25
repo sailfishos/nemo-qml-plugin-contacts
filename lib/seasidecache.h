@@ -486,6 +486,7 @@ private:
     QList<ListModel *> m_models[FilterTypesCount];
     QSet<QObject *> m_users;
     QHash<QContactId,int> m_expiredContacts;
+    QHash<QContactId,quint32> m_contactsWaitingNotify;
     QContactFetchRequest m_fetchRequest;
     QContactFetchByIdRequest m_fetchByIdRequest;
     QContactIdFetchRequest m_contactIdRequest;
