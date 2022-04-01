@@ -721,7 +721,6 @@ void SeasideCache::unregisterChangeListener(ChangeListener *listener)
     if (!instancePtr)
         return;
 
-    qDebug() << "removing listener";
     instancePtr->m_changeListeners.removeAll(listener);
 }
 
@@ -870,9 +869,6 @@ SeasideCache::CacheItem *SeasideCache::existingItem(quint32 iid)
 {
     // Ensure the cache has been instantiated
     instance();
-
-    qDebug() << "SeasideCache::existingItem() cache size " << instancePtr->m_people.size();
-    qDebug() << "SeasideCache::existingItem() contains" << iid << ":" << (instancePtr->m_people.contains(iid) ? "yes" : "no");
 
     QHash<quint32, CacheItem>::iterator it = instancePtr->m_people.find(iid);
     return it != instancePtr->m_people.end()
@@ -1079,7 +1075,6 @@ void SeasideCache::contactDataChanged(quint32 iid, FilterType filter)
 
 bool SeasideCache::removeContact(const QContact &contact)
 {
-    qDebug() << "removing with internal id" << internalId(contact.id());
     return removeContacts(QList<QContact>() << contact);
 }
 
@@ -1091,27 +1086,31 @@ bool SeasideCache::removeContacts(const QList<QContact> &contacts)
     bool allSucceeded = true;
     QSet<QString> modifiedDisplayLabelGroups;
     for (const QContact &contact : contacts) {
-        qDebug() << "SeasideCache::removeContacts() handle id" <<  internalId(contact.id());
         const QContactId id = apiId(contact);
         if (!validId(id)) {
             allSucceeded = false;
             continue;
         }
 
+        quint32 iid = internalId(id);
+
         if (contact.collectionId() == localCollectionId()) {
             instancePtr->m_localContactsToRemove.append(id);
-            qDebug() << "SeasideCache::removeContacts() add id" <<  internalId(contact.id()) << "to local contacts";
+            qDebug() << "local contact" << internalId(contact.id()) << "cache id:" << SeasideCache::contactId(contact);
+            // TODO: this is not correct, but the issue is with id's, internalId = requestedId -1, not sure why this happens.
+            // And as a result, the internalId being one less it has no CacheItem later on when contactsRemoved() is called.
+            instancePtr->m_contactsWaitingNotify.insert(iid + 1);
         }
         instancePtr->m_contactsToRemove[contact.collectionId()].append(id);
 
-        quint32 iid = internalId(id);
         instancePtr->removeContactData(iid, FilterFavorites);
         instancePtr->removeContactData(iid, FilterAll);
 
         const QString group(displayLabelGroup(existingItem(iid)));
         instancePtr->removeFromContactDisplayLabelGroup(iid, group, &modifiedDisplayLabelGroups);
 
-        instancePtr->m_contactsWaitingNotify.insert(id, iid);
+        qDebug() << "add QContactId with internal id" << iid << "to notify wait, cid:" << SeasideCache::contactId(id);
+        instancePtr->m_contactsWaitingNotify.insert(iid);
     }
 
     instancePtr->notifyDisplayLabelGroupsChanged(modifiedDisplayLabelGroups);
@@ -1807,9 +1806,7 @@ void SeasideCache::startRequest(bool *idleProcessing)
     }
 
     if (!m_contactsToRemove.isEmpty()) {
-        qDebug() << "m_contactsToRemove not empty";
         if (m_removeRequest.isActive()) {
-            qDebug() << "remove request not active";
             requestPending = true;
         } else {
             // Make per-collection remove requests, as backend does not allow batch removal of
@@ -1828,9 +1825,7 @@ void SeasideCache::startRequest(bool *idleProcessing)
             }
         }
     } else if (!m_localContactsToRemove.isEmpty() && !m_removeRequest.isActive()) {
-        qDebug() << "local contacts not empty && remove request not active";
         if (m_clearChangeFlagsRequest.state() == QContactAbstractRequest::ActiveState) {
-            qDebug() << "state is not active -> requestPending = TRUE";
             requestPending = true;
         } else {
             // When local contacts are removed, their flags must also be cleared so that they are
@@ -1993,7 +1988,6 @@ void SeasideCache::startRequest(bool *idleProcessing)
 
     if (requestPending) {
         // Don't proceed if we were unable to start one of the above requests
-        qDebug() << "request pending, no idle processing";
         return;
     }
 
@@ -2034,7 +2028,6 @@ void SeasideCache::startRequest(bool *idleProcessing)
 
     if (!requestPending) {
         // Nothing to do - proceeed with idle processing
-        qDebug() << "no request pending, do idle processing";
         *idleProcessing = true;
     }
 }
@@ -2046,7 +2039,7 @@ bool SeasideCache::event(QEvent *event)
 
     m_updatesPending = false;
     bool idleProcessing = false;
-    qDebug() << "event -> start request";
+
     startRequest(&idleProcessing);
 
     // Report any unknown addresses
@@ -2059,7 +2052,6 @@ bool SeasideCache::event(QEvent *event)
         applyPendingContactUpdates();
 
         // Send another event to trigger further processing
-        qDebug() << "do request another update";
         requestUpdate();
         return true;
     }
@@ -2074,13 +2066,12 @@ bool SeasideCache::event(QEvent *event)
                 if (it.value() < 0) {
                     quint32 iid = internalId(it.key());
 
-                    if (m_contactsWaitingNotify.contains(it.key())) {
-                        if (m_contactsWaitingNotify.find(it.key()).value() == iid) {
-                            qDebug() << "not removing" << iid << "yet, waiting for notify";
-                        } else {
-                            qDebug() << "add" << iid << "to removeIds";
-                            removeIds.append(iid);
-                        }
+                     // Don't add the contact to the removed ones if it is still waiting for notify to be triggered
+                    if (m_contactsWaitingNotify.contains(iid)) {
+                        qDebug() << "not removing" << iid << "yet, waiting for notify";
+                    } else {
+                        qDebug() << "add" << iid << "to removeIds";
+                        removeIds.append(iid);
                     }
                 }
             }
@@ -2175,38 +2166,27 @@ void SeasideCache::contactsPresenceChanged(const QList<QContactId> &ids)
 void SeasideCache::contactsRemoved(const QList<QContactId> &ids)
 {
     QList<QContactId> presentIds;
-    int i = 0;
-
-    qDebug() << "SeasideCache::contactsRemoved()";
 
     foreach (const QContactId &id, ids) {
-        qDebug() << "SeasideCache::contactsRemoved() removing #" << i++ << "id" << internalId(id);
+        quint32 iid = internalId(id);
+
         if (CacheItem *item = existingItem(id)) {
             // Report this item is about to be removed
-            qDebug() << "SeasideCache::contactsRemoved() listeners:" << m_changeListeners.size();
             foreach (ChangeListener *listener, m_changeListeners) {
                 listener->itemAboutToBeRemoved(item);
-                qDebug() << "SeasideCache::contactsRemoved() calling itemAboutToBeRemoved()";
             }
 
             ItemListener *listener = item->listeners;
             while (listener) {
                 ItemListener *next = listener->next;
                 listener->itemAboutToBeRemoved(item);
-                qDebug() << "SeasideCache::contactsRemoved() calling itemAboutToBeRemoved() on item";
                 listener = next;
             }
             item->listeners = 0;
 
-            if (m_contactsWaitingNotify.contains(id)) {
-                if (m_contactsWaitingNotify.find(id).value() == internalId(id)) {
-                    qDebug() << "found matching QContactId from notify wait list, removing";
-                    m_contactsWaitingNotify.remove(id);
-                } else {
-                    qDebug() << "non matching id" << m_contactsWaitingNotify.find(id).value() << "to" << internalId(id);
-                }
-            } else {
-                qDebug() << "id:" << internalId(id) << "not found from notify wait list";
+            if (m_contactsWaitingNotify.contains(iid)) {
+                qDebug() << "found matching id " << iid << " from notify wait list, removing";
+                m_contactsWaitingNotify.remove(iid);
             }
 
             // Remove the links to addressible details
@@ -2221,7 +2201,7 @@ void SeasideCache::contactsRemoved(const QList<QContactId> &ids)
                 presentIds.append(id);
             }
         } else {
-            qDebug() << "SeasideCache::contactsRemoved() no cacheitem for id" << internalId(id);
+            qDebug() << "Removed notify failed, no cacheitem for id" << iid;
         }
     }
 
