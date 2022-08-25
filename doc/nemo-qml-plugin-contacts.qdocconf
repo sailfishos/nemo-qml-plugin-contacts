@@ -1,0 +1,45 @@
+project         = nemo-qml-plugin-contacts
+description     = Nemo QML Plugin Contacts Reference Documentation
+versionsym      =
+version         = 0.0.1
+url             = $BASE_URL/nemo-qml-plugin-contacts
+
+sourcedirs += $$PWD/../src $$PWD/../doc
+headerdirs += $$PWD/../src
+
+qhp.projects = NemoQmlPluginContacts
+
+outputformats = HTML
+outputdir = $$PWD/html
+base = file:$$PWD/html
+tagfile = $$PWD/html/nemo-qml-plugin-contacts.tags
+
+qhp.NemoQmlPluginContacts.file = nemo-qml-plugin-contacts.qhp
+qhp.NemoQmlPluginContacts.namespace = org.nemomobile.contacts.0.0.1
+qhp.NemoQmlPluginContacts.virtualFolder = nemo-qml-plugin-contacts
+qhp.NemoQmlPluginContacts.indexTitle = Nemo QML Plugin Contacts
+qhp.NemoQmlPluginContacts.indexRoot =
+
+qhp.NemoQmlPluginContacts.filterAttributes = nemo-qml-plugin-contacts 0.0.1
+
+qhp.NemoQmlPluginContacts.subprojects = qmltypes
+qhp.NemoQmlPluginContacts.subprojects.qmltypes.title = QML Types
+qhp.NemoQmlPluginContacts.subprojects.qmltypes.indexTitle = org.nemomobile.contacts QML Types
+qhp.NemoQmlPluginContacts.subprojects.qmltypes.selectors = qmlclass
+qhp.NemoQmlPluginContacts.subprojects.qmltypes.sortPages = true
+
+qhp.NemoQmlPluginContacts.customFilters.NemoQmlPluginContacts.name = org.nemomobile.contacts 0.0.1
+qhp.NemoQmlPluginContacts.customFilters.NemoQmlPluginContacts.filterAttributes = nemo-qml-plugin-contacts 0.0.1
+
+HTML.footer += \
+    "<div class=\"footer\">\n" \
+    "  <p><acronym title=\"Copyright\">&copy;</acronym> 2022 Jolla Ltd.</p>\n" \
+    "  <p>All other trademarks are property of their respective owners.</p>\n" \
+    "  <p>\n" \
+    "    This document may be used under the terms of the " \
+    "    <a href=\"http://www.gnu.org/licenses/fdl.html\">GNU Free Documentation License version 1.3</a>" \
+    "    as published by the Free Software Foundation." \
+    "  </p>\n" \
+    "</div>\n"
+
+navigation.homepage = "Nemo QML Plugin Contacts"

@@ -114,6 +114,15 @@ QVariantList SeasidePersonAttached::removeDuplicateEmailAddresses(const QVariant
     return SeasidePerson::removeDuplicateEmailAddresses(emailAddresses);
 }
 
+/*!
+  \qmltype Person
+  \inqmlmodule org.nemomobile.contacts
+*/
+/*!
+  \qmlsignal Person::aggregationOperationFinished()
+  \qmlsignal Person::addressResolved()
+  \qmlsignal Person::dataChanged()
+*/
 SeasidePerson::SeasidePerson(QObject *parent)
     : QObject(parent)
     , mContact(new QContact)
@@ -161,12 +170,18 @@ SeasidePerson::~SeasidePerson()
     }
 }
 
+/*!
+  \qmlproperty int Person::id
+*/
 // QT5: this needs to change type
 int SeasidePerson::id() const
 {
     return SeasideCache::contactId(*mContact);
 }
 
+/*!
+  \qmlproperty bool Person::complete
+*/
 bool SeasidePerson::isComplete() const
 {
     return mComplete;
@@ -180,6 +195,9 @@ void SeasidePerson::setComplete(bool complete)
     }
 }
 
+/*!
+  \qmlproperty string Person::firstName
+*/
 QString SeasidePerson::firstName() const
 {
     QContactName nameDetail = mContact->detail<QContactName>();
@@ -197,6 +215,9 @@ void SeasidePerson::setFirstName(const QString &name)
     recalculateDisplayLabel();
 }
 
+/*!
+  \qmlproperty string Person::lastName
+*/
 QString SeasidePerson::lastName() const
 {
     QContactName nameDetail = mContact->detail<QContactName>();
@@ -214,6 +235,9 @@ void SeasidePerson::setLastName(const QString &name)
     recalculateDisplayLabel();
 }
 
+/*!
+  \qmlproperty string Person::middleName
+*/
 QString SeasidePerson::middleName() const
 {
     QContactName nameDetail = mContact->detail<QContactName>();
@@ -229,6 +253,9 @@ void SeasidePerson::setMiddleName(const QString &name)
     recalculateDisplayLabel();
 }
 
+/*!
+  \qmlproperty string Person::namePrefix
+*/
 QString SeasidePerson::namePrefix() const
 {
     QContactName nameDetail = mContact->detail<QContactName>();
@@ -245,6 +272,9 @@ void SeasidePerson::setNamePrefix(const QString &prefix)
     //recalculateDisplayLabel();
 }
 
+/*!
+  \qmlproperty string Person::nameSuffix
+*/
 QString SeasidePerson::nameSuffix() const
 {
     QContactName nameDetail = mContact->detail<QContactName>();
@@ -298,6 +328,9 @@ void SeasidePerson::recalculateDisplayLabel(SeasideCache::DisplayLabelOrder orde
     }
 }
 
+/*!
+  \qmlproperty string Person::displayLabel
+*/
 QString SeasidePerson::displayLabel() const
 {
     SeasideCache::CacheItem *cacheItem = SeasideCache::existingItem(mContact->id());
@@ -310,6 +343,9 @@ QString SeasidePerson::displayLabel() const
     return mDisplayLabel;
 }
 
+/*!
+  \qmlproperty string Person::primaryName
+*/
 QString SeasidePerson::primaryName() const
 {
     QString primaryName(SeasideCache::getPrimaryName(*mContact));
@@ -324,11 +360,17 @@ QString SeasidePerson::primaryName() const
     return QString();
 }
 
+/*!
+  \qmlproperty string Person::secondaryName
+*/
 QString SeasidePerson::secondaryName() const
 {
     return SeasideCache::getSecondaryName(*mContact);
 }
 
+/*!
+  \qmlproperty string Person::sectionBucket
+*/
 QString SeasidePerson::sectionBucket() const
 {
     if (id() != 0) {
@@ -349,6 +391,9 @@ QString SeasidePerson::companyName(const QContact &contact)
     return company.name();
 }
 
+/*!
+  \qmlproperty string Person::companyName
+*/
 QString SeasidePerson::companyName() const
 {
     return companyName(*mContact);
@@ -368,6 +413,9 @@ QString SeasidePerson::title(const QContact &contact)
     return company.title();
 }
 
+/*!
+  \qmlproperty string Person::title
+*/
 QString SeasidePerson::title() const
 {
     return title(*mContact);
@@ -387,6 +435,9 @@ QString SeasidePerson::role(const QContact &contact)
     return company.role();
 }
 
+/*!
+  \qmlproperty string Person::role
+*/
 QString SeasidePerson::role() const
 {
     return role(*mContact);
@@ -400,6 +451,9 @@ void SeasidePerson::setRole(const QString &role)
     emit roleChanged();
 }
 
+/*!
+  \qmlproperty string Person::department
+*/
 QString SeasidePerson::department() const
 {
     QContactOrganization company = mContact->detail<QContactOrganization>();
@@ -419,6 +473,9 @@ void SeasidePerson::setDepartment(const QString &department)
     emit departmentChanged();
 }
 
+/*!
+  \qmlproperty bool Person::favorite
+*/
 bool SeasidePerson::favorite() const
 {
     QContactFavorite favoriteDetail = mContact->detail<QContactFavorite>();
@@ -433,6 +490,9 @@ void SeasidePerson::setFavorite(bool favorite)
     emit favoriteChanged();
 }
 
+/*!
+  \qmlproperty url Person::avatarPath
+*/
 QUrl SeasidePerson::avatarPath() const
 {
     QUrl url = avatarUrl();
@@ -447,6 +507,9 @@ void SeasidePerson::setAvatarPath(QUrl avatarPath)
     setAvatarUrl(avatarPath);
 }
 
+/*!
+  \qmlproperty url Person::avatarUrl
+*/
 QUrl SeasidePerson::avatarUrl() const
 {
     return filteredAvatarUrl();
@@ -481,6 +544,9 @@ void SeasidePerson::setAvatarUrl(QUrl avatarUrl)
     emit avatarPathChanged();
 }
 
+/*!
+  \qmlmethod url Person::filteredAvatarUrl(array metadataFragments)
+*/
 QUrl SeasidePerson::filteredAvatarUrl(const QStringList &metadataFragments) const
 {
     return SeasideCache::filteredAvatarUrl(*mContact, metadataFragments);
@@ -693,6 +759,9 @@ QVariantList SeasidePerson::nicknameDetails(const QContact &contact)
     return rv;
 }
 
+/*!
+  \qmlproperty array Person::nicknameDetails
+*/
 QVariantList SeasidePerson::nicknameDetails() const
 {
     return nicknameDetails(*mContact);
@@ -869,6 +938,9 @@ QVariantList SeasidePerson::phoneDetails(const QContact &contact)
     return rv;
 }
 
+/*!
+  \qmlproperty array Person::phoneDetails
+*/
 QVariantList SeasidePerson::phoneDetails() const
 {
     return phoneDetails(*mContact);
@@ -960,6 +1032,9 @@ QVariantList SeasidePerson::emailDetails(const QContact &contact)
     return rv;
 }
 
+/*!
+  \qmlproperty array Person::emailDetails
+*/
 QVariantList SeasidePerson::emailDetails() const
 {
     return emailDetails(*mContact);
@@ -1142,6 +1217,9 @@ QVariantList SeasidePerson::addressDetails(const QContact &contact)
     return rv;
 }
 
+/*!
+  \qmlproperty array Person::addressDetails
+*/
 QVariantList SeasidePerson::addressDetails() const
 {
     return addressDetails(*mContact);
@@ -1296,6 +1374,9 @@ QVariantList SeasidePerson::websiteDetails(const QContact &contact)
     return rv;
 }
 
+/*!
+  \qmlproperty array Person::websiteDetails
+*/
 QVariantList SeasidePerson::websiteDetails() const
 {
     return websiteDetails(*mContact);
@@ -1369,6 +1450,9 @@ QVariantMap SeasidePerson::birthdayDetail(const QContact &contact)
     return item;
 }
 
+/*!
+  \qmlproperty object Person::birthdayDetail
+*/
 QVariantMap SeasidePerson::birthdayDetail() const
 {
     return birthdayDetail(*mContact);
@@ -1392,6 +1476,9 @@ QDateTime SeasidePerson::birthday(const QContact &contact)
     return birthDateTime;
 }
 
+/*!
+  \qmlproperty Date Person::birthday
+*/
 QDateTime SeasidePerson::birthday() const
 {
     return birthday(*mContact);
@@ -1507,6 +1594,9 @@ QVariantList SeasidePerson::anniversaryDetails(const QContact &contact)
     return rv;
 }
 
+/*!
+  \qmlproperty array Person::anniversaryDetails
+*/
 QVariantList SeasidePerson::anniversaryDetails() const
 {
     return anniversaryDetails(*mContact);
@@ -1569,6 +1659,16 @@ void SeasidePerson::setAnniversaryDetails(const QVariantList &anniversaryDetails
     emit anniversaryDetailsChanged();
 }
 
+/*!
+  \qmlproperty enumeration Person::globalPresenceState
+  \value PresenceUnknown
+  \value PresenceAvailable
+  \value PresenceHidden
+  \value PresenceBusy 
+  \value PresenceAway 
+  \value PresenceExtendedAway
+  \value PresenceOffline
+*/
 SeasidePerson::PresenceState SeasidePerson::globalPresenceState() const
 {
     return static_cast<SeasidePerson::PresenceState>(mContact->detail<QContactGlobalPresence>().presenceState());
@@ -1597,6 +1697,9 @@ QVariantList SeasidePerson::noteDetails(const QContact &contact)
     return rv;
 }
 
+/*!
+  \qmlproperty array Person::noteDetails
+*/
 QVariantList SeasidePerson::noteDetails() const
 {
     return noteDetails(*mContact);
@@ -1799,6 +1902,9 @@ QVariantList SeasidePerson::accountDetails(const QContact &contact)
     return rv;
 }
 
+/*!
+  \qmlproperty array Person::accountDetails
+*/
 QVariantList SeasidePerson::accountDetails() const
 {
     return accountDetails(*mContact);
@@ -1881,11 +1987,17 @@ void SeasidePerson::setAccountDetails(const QVariantList &accountDetails)
     recalculateDisplayLabel();
 }
 
+/*!
+  \qmlproperty string Person::syncTarget
+*/
 QString SeasidePerson::syncTarget() const
 {
     return mContact->detail<QContactSyncTarget>().syncTarget();
 }
 
+/*!
+  \qmlproperty AddressBook Person::addressBook
+*/
 SeasideAddressBook SeasidePerson::addressBook() const
 {
     return mAddressBook;
@@ -1900,6 +2012,9 @@ void SeasidePerson::setAddressBook(const SeasideAddressBook &addressBook)
     }
 }
 
+/*!
+  \qmlproperty array Person::constituents
+*/
 QList<int> SeasidePerson::constituents() const
 {
     return mConstituents;
@@ -1910,6 +2025,9 @@ void SeasidePerson::setConstituents(const QList<int> &constituents)
     mConstituents = constituents;
 }
 
+/*!
+  \qmlproperty array Person::mergeCandidates
+*/
 QList<int> SeasidePerson::mergeCandidates() const
 {
     return mCandidates;
@@ -1920,6 +2038,9 @@ void SeasidePerson::setMergeCandidates(const QList<int> &candidates)
     mCandidates = candidates;
 }
 
+/*!
+  \qmlproperty bool Person::resolving
+*/
 bool SeasidePerson::resolving() const
 {
     return mResolving;
@@ -2085,6 +2206,9 @@ void SeasidePerson::emitChangeSignals()
     emit dataChanged();
 }
 
+/*!
+  \qmlmethod void Person::ensureComplete
+*/
 void SeasidePerson::ensureComplete()
 {
     if (SeasideCache::CacheItem *item = SeasideCache::itemById(SeasideCache::apiId(*mContact))) {
@@ -2092,11 +2216,17 @@ void SeasidePerson::ensureComplete()
     }
 }
 
+/*!
+  \qmlmethod object Person::contactData
+*/
 QVariant SeasidePerson::contactData() const
 {
     return QVariant::fromValue(contact());
 }
 
+/*!
+  \qmlmethod void Person::setContactData(object data)
+*/
 void SeasidePerson::setContactData(const QVariant &data)
 {
     if (mAttachState == Attached) {
@@ -2121,6 +2251,9 @@ void SeasidePerson::setContactData(const QVariant &data)
     refreshContactDetails();
 }
 
+/*!
+  \qmlmethod void Person::resetContactData()
+*/
 void SeasidePerson::resetContactData()
 {
     if (SeasideCache::CacheItem *item = SeasideCache::itemById(SeasideCache::apiId(*mContact))) {
@@ -2129,6 +2262,9 @@ void SeasidePerson::resetContactData()
     }
 }
 
+/*!
+  \qmlmethod string Person::vCard()
+*/
 QString SeasidePerson::vCard() const
 {
     QVersitContactExporter exporter;
@@ -2148,11 +2284,17 @@ QString SeasidePerson::vCard() const
     return QString::fromUtf8(vcard);
 }
 
+/*!
+  \qmlmethod array Person::avatarUrls()
+*/
 QStringList SeasidePerson::avatarUrls() const
 {
     return avatarUrlsExcluding(QStringList());
 }
 
+/*!
+  \qmlmethod array Person::avatarUrlsExcluding(array excludeMetadata)
+*/
 QStringList SeasidePerson::avatarUrlsExcluding(const QStringList &excludeMetadata) const
 {
     QSet<QString> urls;
@@ -2168,6 +2310,9 @@ QStringList SeasidePerson::avatarUrlsExcluding(const QStringList &excludeMetadat
     return urls.toList();
 }
 
+/*!
+  \qmlmethod bool Person::hasValidPhoneNumber()
+*/
 bool SeasidePerson::hasValidPhoneNumber() const
 {
     foreach (const QContactPhoneNumber &detail, mContact->details<QContactPhoneNumber>()) {
@@ -2179,6 +2324,9 @@ bool SeasidePerson::hasValidPhoneNumber() const
     return false;
 }
 
+/*!
+  \qmlmethod void Person::fetchConstituents()
+*/
 void SeasidePerson::fetchConstituents()
 {
     if (SeasideCache::validId(SeasideCache::apiId(*mContact))) {
@@ -2189,11 +2337,17 @@ void SeasidePerson::fetchConstituents()
     }
 }
 
+/*!
+  \qmlmethod void Person::fetchMergeCandidates()
+*/
 void SeasidePerson::fetchMergeCandidates()
 {
     SeasideCache::fetchMergeCandidates(contact());
 }
 
+/*!
+  \qmlmethod void Person::resolvePhoneNumber(string number, bool requireComplete)
+*/
 void SeasidePerson::resolvePhoneNumber(const QString &number, bool requireComplete)
 {
     mResolving = true;
@@ -2205,6 +2359,9 @@ void SeasidePerson::resolvePhoneNumber(const QString &number, bool requireComple
     }
 }
 
+/*!
+  \qmlmethod void Person::resolveEmailAddress(string address, bool requireComplete)
+*/
 void SeasidePerson::resolveEmailAddress(const QString &address, bool requireComplete)
 {
     mResolving = true;
@@ -2215,6 +2372,9 @@ void SeasidePerson::resolveEmailAddress(const QString &address, bool requireComp
     }
 }
 
+/*!
+  \qmlmethod void Person::resolveOnlineAccount(string localUid, string remoteUid, bool requireComplete)
+*/
 void SeasidePerson::resolveOnlineAccount(const QString &localUid, const QString &remoteUid, bool requireComplete)
 {
     mResolving = true;
@@ -2225,6 +2385,9 @@ void SeasidePerson::resolveOnlineAccount(const QString &localUid, const QString 
     }
 }
 
+/*!
+  \qmlmethod array Person::removeDuplicatePhoneNumbers(array phoneNumbers)
+*/
 QVariantList SeasidePerson::removeDuplicatePhoneNumbers(const QVariantList &phoneNumbers)
 {
     QVariantList rv;
@@ -2303,6 +2466,9 @@ QVariantList SeasidePerson::removeDuplicatePhoneNumbers(const QVariantList &phon
     return rv;
 }
 
+/*!
+  \qmlmethod array Person::removeDuplicateOnlineAccounts(array onlineAccounts)
+*/
 QVariantList SeasidePerson::removeDuplicateOnlineAccounts(const QVariantList &onlineAccounts)
 {
     QVariantList rv;
@@ -2344,6 +2510,9 @@ QVariantList SeasidePerson::removeDuplicateOnlineAccounts(const QVariantList &on
     return rv;
 }
 
+/*!
+  \qmlmethod array Person::removeDuplicateEmailAddresses(array emailAddresses)
+*/
 QVariantList SeasidePerson::removeDuplicateEmailAddresses(const QVariantList &emailAddresses)
 {
     QVariantList rv;
@@ -2373,6 +2542,9 @@ QVariantList SeasidePerson::removeDuplicateEmailAddresses(const QVariantList &em
     return rv;
 }
 
+/*!
+  \qmlmethod object Person::decomposeName(string name)
+*/
 QVariantMap SeasidePerson::decomposeName(const QString &name) const
 {
     QContactName nameDetail;
@@ -2490,6 +2662,9 @@ void SeasidePerson::aggregationOperationCompleted()
     emit aggregationOperationFinished();
 }
 
+/*!
+  \qmlmethod void Person::aggregateInto(Person person)
+*/
 void SeasidePerson::aggregateInto(SeasidePerson *person)
 {
     if (!person)
@@ -2506,6 +2681,9 @@ void SeasidePerson::aggregateInto(SeasidePerson *person)
     SeasideCache::aggregateContacts(person->contact(), *mContact);
 }
 
+/*!
+  \qmlmethod void Person::disaggregateFrom(Person person)
+*/
 void SeasidePerson::disaggregateFrom(SeasidePerson *person)
 {
     if (!person)

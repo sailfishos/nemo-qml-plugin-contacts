@@ -48,6 +48,10 @@ static const auto MsyncdInterface = MsyncdService;
 static const auto GalIdKey = QStringLiteral("id");
 static const auto AccountIdKey = QStringLiteral("accountId");
 
+/*!
+  \qmltype KnownContacts
+  \inqmlmodule org.nemomobile.contacts
+*/
 KnownContacts::KnownContacts(QObject *parent)
     : QObject(parent)
     , m_msyncd(MsyncdService, SynchronizerPath, MsyncdInterface)
@@ -60,11 +64,17 @@ KnownContacts::~KnownContacts()
 {
 }
 
+/*!
+  \qmlmethod bool KnownContacts::storeContact(object contact)
+*/
 bool KnownContacts::storeContact(const QVariantMap &contact)
 {
     return storeContacts({contact});
 }
 
+/*!
+  \qmlmethod bool KnownContacts::storeContacts(array contacts)
+*/
 bool KnownContacts::storeContacts(const QVariantList &contacts)
 {
     QMap<int, QList<QVariantMap> > accountContacts;

@@ -1,0 +1,17 @@
+/*!
+\qmlmodule org.nemomobile.contacts 1.0
+\title org.nemomobile.contacts QML Types
+
+This module includes the following types:
+
+*/
+
+/*!
+\page index.html
+\title Nemo QML Plugin Contacts
+
+This module includes the following types:
+
+\generatelist{qmltypesbymodule org.nemomobile.contacts}
+
+*/

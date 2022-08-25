@@ -36,6 +36,10 @@
 
 #include <QDebug>
 
+/*!
+  \qmltype ConstituentModel
+  \inqmlmodule org.nemomobile.contacts
+*/
 SeasideConstituentModel::SeasideConstituentModel(QObject *parent)
     : SeasideSimpleContactModel(parent)
 {
@@ -45,6 +49,9 @@ SeasideConstituentModel::~SeasideConstituentModel()
 {
 }
 
+/*!
+  \qmlproperty Person ConstituentModel::person
+*/
 SeasidePerson* SeasideConstituentModel::person() const
 {
     return m_person;

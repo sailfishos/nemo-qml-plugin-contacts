@@ -609,6 +609,14 @@ struct FilterData : public SeasideCache::ItemListener
     void itemAboutToBeRemoved(SeasideCache::CacheItem *) { delete this; }
 };
 
+/*!
+  \qmltype PeopleModel
+  \inqmlmodule org.nemomobile.contacts
+*/
+/*!
+  \qmlsignal PeopleModel::savePersonSucceeded(int localId, int aggregateId)
+  \qmlsignal PeopleModel::savePersonFailed()
+*/
 SeasideFilteredModel::SeasideFilteredModel(QObject *parent)
     : SeasideCache::ListModel(parent)
     , m_filterUpdateIndex(-1)
@@ -667,11 +675,19 @@ QHash<int, QByteArray> SeasideFilteredModel::roleNames() const
     return roles;
 }
 
+/*!
+  \qmlproperty bool PeopleModel::populated
+*/
 bool SeasideFilteredModel::isPopulated() const
 {
     return SeasideCache::isPopulated(static_cast<SeasideCache::FilterType>(m_filterType));
 }
 
+/*!
+  \qmlproperty enumeration PeopleModel::displayLabelOrder
+  \value FirstNameFirst
+  \value LastNameFirst
+*/
 SeasideFilteredModel::DisplayLabelOrder SeasideFilteredModel::displayLabelOrder() const
 {
     SeasideCache::DisplayLabelOrder order = SeasideCache::displayLabelOrder();
@@ -684,21 +700,37 @@ void SeasideFilteredModel::setDisplayLabelOrder(DisplayLabelOrder)
     qWarning() << "PeopleModel::displayLabelOrder is now readonly";
 }
 
+/*!
+  \qmlproperty string PeopleModel::sortProperty
+*/
 QString SeasideFilteredModel::sortProperty() const
 {
     return SeasideCache::sortProperty();
 }
 
+/*!
+  \qmlproperty string PeopleModel::groupProperty
+*/
 QString SeasideFilteredModel::groupProperty() const
 {
     return SeasideCache::groupProperty();
 }
 
+/*!
+  \qmlproperty string PeopleModel::placeholderDisplayLabel
+*/
 QString SeasideFilteredModel::placeholderDisplayLabel() const
 {
     return SeasidePerson::placeholderDisplayLabel();
 }
 
+/*!
+  \qmlproperty enumeration PeopleModel::filterType
+  \value FilterNone
+  \value FilterAll
+  \value FilterFavorites
+  \value FilterTypesCount
+*/
 SeasideFilteredModel::FilterType SeasideFilteredModel::filterType() const
 {
     return m_filterType;
@@ -742,6 +774,9 @@ void SeasideFilteredModel::setFilterType(FilterType type)
     }
 }
 
+/*!
+  \qmlproperty string PeopleModel::filterPattern
+*/
 QString SeasideFilteredModel::filterPattern() const
 {
     return m_filterPattern;
@@ -752,6 +787,9 @@ void SeasideFilteredModel::setFilterPattern(const QString &pattern)
     updateFilters(pattern, m_requiredProperty);
 }
 
+/*!
+  \qmlproperty int PeopleModel::requiredProperty
+*/
 int SeasideFilteredModel::requiredProperty() const
 {
     return m_requiredProperty;
@@ -762,6 +800,9 @@ void SeasideFilteredModel::setRequiredProperty(int type)
     updateFilters(m_filterPattern, type);
 }
 
+/*!
+  \qmlproperty int PeopleModel::searchableProperty
+*/
 int SeasideFilteredModel::searchableProperty() const
 {
     return m_searchableProperty;
@@ -777,6 +818,9 @@ void SeasideFilteredModel::setSearchableProperty(int type)
     }
 }
 
+/*!
+  \qmlproperty bool PeopleModel::searchByFirstNameCharacter
+*/
 bool SeasideFilteredModel::searchByFirstNameCharacter() const
 {
     return m_searchByFirstNameCharacter;
@@ -963,6 +1007,9 @@ void SeasideFilteredModel::populateIndex()
     }
 }
 
+/*!
+  \qmlmethod object PeopleModel::get(int row)
+*/
 QVariantMap SeasideFilteredModel::get(int row) const
 {
     SeasideCache::CacheItem *cacheItem = existingItem(m_contactIds->at(row));
@@ -999,6 +1046,9 @@ QVariantMap SeasideFilteredModel::get(int row) const
     return m;
 }
 
+/*!
+  \qmlmethod object PeopleModel::get(int row, int role)
+*/
 QVariant SeasideFilteredModel::get(int row, int role) const
 {
     SeasideCache::CacheItem *cacheItem = existingItem(m_contactIds->at(row));
@@ -1008,6 +1058,9 @@ QVariant SeasideFilteredModel::get(int row, int role) const
     return data(cacheItem, role);
 }
 
+/*!
+  \qmlmethod bool PeopleModel::savePerson(Person person)
+*/
 bool SeasideFilteredModel::savePerson(SeasidePerson *person)
 {
     if (!person) {
@@ -1029,6 +1082,9 @@ bool SeasideFilteredModel::savePerson(SeasidePerson *person)
     return false;
 }
 
+/*!
+  \qmlmethod bool PeopleModel::savePeople(array people)
+*/
 bool SeasideFilteredModel::savePeople(const QVariantList &people)
 {
     bool allSucceeded = true;
@@ -1056,6 +1112,9 @@ bool SeasideFilteredModel::savePeople(const QVariantList &people)
     return allSucceeded;
 }
 
+/*!
+  \qmlmethod Person PeopleModel::personByRow(int row)
+*/
 SeasidePerson *SeasideFilteredModel::personByRow(int row) const
 {
     if(row < 0 || row >= m_contactIds->size()) {
@@ -1064,36 +1123,57 @@ SeasidePerson *SeasideFilteredModel::personByRow(int row) const
     return personFromItem(SeasideCache::itemById(m_contactIds->at(row)));
 }
 
+/*!
+  \qmlmethod Person PeopleModel::personById(int id)
+*/
 SeasidePerson *SeasideFilteredModel::personById(int id) const
 {
     return personFromItem(SeasideCache::itemById(id));
 }
 
+/*!
+  \qmlmethod Person PeopleModel::personByPhoneNumber(string number, bool requireComplete)
+*/
 SeasidePerson *SeasideFilteredModel::personByPhoneNumber(const QString &number, bool requireComplete) const
 {
     return personFromItem(SeasideCache::itemByPhoneNumber(number, requireComplete));
 }
 
+/*!
+  \qmlmethod Person PeopleModel::personByEmailAddress(string email, bool requireComplete)
+*/
 SeasidePerson *SeasideFilteredModel::personByEmailAddress(const QString &email, bool requireComplete) const
 {
     return personFromItem(SeasideCache::itemByEmailAddress(email, requireComplete));
 }
 
+/*!
+  \qmlmethod Person PeopleModel::personByOnlineAccount(string localUid, string remoteUid, bool requireComplete)
+*/
 SeasidePerson *SeasideFilteredModel::personByOnlineAccount(const QString &localUid, const QString &remoteUid, bool requireComplete) const
 {
     return personFromItem(SeasideCache::itemByOnlineAccount(localUid, remoteUid, requireComplete));
 }
 
+/*!
+  \qmlmethod Person PeopleModel::selfPerson()
+*/
 SeasidePerson *SeasideFilteredModel::selfPerson() const
 {
     return personFromItem(SeasideCache::itemById(SeasideCache::selfContactId()));
 }
 
+/*!
+  \qmlmethod void PeopleModel::removePerson(Person person)
+*/
 void SeasideFilteredModel::removePerson(SeasidePerson *person)
 {
     SeasideCache::removeContact(person->contact());
 }
 
+/*!
+  \qmlmethod void PeopleModel::removePeople(array people)
+*/
 void SeasideFilteredModel::removePeople(const QVariantList &people)
 {
     QList<QContact> contacts;
@@ -1115,6 +1195,9 @@ QModelIndex SeasideFilteredModel::index(const QModelIndex &parent, int row, int 
             : QModelIndex();
 }
 
+/*!
+  \qmlproperty int PeopleModel::count
+*/
 int SeasideFilteredModel::rowCount(const QModelIndex &parent) const
 {
     return !parent.isValid()
@@ -1355,11 +1438,17 @@ void SeasideFilteredModel::saveContactComplete(int localId, int aggregateId)
     }
 }
 
+/*!
+  \qmlmethod int PeopleModel::importContacts(string path)
+*/
 int SeasideFilteredModel::importContacts(const QString &path)
 {
     return SeasideCache::importContacts(path);
 }
 
+/*!
+  \qmlmethod string PeopleModel::exportContacts()
+*/
 QString SeasideFilteredModel::exportContacts()
 {
     return SeasideCache::exportContacts();

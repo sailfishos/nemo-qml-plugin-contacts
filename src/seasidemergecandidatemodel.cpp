@@ -36,6 +36,10 @@
 
 #include <QDebug>
 
+/*!
+  \qmltype MergeCandidateModel
+  \inqmlmodule org.nemomobile.contacts
+*/
 SeasideMergeCandidateModel::SeasideMergeCandidateModel(QObject *parent)
     : SeasideSimpleContactModel(parent)
 {
@@ -45,6 +49,9 @@ SeasideMergeCandidateModel::~SeasideMergeCandidateModel()
 {
 }
 
+/*!
+  \qmlproperty Person MergeCandidateModel::person
+*/
 SeasidePerson* SeasideMergeCandidateModel::person() const
 {
     return m_person;

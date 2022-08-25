@@ -41,6 +41,10 @@
 #include <QContactEmailAddress>
 #include <QDebug>
 
+/*!
+  \qmltype PeopleDisplayLabelGroupModel
+  \inqmlmodule org.nemomobile.contacts
+*/
 SeasideDisplayLabelGroupModel::SeasideDisplayLabelGroupModel(QObject *parent)
     : QAbstractListModel(parent)
     , m_requiredProperty(NoPropertyRequired)
@@ -65,6 +69,9 @@ SeasideDisplayLabelGroupModel::~SeasideDisplayLabelGroupModel()
     SeasideCache::unregisterDisplayLabelGroupChangeListener(this);
 }
 
+/*!
+  \qmlproperty int PeopleDisplayLabelGroupModel::requiredProperty
+*/
 int SeasideDisplayLabelGroupModel::requiredProperty() const
 {
     return m_requiredProperty;
@@ -95,11 +102,17 @@ void SeasideDisplayLabelGroupModel::setRequiredProperty(int properties)
     }
 }
 
+/*!
+  \qmlproperty int PeopleDisplayLabelGroupModel::minimumCount
+*/
 int SeasideDisplayLabelGroupModel::minimumCount() const
 {
     return SeasideStringListCompressor::minimumCompressionInputCount();
 }
 
+/*!
+  \qmlproperty int PeopleDisplayLabelGroupModel::maximumCount
+*/
 int SeasideDisplayLabelGroupModel::maximumCount() const
 {
     return m_maximumCount;
@@ -116,11 +129,17 @@ void SeasideDisplayLabelGroupModel::setMaximumCount(int maximumCount)
     }
 }
 
+/*!
+  \qmlmethod int PeopleDisplayLabelGroupModel::indexOf(string name)
+*/
 int SeasideDisplayLabelGroupModel::indexOf(const QString &name) const
 {
     return m_groupIndices.value(name);
 }
 
+/*!
+  \qmlmethod object PeopleDisplayLabelGroupModel::get(int row)
+*/
 QVariantMap SeasideDisplayLabelGroupModel::get(int row) const
 {
     if (row < 0 || row > m_compressedGroups.count()) {
@@ -135,6 +154,9 @@ QVariantMap SeasideDisplayLabelGroupModel::get(int row) const
     return m;
 }
 
+/*!
+  \qmlmethod object PeopleDisplayLabelGroupModel::get(int row, int role)
+*/
 QVariant SeasideDisplayLabelGroupModel::get(int row, int role) const
 {
     if (row < 0 || row >= m_compressedGroups.count()) {
@@ -164,6 +186,9 @@ QHash<int, QByteArray> SeasideDisplayLabelGroupModel::roleNames() const
     return roles;
 }
 
+/*!
+  \qmlproperty int PeopleDisplayLabelGroupModel::count
+*/
 int SeasideDisplayLabelGroupModel::rowCount(const QModelIndex &) const
 {
     return m_compressedGroups.count();
