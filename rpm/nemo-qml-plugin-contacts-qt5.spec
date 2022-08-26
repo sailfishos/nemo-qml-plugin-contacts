@@ -1,7 +1,7 @@
 Name:       nemo-qml-plugin-contacts-qt5
 
 Summary:    Nemo QML contacts library
-Version:    0.3.22
+Version:    0.3.24
 Release:    1
 License:    BSD
 URL:        https://github.com/sailfishos/nemo-qml-plugin-contacts
@@ -20,6 +20,8 @@ BuildRequires:  pkgconfig(accounts-qt5)
 BuildRequires:  libphonenumber-devel
 BuildRequires:  qt5-qttools-linguist
 BuildRequires:  qt5-qttools
+BuildRequires:  qt5-qttools-qthelp-devel
+BuildRequires:  sailfish-qdoc-template
 
 %description
 %{summary}.
@@ -29,6 +31,12 @@ Summary:    Nemo QML contacts devel headers
 Requires:   %{name} = %{version}-%{release}
 
 %description devel
+%{summary}.
+
+%package doc
+Summary:    Nemo QML contacts documentation
+
+%description doc
 %{summary}.
 
 %package ts-devel
@@ -63,6 +71,10 @@ make %{?_smp_mflags}
 %install
 %qmake5_install
 
+install -m 644 doc/html/*.html %{buildroot}/%{_docdir}/nemo-qml-plugin-contacts/
+install -m 644 doc/html/nemo-qml-plugin-contacts.index %{buildroot}/%{_docdir}/nemo-qml-plugin-contacts/
+install -m 644 doc/nemo-qml-plugin-contacts.qch %{buildroot}/%{_docdir}/nemo-qml-plugin-contacts/
+
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
@@ -80,6 +92,11 @@ make %{?_smp_mflags}
 %defattr(-,root,root,-)
 %{_includedir}/contactcache-qt5/*
 %{_libdir}/pkgconfig/contactcache-qt5.pc
+
+%files doc
+%defattr(-,root,root,-)
+%{_docdir}/nemo-qml-plugin-contacts/*
+
 
 %files ts-devel
 %defattr(-,root,root,-)

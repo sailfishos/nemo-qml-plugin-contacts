@@ -54,6 +54,10 @@ const QByteArray phoneDetailsRole("phoneDetails");
 const QByteArray emailDetailsRole("emailDetails");
 const QByteArray personRole("person");
 
+/*!
+  \qmltype PeopleVCardModel
+  \inqmlmodule org.nemomobile.contacts
+*/
 SeasideVCardModel::SeasideVCardModel(QObject *parent)
     : QAbstractListModel(parent) , mComplete(false)
 #ifdef HAS_MLITE
@@ -70,6 +74,9 @@ SeasideVCardModel::~SeasideVCardModel()
     qDeleteAll(mPeople);
 }
 
+/*!
+  \qmlproperty url PeopleVCardModel::source
+*/
 QUrl SeasideVCardModel::source() const
 {
     return mSource;
@@ -84,11 +91,17 @@ void SeasideVCardModel::setSource(const QUrl &source)
     }
 }
 
+/*!
+  \qmlproperty int PeopleVCardModel::count
+*/
 int SeasideVCardModel::count() const
 {
     return rowCount(QModelIndex());
 }
 
+/*!
+  \qmlproperty string PeopleVCardModel::defaultCodec
+*/
 QString SeasideVCardModel::defaultCodec() const
 {
     return mDefaultCodec;
@@ -183,6 +196,9 @@ QVariant SeasideVCardModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
+/*!
+  \qmlmethod Person PeopleVCardModel::getPerson(int index)
+*/
 SeasidePerson *SeasideVCardModel::getPerson(int index) const
 {
     if (index < 0 || index >= count())
@@ -199,6 +215,11 @@ SeasidePerson *SeasideVCardModel::getPerson(int index) const
     return person;
 }
 
+/*!
+  \qmlproperty enumeration PeopleVCardModel::displayLabelOrder
+  \value FirstNameFirst
+  \value LastNameFirst
+*/
 SeasideVCardModel::DisplayLabelOrder SeasideVCardModel::displayLabelOrder() const
 {
 #ifdef HAS_MLITE

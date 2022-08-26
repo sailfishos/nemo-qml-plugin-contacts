@@ -35,6 +35,10 @@
 
 #include <QtDebug>
 
+/*!
+  \qmltype AddressBookUtil
+  \inqmlmodule org.nemomobile.contacts
+*/
 SeasideAddressBookUtil::SeasideAddressBookUtil(QObject *parent)
     : QObject(parent)
 {
@@ -55,6 +59,9 @@ SeasideAddressBookUtil::~SeasideAddressBookUtil()
 {
 }
 
+/*!
+  \qmlproperty array AddressBookUtil::addressBooks
+*/
 QVariantList SeasideAddressBookUtil::addressBooks() const
 {
     return m_addressBooks;

@@ -1,5 +1,5 @@
 TEMPLATE = subdirs
-SUBDIRS = lib src tools tests translations
+SUBDIRS = lib src tools tests translations doc
 
 src.depends = lib
 tools.depends = src

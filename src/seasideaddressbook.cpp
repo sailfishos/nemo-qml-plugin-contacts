@@ -39,6 +39,21 @@
 
 #include <QDebug>
 
+/*!
+  \qmltype AddressBook
+  \inqmlmodule org.nemomobile.contacts
+*/
+/*!
+  \qmlproperty string AddressBook::name
+  \qmlproperty color AddressBook::color
+  \qmlproperty color AddressBook::secondaryColor
+  \qmlproperty string AddressBook::image
+  \qmlproperty object AddressBook::extendedMetaData
+  \qmlproperty int AddressBook::accountId
+  \qmlproperty bool AddressBook::isAggregate
+  \qmlproperty bool AddressBook::isLocal
+  \qmlproperty bool AddressBook::readOnly
+*/
 SeasideAddressBook::SeasideAddressBook()
 {
 }
@@ -52,6 +67,9 @@ bool SeasideAddressBook::operator==(const SeasideAddressBook &other)
     return collectionId == other.collectionId;
 }
 
+/*!
+  \qmlproperty string AddressBook::id
+*/
 QString SeasideAddressBook::idString() const
 {
     return collectionId.toString();

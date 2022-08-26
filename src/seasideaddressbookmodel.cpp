@@ -75,6 +75,10 @@ namespace {
     }
 }
 
+/*!
+  \qmltype AddressBookModel
+  \inqmlmodule org.nemomobile.contacts
+*/
 SeasideAddressBookModel::SeasideAddressBookModel(QObject *parent)
     : QAbstractListModel(parent)
     , m_accountManager(new Accounts::Manager(this))
@@ -109,11 +113,17 @@ void SeasideAddressBookModel::setContactId(int contactId)
     }
 }
 
+/*!
+  \qmlproperty int AddressBookModel::contactId
+*/
 int SeasideAddressBookModel::contactId() const
 {
     return m_contactId;
 }
 
+/*!
+  \qmlmethod AddressBook AddressBookModel::addressBookAt(int index)
+*/
 QVariant SeasideAddressBookModel::addressBookAt(int index) const
 {
     return QVariant::fromValue(m_filteredAddressBooks.value(index));
@@ -126,6 +136,9 @@ QHash<int, QByteArray> SeasideAddressBookModel::roleNames() const
     return roles;
 }
 
+/*!
+  \qmlproperty int AddressBookModel::count
+*/
 int SeasideAddressBookModel::rowCount(const QModelIndex &parent) const
 {
     return !parent.isValid()
