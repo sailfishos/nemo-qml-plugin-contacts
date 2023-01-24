@@ -405,7 +405,7 @@ void tst_Resolve::resolveDuringContactLink()
 
     QStringList names, expected;
     names << item1->displayLabel << item2->displayLabel;
-    qSort(names);
+    std::sort(names.begin(), names.end());
     expected << QString::fromLatin1("Dafferd Duck") << QString::fromLatin1("Daffy Duck");
     QCOMPARE(names, expected);
 }
