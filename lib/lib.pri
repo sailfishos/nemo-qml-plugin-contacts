@@ -25,6 +25,7 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/cacheconfiguration.cpp \
+    $$PWD/defaultseasideactionplugin.cpp \
     $$PWD/seasidecache.cpp \
     $$PWD/seasideexport.cpp \
     $$PWD/seasideimport.cpp \
@@ -39,7 +40,9 @@ PUBLIC_HEADERS = \
     $$PWD/seasideimport.h \
     $$PWD/seasidecontactbuilder.h \
     $$PWD/synchronizelists.h \
-    $$PWD/seasidepropertyhandler.h
+    $$PWD/seasidepropertyhandler.h \
+    $$PWD/seasideactionplugin.h \
+    $$PWD/defaultseasideactionplugin.h
 
 HEADERS += $$PUBLIC_HEADERS
 

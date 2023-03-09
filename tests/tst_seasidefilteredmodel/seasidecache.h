@@ -18,6 +18,7 @@
 QTCONTACTS_USE_NAMESPACE
 
 class SeasidePerson;
+class SeasideActionPlugin;
 
 class SeasideCache : public QObject
 {
@@ -228,6 +229,8 @@ public:
 
     static QContactCollectionId aggregateCollectionId();
     static QContactCollectionId localCollectionId();
+
+    static SeasideActionPlugin *actionPlugin();
 
     void populate(FilterType filterType);
     void insert(FilterType filterType, int index, const QList<quint32> &ids);

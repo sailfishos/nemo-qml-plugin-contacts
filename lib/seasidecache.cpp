@@ -31,6 +31,7 @@
  */
 
 #include "seasidecache.h"
+#include "defaultseasideactionplugin.h"
 
 #include "synchronizelists.h"
 
@@ -1529,6 +1530,12 @@ QContactCollectionId SeasideCache::aggregateCollectionId()
 QContactCollectionId SeasideCache::localCollectionId()
 {
     return QtContactsSqliteExtensions::localCollectionId(manager()->managerUri());
+}
+
+SeasideActionPlugin *SeasideCache::actionPlugin()
+{
+    static SeasideActionPlugin *actionPlugin = new DefaultSeasideActionPlugin;
+    return actionPlugin;
 }
 
 QContactFilter SeasideCache::filterForMergeCandidates(const QContact &contact) const
