@@ -463,7 +463,11 @@ QString SeasidePerson::department() const
 void SeasidePerson::setDepartment(const QString &department)
 {
     QStringList dept;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    foreach (const QString &field, department.split(QChar::fromLatin1(';'), Qt::SkipEmptyParts)) {
+#else
     foreach (const QString &field, department.split(QChar::fromLatin1(';'), QString::SkipEmptyParts)) {
+#endif
         dept.append(field.trimmed());
     }
 
@@ -2306,8 +2310,11 @@ QStringList SeasidePerson::avatarUrlsExcluding(const QStringList &excludeMetadat
 
         urls.insert(avatar.imageUrl().toString());
     }
-
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return urls.values();
+#else
     return urls.toList();
+#endif
 }
 
 /*!

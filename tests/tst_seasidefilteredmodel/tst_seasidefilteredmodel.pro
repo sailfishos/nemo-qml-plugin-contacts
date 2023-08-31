@@ -1,6 +1,6 @@
 include(../common.pri)
 
-PKGCONFIG += mlocale5
+PKGCONFIG += mlocale$${QT_MAJOR_VERSION}
 
 CONFIG += c++11
 

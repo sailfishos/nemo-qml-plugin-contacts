@@ -3,7 +3,7 @@ TEMPLATE = aux
 TS_FILE = $$OUT_PWD/nemo-qml-plugin-contacts.ts
 EE_QM = $$OUT_PWD/nemo-qml-plugin-contacts_eng_en.qm
 
-ts.commands += lupdate $$PWD/.. -ts $$TS_FILE
+ts.commands += $$[QT_INSTALL_BINS]/lupdate $$PWD/.. -ts $$TS_FILE
 ts.CONFIG += no_check_exist no_link
 ts.output = $$TS_FILE
 ts.input = ..
@@ -13,7 +13,7 @@ ts_install.path = /usr/share/translations/source
 ts_install.CONFIG += no_check_exist
 
 # should add -markuntranslated "-" when proper translations are in place (or for testing)
-engineering_english.commands += lrelease -idbased $$TS_FILE -qm $$EE_QM
+engineering_english.commands += $$[QT_INSTALL_BINS]/lrelease -idbased $$TS_FILE -qm $$EE_QM
 engineering_english.CONFIG += no_check_exist no_link
 engineering_english.depends = ts
 engineering_english.input = $$TS_FILE

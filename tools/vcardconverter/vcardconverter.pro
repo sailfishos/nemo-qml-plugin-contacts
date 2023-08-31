@@ -1,5 +1,5 @@
 include(../common.pri)
-PKGCONFIG += qtcontacts-sqlite-qt5-extensions
+PKGCONFIG += qtcontacts-sqlite-qt$${QT_MAJOR_VERSION}-extensions
 
 TARGET = vcardconverter
 

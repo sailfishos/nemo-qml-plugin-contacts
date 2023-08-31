@@ -156,7 +156,11 @@ void processOnlineAccount(const QVersitProperty &property, bool *alreadyProcesse
     const QString detail(property.variantValue().toString());
 
     // The format is: URI/path/display-name/icon-path/service-provider/service-provider-display-name
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    const QStringList details(detail.split(QLatin1Char(';'), Qt::KeepEmptyParts));
+#else
     const QStringList details(detail.split(QLatin1Char(';'), QString::KeepEmptyParts));
+#endif
     if (details.count() == 6) {
         QContactOnlineAccount qcoa;
 
@@ -171,7 +175,11 @@ void processOnlineAccount(const QVersitProperty &property, bool *alreadyProcesse
         updatedDetails->append(qcoa);
 
         // Since it is a demo account, give it a random presence state
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        const int state = (rand() % 4);
+#else
         const int state = (qrand() % 4);
+#endif
         QContactPresence presence;
         presence.setPresenceState(state == 3 ? QContactPresence::PresenceBusy : (state == 2 ? QContactPresence::PresenceAway : QContactPresence::PresenceAvailable));
         presence.setLinkedDetailUris(QStringList() << qcoa.detailUri());

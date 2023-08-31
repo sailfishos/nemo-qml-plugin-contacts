@@ -133,8 +133,13 @@ void SeasideSimpleContactModel::updateOrReset(const QList<int> &newContactIds)
         currentContactIds.append(contactInfo.cacheItem->iid);
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    const QSet<int> currentIdSet = QSet<int>(currentContactIds.begin(), currentContactIds.end());
+    const QSet<int> newIdSet = QSet<int>(newContactIds.begin(), newContactIds.end());
+#else
     const QSet<int> currentIdSet = currentContactIds.toSet();
     const QSet<int> newIdSet = newContactIds.toSet();
+#endif
 
     if (currentIdSet == newIdSet) {
         return;

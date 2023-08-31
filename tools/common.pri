@@ -5,4 +5,4 @@ CONFIG -= app_bundle
 
 INCLUDEPATH += $$PWD/../src/ $$PWD/../lib/
 DEPENDPATH += $$INCLUDEPATH
-LIBS += -L$$PWD/../lib -lcontactcache-qt5
+LIBS += -L$$PWD/../lib -L../../lib -lcontactcache-qt$${QT_MAJOR_VERSION}

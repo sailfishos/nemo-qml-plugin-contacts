@@ -93,7 +93,9 @@ public:
         qmlRegisterType<SeasideFilteredModel>(uri, 1, 0, "PeopleModel");
         qmlRegisterType<SeasideAddressBookModel>(uri, 1, 0, "AddressBookModel");
         qmlRegisterType<SeasideDisplayLabelGroupModel>(uri, 1, 0, "PeopleDisplayLabelGroupModel");
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         qmlRegisterType<SeasidePersonAttached>();
+#endif
         qmlRegisterType<SeasidePerson>(uri, 1, 0, "Person");
         qmlRegisterType<SeasideVCardModel>(uri, 1, 0, "PeopleVCardModel");
         qmlRegisterType<SeasideConstituentModel>(uri, 1, 0, "ConstituentModel");

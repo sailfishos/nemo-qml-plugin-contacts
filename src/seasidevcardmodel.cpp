@@ -257,12 +257,13 @@ void SeasideVCardModel::readContacts()
     if (vcf.open(QIODevice::ReadOnly)) {
         // TODO: thread
         QVersitReader reader(&vcf);
-
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         if (!mDefaultCodec.isEmpty()) {
             QTextCodec *codec = QTextCodec::codecForName(mDefaultCodec.toLatin1());
             if (codec)
                 reader.setDefaultCodec(codec);
         }
+#endif
 
         reader.startReading();
         reader.waitForFinished();

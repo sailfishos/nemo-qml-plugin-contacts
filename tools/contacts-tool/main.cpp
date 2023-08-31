@@ -81,7 +81,11 @@ QString delimiter(QString::fromLatin1("\n    "));
 void errorMessage(const QString &s)
 {
     QTextStream ts(stderr);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    ts << s << Qt::endl;
+#else
     ts << s << endl;
+#endif
 }
 
 void invalidUsage(const QString &app)
@@ -130,8 +134,11 @@ const QList<QContactCollection>& managerCollections()
 QSet<quint32> parseIds(const QString &ids)
 {
     QSet<quint32> rv;
-
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    foreach (const QString &id, ids.split(QChar::fromLatin1(','), Qt::SkipEmptyParts)) {
+#else
     foreach (const QString &id, ids.split(QChar::fromLatin1(','), QString::SkipEmptyParts)) {
+#endif
         bool ok(false);
         quint32 value(id.toUInt(&ok));
         if (!ok) {
@@ -600,7 +607,9 @@ void printContactLinks(const QList<QContact> &contacts)
 
 QTextStream &utf8(QTextStream &ts)
 {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     ts.setCodec("UTF-8");
+#endif
     return ts;
 }
 
@@ -749,13 +758,18 @@ int deleteContacts(char **begin, char **end)
     }
 
     QTextStream output(stdout);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    output << QString::fromLatin1("\nSelected contacts:\n") << Qt::flush;
+#else
     output << QString::fromLatin1("\nSelected contacts:\n") << flush;
-
+#endif
     QSet<quint32> contactIds(parseIds(begin, end));
     printContactSummary(manager().contacts(contactIdsFilter(contactIds)));
-
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    output << QString::fromLatin1("\nAre you sure you want to delete these contacts? (y/N):") << Qt::flush;
+#else
     output << QString::fromLatin1("\nAre you sure you want to delete these contacts? (y/N):") << flush;
-
+#endif
     QString confirmation;
     QTextStream(stdin) >> confirmation;
     if (confirmation == QString::fromLatin1("y")) {

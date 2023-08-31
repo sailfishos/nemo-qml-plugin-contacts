@@ -1243,7 +1243,11 @@ void SeasideCache::decomposeDisplayLabel(const QString &formattedDisplayLabel, Q
 
     // Try to parse the structure from the formatted name
     // TODO: Use MBreakIterator for localized splitting
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QStringList tokens(formattedDisplayLabel.split(QChar::fromLatin1(' '), Qt::SkipEmptyParts));
+#else
     QStringList tokens(formattedDisplayLabel.split(QChar::fromLatin1(' '), QString::SkipEmptyParts));
+#endif
     if (tokens.count() >= 2) {
         QString format;
         if (tokens.count() == 2) {
@@ -1863,7 +1867,11 @@ void SeasideCache::startRequest(bool *idleProcessing)
         } else {
             // Fetch the constituent information (even if they're already in the
             // cache, because we don't update non-aggregates on change notifications)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+            m_fetchByIdRequest.setIds(m_constituentIds.values());
+#else
             m_fetchByIdRequest.setIds(m_constituentIds.toList());
+#endif
             m_fetchByIdRequest.start();
 
             m_fetchByIdProcessedCount = 0;
@@ -2523,7 +2531,11 @@ void SeasideCache::contactsAvailable()
     if (contacts.isEmpty())
         return;
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QSet<QContactDetail::DetailType> queryDetailTypes = QSet<QContactDetail::DetailType>(detailTypesHint(fetchHint).begin(), detailTypesHint(fetchHint).end());
+#else
     QSet<QContactDetail::DetailType> queryDetailTypes = detailTypesHint(fetchHint).toSet();
+#endif
 
     if (request == &m_fetchRequest && m_populating) {
         Q_ASSERT(m_populateProgress > Unpopulated && m_populateProgress < Populated);
@@ -3050,7 +3062,12 @@ void SeasideCache::addressRequestStateChanged(QContactAbstractRequest::State sta
 
     // results are complete, so record them in the cache
     QContactFetchRequest *request = static_cast<QContactFetchRequest *>(sender());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QSet<QContactDetail::DetailType> queryDetailTypes = QSet<QContactDetail::DetailType>(detailTypesHint(request->fetchHint()).begin()
+                                                                                         , detailTypesHint(request->fetchHint()).end());
+#else
     QSet<QContactDetail::DetailType> queryDetailTypes = detailTypesHint(request->fetchHint()).toSet();
+#endif
     applyContactUpdates(request->contacts(), queryDetailTypes);
 
     // now figure out which address was being resolved and resolve it

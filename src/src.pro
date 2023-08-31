@@ -9,17 +9,17 @@ CONFIG += qt plugin hide_symbols
 QT = \
     core  \
     qml
-PKGCONFIG += mlocale5 accounts-qt5
+PKGCONFIG += mlocale$${QT_MAJOR_VERSION} accounts-qt$${QT_MAJOR_VERSION}
 
-packagesExist(mlite5) {
-    PKGCONFIG += mlite5
+packagesExist(mlite$${QT_MAJOR_VERSION}) {
+    PKGCONFIG += mlite$${QT_MAJOR_VERSION}
     DEFINES += HAS_MLITE
 } else {
     warning("mlite not available. Some functionality may not work as expected.")
 }
 
 INCLUDEPATH += ../lib
-LIBS += -L../lib -lcontactcache-qt5
+LIBS += -L../lib -lcontactcache-qt$${QT_MAJOR_VERSION}
 
 target.path = $$[QT_INSTALL_QML]/$$PLUGIN_IMPORT_PATH
 INSTALLS += target

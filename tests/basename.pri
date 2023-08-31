@@ -1,1 +1,1 @@
-BASENAME=nemo-qml-plugins-qt5
+BASENAME=nemo-qml-plugins-qt$${QT_MAJOR_VERSION}
