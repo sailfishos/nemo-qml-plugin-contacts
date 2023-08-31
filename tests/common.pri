@@ -9,7 +9,7 @@ QT += testlib qml
 SRCDIR = $$PWD/../src/
 INCLUDEPATH += $$SRCDIR $$PWD/../lib/
 DEPENDPATH += $$INCLUDEPATH
-LIBS += -L$$PWD/../lib -lcontactcache-qt5
+LIBS += -L$$PWD/../lib -L../../lib -lcontactcache-qt$${QT_MAJOR_VERSION}
 
 target.path = /opt/tests/$${BASENAME}/contacts
 INSTALLS += target

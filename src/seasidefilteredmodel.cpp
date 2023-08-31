@@ -491,10 +491,13 @@ struct FilterData : public SeasideCache::ItemListener
 
     static const QChar *cbegin(const QString &s) { return s.cbegin(); }
     static const QChar *cend(const QString &s) { return s.cend(); }
-
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    static const QChar *cbegin(const QStringView &r) { return r.data(); }
+    static const QChar *cend(const QStringView &r) { return r.data() + r.size(); }
+#else
     static const QChar *cbegin(const QStringRef &r) { return r.data(); }
     static const QChar *cend(const QStringRef &r) { return r.data() + r.size(); }
-
+#endif
     template<typename KeyType>
     static bool partialMatch(const KeyType &key, const QChar * const vbegin, const QChar * const vend)
     {
@@ -559,7 +562,11 @@ struct FilterData : public SeasideCache::ItemListener
                 const QChar initialChar(*vbegin);
                 int index = -1;
                 while ((index = token.indexOf(initialChar, index + 1)) != -1) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+                    if (partialMatch(QStringView(token).mid(index), vbegin, vend)) {
+#else
                     if (partialMatch(token.midRef(index), vbegin, vend)) {
+#endif
                         return true;
                     }
                 }

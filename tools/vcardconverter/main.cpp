@@ -62,7 +62,11 @@ namespace {
 void errorMessage(const QString &s)
 {
     QTextStream ts(stderr);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    ts << s << Qt::endl;
+#else
     ts << s << endl;
+#endif
 }
 
 void invalidUsage(const QString &app)

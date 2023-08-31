@@ -678,7 +678,11 @@ void tst_SeasidePerson::birthday()
     QCOMPARE(spy.count(), 2);
     QCOMPARE(person->birthday(), QDateTime());
     QCOMPARE(person->property("birthday").toDateTime(), person->birthday());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    person->setBirthday(QDateTime(QDate::fromString("05/01/1980", "dd/MM/yyyy").startOfDay()));
+#else
     person->setBirthday(QDateTime(QDate::fromString("05/01/1980", "dd/MM/yyyy")));
+#endif
     QCOMPARE(spy.count(), 3);
     QCOMPARE(person->birthday(), QDateTime::fromString("05/01/1980 12:00:00.000", "dd/MM/yyyy hh:mm:ss.zzz"));
     QCOMPARE(person->property("birthday").toDateTime(), person->birthday());
@@ -1084,7 +1088,11 @@ void tst_SeasidePerson::removeDuplicatePhoneNumbers()
             const QVariantMap detail(item.value<QVariantMap>());
             resultList.append(detail.value(phoneDetailNumber).toString());
         }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QCOMPARE(QSet<QString>(resultList.begin(), resultList.end()), expectedSet);
+#else
         QCOMPARE(resultList.toSet(), expectedSet);
+#endif
     }
 }
 
@@ -1132,7 +1140,12 @@ void tst_SeasidePerson::removeDuplicateOnlineAccounts()
             const QString path(detail.value(accountDetailPath).toString());
             resultList.append(qMakePair(uri, path));
         }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QSet<QPair<QString, QString> > resultSet = QSet<QPair<QString, QString> > (resultList.begin(), resultList.end());
+        QCOMPARE(resultSet, expected);
+#else
         QCOMPARE(resultList.toSet(), expected);
+#endif
     }
 }
 
@@ -1175,7 +1188,11 @@ void tst_SeasidePerson::removeDuplicateEmailAddresses()
             const QString addr(detail.value(emailDetailAddress).toString().trimmed().toLower());
             resultList.append(addr);
         }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QCOMPARE(QSet<QString>(resultList.begin(), resultList.end()), expected);
+#else
         QCOMPARE(resultList.toSet(), expected);
+#endif
     }
 }
 

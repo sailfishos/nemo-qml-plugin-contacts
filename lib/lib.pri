@@ -3,13 +3,13 @@ include(../config.pri)
 CONFIG += qt hide_symbols
 CONFIG += link_pkgconfig
 
-packagesExist(mlite5) {
-    PKGCONFIG += mlite5
+packagesExist(mlite$${QT_MAJOR_VERSION}) {
+    PKGCONFIG += mlite$${QT_MAJOR_VERSION}
     DEFINES += HAS_MLITE
 } else {
     warning("mlite not available. Some functionality may not work as expected.")
 }
-PKGCONFIG += mlocale5 mce
+PKGCONFIG += mlocale$${QT_MAJOR_VERSION} mce
 LIBS += -lphonenumber
 
 
@@ -17,7 +17,7 @@ LIBS += -lphonenumber
 QT += contacts-private
 
 # We need the moc output for ContactManagerEngine from sqlite-extensions
-extensionsIncludePath = $$system(pkg-config --cflags-only-I qtcontacts-sqlite-qt5-extensions)
+extensionsIncludePath = $$system(pkg-config --cflags-only-I qtcontacts-sqlite-qt$${QT_MAJOR_VERSION}-extensions)
 VPATH += $$replace(extensionsIncludePath, -I, )
 HEADERS += \
     contactmanagerengine.h \

@@ -35,7 +35,12 @@
 #include "seasidesimplecontactmodel.h"
 
 class SeasidePerson;
-
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#ifndef DECLARE_SEASIDE_PERSON
+#define DECLARE_SEASIDE_PERSON
+Q_DECLARE_OPAQUE_POINTER(SeasidePerson)
+#endif
+#endif
 QTCONTACTS_USE_NAMESPACE
 
 class SeasideMergeCandidateModel : public SeasideSimpleContactModel
@@ -65,5 +70,7 @@ private:
     SeasidePerson *m_person = nullptr;
     SeasideCache::CacheItem *m_cacheItem = nullptr;
 };
-
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+Q_MOC_INCLUDE("seasideperson.h")
+#endif
 #endif
