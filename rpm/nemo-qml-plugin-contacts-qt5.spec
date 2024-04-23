@@ -65,8 +65,7 @@ Requires:   blts-tools
 
 %build
 %qmake5 VERSION=%{version}
-
-make %{?_smp_mflags}
+%make_build
 
 %install
 %qmake5_install
@@ -80,33 +79,27 @@ install -m 644 doc/nemo-qml-plugin-contacts.qch %{buildroot}/%{_docdir}/nemo-qml
 %postun -p /sbin/ldconfig
 
 %files
-%defattr(-,root,root,-)
 %license LICENSE.BSD
-%{_libdir}/libcontactcache-qt5.so*
+%{_libdir}/libcontactcache-qt5.so.*
 %{_libdir}/qt5/qml/org/nemomobile/contacts/libnemocontacts.so
 %{_libdir}/qt5/qml/org/nemomobile/contacts/plugins.qmltypes
 %{_libdir}/qt5/qml/org/nemomobile/contacts/qmldir
 %{_datadir}/translations/nemo-qml-plugin-contacts_eng_en.qm
 
 %files devel
-%defattr(-,root,root,-)
+%{_libdir}/libcontactcache-qt5.so
 %{_includedir}/contactcache-qt5/*
 %{_libdir}/pkgconfig/contactcache-qt5.pc
 
 %files doc
-%defattr(-,root,root,-)
 %{_docdir}/nemo-qml-plugin-contacts/*
 
-
 %files ts-devel
-%defattr(-,root,root,-)
 %{_datadir}/translations/source/nemo-qml-plugin-contacts.ts
 
 %files tools
-%defattr(-,root,root,-)
 %{_bindir}/vcardconverter
 %{_bindir}/contacts-tool
 
 %files tests
-%defattr(-,root,root,-)
 /opt/tests/nemo-qml-plugins-qt5/contacts/*
