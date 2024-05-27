@@ -74,8 +74,10 @@
 
 #include <mlocale.h>
 
+#ifdef HAS_MCE
 #include <mce/dbus-names.h>
 #include <mce/mode-names.h>
+#endif
 #include <phonenumbers/phonenumberutil.h>
 
 QTVERSIT_USE_NAMESPACE
@@ -546,7 +548,7 @@ SeasideCache::SeasideCache()
             this, &SeasideCache::displayLabelOrderChanged);
     connect(config, &CacheConfiguration::sortPropertyChanged,
             this, &SeasideCache::sortPropertyChanged);
-
+#ifdef HAS_MCE
     // Is this a GUI application?  If so, we want to defer some processing when the display is off
     if (qApp && qApp->property("applicationDisplayName").isValid()) {
         // Only QGuiApplication has this property
@@ -555,7 +557,7 @@ SeasideCache::SeasideCache()
             qWarning() << "Unable to connect to MCE displayStatusChanged signal";
         }
     }
-
+#endif
     QContactManager *mgr(manager());
 
     // The contactsPresenceChanged signal is not exported by QContactManager, so we
@@ -3215,6 +3217,7 @@ void SeasideCache::sortPropertyChanged(const QString &sortProperty)
 
 void SeasideCache::displayStatusChanged(const QString &status)
 {
+#ifdef HAS_MCE
     const bool off = (status == QLatin1String(MCE_DISPLAY_OFF_STRING));
     if (m_displayOff != off) {
         m_displayOff = off;
@@ -3224,6 +3227,7 @@ void SeasideCache::displayStatusChanged(const QString &status)
             requestUpdate();
         }
     }
+#endif
 }
 
 int SeasideCache::importContacts(const QString &path)
