@@ -12,7 +12,7 @@ DEFINES += CONTACTCACHE_BUILD
 CONFIG += create_pc create_prl no_install_prl
 
 QT -= gui
-QT += core
+QT += core dbus
 
 develheaders.path = /usr/include/$$TARGET
 develheaders.files = $$PUBLIC_HEADERS
