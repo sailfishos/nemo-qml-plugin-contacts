@@ -8,7 +8,8 @@ CONFIG += qt plugin hide_symbols
 
 QT = \
     core  \
-    qml
+    qml   \
+    dbus
 PKGCONFIG += mlocale$${QT_MAJOR_VERSION} accounts-qt$${QT_MAJOR_VERSION}
 
 packagesExist(mlite$${QT_MAJOR_VERSION}) {

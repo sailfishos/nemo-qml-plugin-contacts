@@ -4,7 +4,7 @@ include(basename.pri)
 TEMPLATE = app
 CONFIG -= app_bundle
 
-QT += testlib qml
+QT += testlib qml dbus
 
 SRCDIR = $$PWD/../src/
 INCLUDEPATH += $$SRCDIR $$PWD/../lib/
