@@ -9,7 +9,15 @@ packagesExist(mlite$${QT_MAJOR_VERSION}) {
 } else {
     warning("mlite not available. Some functionality may not work as expected.")
 }
-PKGCONFIG += mlocale$${QT_MAJOR_VERSION} mce
+
+packagesExist(mce) {
+    PKGCONFIG += mce
+    DEFINES += HAS_MCE
+} else {
+    warning("mce not available. Some functionality may not work as expected.")
+}
+
+PKGCONFIG += mlocale$${QT_MAJOR_VERSION}
 LIBS += -lphonenumber
 
 
