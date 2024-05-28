@@ -75,7 +75,9 @@ SeasidePerson *SeasidePersonAttached::selfPerson() const
 {
     if (SeasideCache::CacheItem *item = SeasideCache::itemById(SeasideCache::selfContactId())) {
         if (!item->itemData) {
-            item->itemData = new SeasidePerson(&item->contact, (item->contactState == SeasideCache::ContactComplete), SeasideCache::instance());
+            item->itemData = new SeasidePerson(&item->contact,
+                                               item->contactState == SeasideCache::ContactComplete,
+                                               SeasideCache::instance());
         }
 
         return static_cast<SeasidePerson *>(item->itemData);
