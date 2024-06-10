@@ -32,6 +32,8 @@
 #include "seasidedisplaylabelgroupmodel.h"
 #include "seasidestringlistcompressor.h"
 
+#include <limits>
+
 #include <seasidecache.h>
 
 #include <QQmlInfo>
