@@ -41,6 +41,9 @@
 #ifdef HAS_MLITE
 #include <mgconfitem.h>
 #endif
+#ifdef HAS_GSETTINGS
+#include <QGSettings>
+#endif
 
 class CONTACTCACHE_EXPORT CacheConfiguration : public QObject
 {
@@ -72,12 +75,22 @@ private:
     MGConfItem m_displayLabelOrderConf;
     MGConfItem m_sortPropertyConf;
     MGConfItem m_groupPropertyConf;
+#endif
 
+#ifdef HAS_GSETTINGS
+    QGSettings *m_propertyConf;
+#endif // HAS_GSETTINGS
+
+#ifdef HAS_MLITE
 private slots:
     void onDisplayLabelOrderChanged();
     void onSortPropertyChanged();
     void onGroupPropertyChanged();
 #endif
+#ifdef HAS_GSETTINGS
+private slots:
+    void onConfigPropertyChanged(const QString &key);
+#endif // HAS_GSETTINGS
 };
 
 #endif // SEASIDE_CACHE_CONFIGURATION_H
