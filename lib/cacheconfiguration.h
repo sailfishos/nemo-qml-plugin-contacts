@@ -38,9 +38,7 @@
 #include <QObject>
 #include <QString>
 
-#ifdef HAS_MLITE
-#include <mgconfitem.h>
-#endif
+class CacheConfigurationPrivate;
 
 class CONTACTCACHE_EXPORT CacheConfiguration : public QObject
 {
@@ -53,10 +51,11 @@ public:
     };
 
     CacheConfiguration();
+    virtual ~CacheConfiguration();
 
-    DisplayLabelOrder displayLabelOrder() const { return m_displayLabelOrder; }
-    QString sortProperty() const { return m_sortProperty; }
-    QString groupProperty() const { return m_groupProperty; }
+    DisplayLabelOrder displayLabelOrder() const;
+    QString sortProperty() const;
+    QString groupProperty() const;
 
 signals:
     void displayLabelOrderChanged(CacheConfiguration::DisplayLabelOrder order);
@@ -64,20 +63,7 @@ signals:
     void groupPropertyChanged(const QString &groupProperty);
 
 private:
-    DisplayLabelOrder m_displayLabelOrder;
-    QString m_sortProperty;
-    QString m_groupProperty;
-
-#ifdef HAS_MLITE
-    MGConfItem m_displayLabelOrderConf;
-    MGConfItem m_sortPropertyConf;
-    MGConfItem m_groupPropertyConf;
-
-private slots:
-    void onDisplayLabelOrderChanged();
-    void onSortPropertyChanged();
-    void onGroupPropertyChanged();
-#endif
+    CacheConfigurationPrivate *d_ptr;
 };
 
 #endif // SEASIDE_CACHE_CONFIGURATION_H

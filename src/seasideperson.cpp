@@ -2211,7 +2211,7 @@ void SeasidePerson::emitChangeSignals()
 }
 
 /*!
-  \qmlmethod void Person::ensureComplete
+  \qmlmethod void Person::ensureComplete()
 */
 void SeasidePerson::ensureComplete()
 {
@@ -2221,7 +2221,7 @@ void SeasidePerson::ensureComplete()
 }
 
 /*!
-  \qmlmethod object Person::contactData
+  \qmlmethod object Person::contactData()
 */
 QVariant SeasidePerson::contactData() const
 {

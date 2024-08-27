@@ -34,8 +34,35 @@
 
 #include <QtDebug>
 
-CacheConfiguration::CacheConfiguration()
-    : m_displayLabelOrder(FirstNameFirst)
+#ifdef HAS_MLITE
+#include <mgconfitem.h>
+#endif
+
+class CacheConfigurationPrivate : public QObject
+{
+    Q_OBJECT
+public:
+    CacheConfigurationPrivate(CacheConfiguration *q);
+
+    CacheConfiguration *q_ptr;
+    CacheConfiguration::DisplayLabelOrder m_displayLabelOrder;
+    QString m_sortProperty;
+    QString m_groupProperty;
+
+#ifdef HAS_MLITE
+    MGConfItem m_displayLabelOrderConf;
+    MGConfItem m_sortPropertyConf;
+    MGConfItem m_groupPropertyConf;
+
+    void onDisplayLabelOrderChanged();
+    void onSortPropertyChanged();
+    void onGroupPropertyChanged();
+#endif
+};
+
+CacheConfigurationPrivate::CacheConfigurationPrivate(CacheConfiguration *q)
+    : q_ptr(q)
+    , m_displayLabelOrder(CacheConfiguration::FirstNameFirst)
     , m_sortProperty(QString::fromLatin1("firstName"))
     , m_groupProperty(QString::fromLatin1("firstName"))
 #ifdef HAS_MLITE
@@ -45,17 +72,20 @@ CacheConfiguration::CacheConfiguration()
 #endif
 {
 #ifdef HAS_MLITE
-    connect(&m_displayLabelOrderConf, SIGNAL(valueChanged()), this, SLOT(onDisplayLabelOrderChanged()));
+    connect(&m_displayLabelOrderConf, &MGConfItem::valueChanged,
+            this, &CacheConfigurationPrivate::onDisplayLabelOrderChanged);
     QVariant displayLabelOrder = m_displayLabelOrderConf.value();
     if (displayLabelOrder.isValid())
-        m_displayLabelOrder = static_cast<DisplayLabelOrder>(displayLabelOrder.toInt());
+        m_displayLabelOrder = static_cast<CacheConfiguration::DisplayLabelOrder>(displayLabelOrder.toInt());
 
-    connect(&m_sortPropertyConf, SIGNAL(valueChanged()), this, SLOT(onSortPropertyChanged()));
+    connect(&m_sortPropertyConf, &MGConfItem::valueChanged,
+            this, &CacheConfigurationPrivate::onSortPropertyChanged);
     QVariant sortPropertyConf = m_sortPropertyConf.value();
     if (sortPropertyConf.isValid())
         m_sortProperty = sortPropertyConf.toString();
 
-    connect(&m_groupPropertyConf, SIGNAL(valueChanged()), this, SLOT(onGroupPropertyChanged()));
+    connect(&m_groupPropertyConf, &MGConfItem::valueChanged,
+            this, &CacheConfigurationPrivate::onGroupPropertyChanged);
     QVariant groupPropertyConf = m_groupPropertyConf.value();
     if (groupPropertyConf.isValid())
         m_groupProperty = groupPropertyConf.toString();
@@ -63,45 +93,71 @@ CacheConfiguration::CacheConfiguration()
 }
 
 #ifdef HAS_MLITE
-void CacheConfiguration::onDisplayLabelOrderChanged()
+void CacheConfigurationPrivate::onDisplayLabelOrderChanged()
 {
     QVariant displayLabelOrder = m_displayLabelOrderConf.value();
     if (displayLabelOrder.isValid() && displayLabelOrder.toInt() != m_displayLabelOrder) {
-        m_displayLabelOrder = static_cast<DisplayLabelOrder>(displayLabelOrder.toInt());
-        emit displayLabelOrderChanged(m_displayLabelOrder);
+        m_displayLabelOrder = static_cast<CacheConfiguration::DisplayLabelOrder>(displayLabelOrder.toInt());
+        emit q_ptr->displayLabelOrderChanged(m_displayLabelOrder);
     }
 }
 
-void CacheConfiguration::onSortPropertyChanged()
+void CacheConfigurationPrivate::onSortPropertyChanged()
 {
     QVariant sortProperty = m_sortPropertyConf.value();
     if (sortProperty.isValid() && sortProperty.toString() != m_sortProperty) {
         const QString newProperty(sortProperty.toString());
-        if ((newProperty != QString::fromLatin1("firstName")) &&
-            (newProperty != QString::fromLatin1("lastName"))) {
+        if ((newProperty != QString::fromLatin1("firstName"))
+                && (newProperty != QString::fromLatin1("lastName"))) {
             qWarning() << "Invalid sort property configuration:" << newProperty;
             return;
         }
 
         m_sortProperty = newProperty;
-        emit sortPropertyChanged(m_sortProperty);
+        emit q_ptr->sortPropertyChanged(m_sortProperty);
     }
 }
 
-void CacheConfiguration::onGroupPropertyChanged()
+void CacheConfigurationPrivate::onGroupPropertyChanged()
 {
     QVariant groupProperty = m_groupPropertyConf.value();
     if (groupProperty.isValid() && groupProperty.toString() != m_groupProperty) {
         const QString newProperty(groupProperty.toString());
-        if ((newProperty != QString::fromLatin1("firstName")) &&
-            (newProperty != QString::fromLatin1("lastName"))) {
+        if ((newProperty != QString::fromLatin1("firstName"))
+                && (newProperty != QString::fromLatin1("lastName"))) {
             qWarning() << "Invalid group property configuration:" << newProperty;
             return;
         }
 
         m_groupProperty = newProperty;
-        emit groupPropertyChanged(m_groupProperty);
+        emit q_ptr->groupPropertyChanged(m_groupProperty);
     }
 }
 #endif
 
+CacheConfiguration::CacheConfiguration()
+    : d_ptr(new CacheConfigurationPrivate(this))
+{
+}
+
+CacheConfiguration::~CacheConfiguration()
+{
+    delete d_ptr;
+}
+
+CacheConfiguration::DisplayLabelOrder CacheConfiguration::displayLabelOrder() const
+{
+    return d_ptr->m_displayLabelOrder;
+}
+
+QString CacheConfiguration::sortProperty() const
+{
+    return d_ptr->m_sortProperty;
+}
+
+QString CacheConfiguration::groupProperty() const
+{
+    return d_ptr->m_groupProperty;
+}
+
+#include "cacheconfiguration.moc"
