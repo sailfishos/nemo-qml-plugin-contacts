@@ -7,7 +7,13 @@ packagesExist(mlite$${QT_MAJOR_VERSION}) {
     PKGCONFIG += mlite$${QT_MAJOR_VERSION}
     DEFINES += HAS_MLITE
 } else {
-    warning("mlite not available. Some functionality may not work as expected.")
+    packagesExist(gsettings-qt) {
+        message("use of gsettings")
+        PKGCONFIG += gsettings-qt
+        DEFINES += HAS_QGSETTINGS
+    } else {
+        warning("Neither mlite nor gsettings available. Some functionality may not work as expected.")
+    }
 }
 
 packagesExist(mce) {

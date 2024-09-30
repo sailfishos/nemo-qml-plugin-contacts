@@ -38,6 +38,10 @@
 #include <mgconfitem.h>
 #endif
 
+#ifdef HAS_QGSETTINGS
+#include <QGSettings>
+#endif
+
 class CacheConfigurationPrivate : public QObject
 {
     Q_OBJECT
@@ -58,6 +62,12 @@ public:
     void onSortPropertyChanged();
     void onGroupPropertyChanged();
 #endif
+
+#ifdef HAS_QGSETTINGS
+    QGSettings *m_propertyConf;
+
+    void onConfigPropertyChanged(const QString &key);
+#endif // HAS_QGSETTINGS
 };
 
 CacheConfigurationPrivate::CacheConfigurationPrivate(CacheConfiguration *q)
@@ -70,6 +80,10 @@ CacheConfigurationPrivate::CacheConfigurationPrivate(CacheConfiguration *q)
     , m_sortPropertyConf(QLatin1String("/org/nemomobile/contacts/sort_property"))
     , m_groupPropertyConf(QLatin1String("/org/nemomobile/contacts/group_property"))
 #endif
+#ifdef HAS_QGSETTINGS
+    , m_propertyConf(new QGSettings("org.nemomobile.contacts", "/org/nemomobile/contacts/"))
+#endif // HAS_QGSETTINGS
+
 {
 #ifdef HAS_MLITE
     connect(&m_displayLabelOrderConf, &MGConfItem::valueChanged,
@@ -89,6 +103,24 @@ CacheConfigurationPrivate::CacheConfigurationPrivate(CacheConfiguration *q)
     QVariant groupPropertyConf = m_groupPropertyConf.value();
     if (groupPropertyConf.isValid())
         m_groupProperty = groupPropertyConf.toString();
+#endif
+
+#ifdef HAS_QGSETTINGS
+    connect(m_propertyConf, &QGSettings::changed, this,
+            &CacheConfigurationPrivate::onConfigPropertyChanged);
+
+    QVariant displayLabelOrder = m_propertyConf->get(QStringLiteral("display-label-order"));
+    if (displayLabelOrder.isValid())
+        m_displayLabelOrder = static_cast<CacheConfiguration::DisplayLabelOrder>(displayLabelOrder.toInt());
+
+    QVariant sortPropertyConf = m_propertyConf->get(QStringLiteral("sort-property"));
+    if (sortPropertyConf.isValid())
+        m_sortProperty = sortPropertyConf.toString();
+
+    QVariant groupPropertyConf = m_propertyConf->get(QStringLiteral("group-property"));
+    if (groupPropertyConf.isValid())
+        m_groupProperty = groupPropertyConf.toString();
+
 #endif
 }
 
@@ -131,6 +163,45 @@ void CacheConfigurationPrivate::onGroupPropertyChanged()
 
         m_groupProperty = newProperty;
         emit q_ptr->groupPropertyChanged(m_groupProperty);
+    }
+}
+#endif
+
+#ifdef HAS_QGSETTINGS
+void CacheConfigurationPrivate::onConfigPropertyChanged(const QString &key) {
+    if (key == QLatin1String("display-label-order")) {
+        QVariant displayLabelOrder = m_propertyConf->get(QStringLiteral("display-label-order"));
+        if (displayLabelOrder.isValid() && displayLabelOrder.toInt() != m_displayLabelOrder) {
+            m_displayLabelOrder = static_cast<CacheConfiguration::DisplayLabelOrder>(displayLabelOrder.toInt());
+            emit q_ptr->displayLabelOrderChanged(m_displayLabelOrder);
+        }
+    } else if (key == QLatin1String("sort-property")) {
+        QVariant sortProperty = m_propertyConf->get(QStringLiteral("sort-property"));
+        if (sortProperty.isValid() && sortProperty.toString() != m_sortProperty) {
+            const QString newProperty(sortProperty.toString());
+            if ((newProperty != QString::fromLatin1("firstName")) &&
+                (newProperty != QString::fromLatin1("lastName"))) {
+                qWarning() << "Invalid sort property configuration:" << newProperty;
+                return;
+            }
+
+            m_sortProperty = newProperty;
+            emit q_ptr->sortPropertyChanged(m_sortProperty);
+        }
+    } else if (key == QLatin1String("group-property")) {
+
+        QVariant groupProperty = m_propertyConf->get(QStringLiteral("group-property"));
+        if (groupProperty.isValid() && groupProperty.toString() != m_groupProperty) {
+            const QString newProperty(groupProperty.toString());
+            if ((newProperty != QString::fromLatin1("firstName")) &&
+                (newProperty != QString::fromLatin1("lastName"))) {
+                qWarning() << "Invalid group property configuration:" << newProperty;
+                return;
+            }
+
+            m_groupProperty = newProperty;
+            emit q_ptr->groupPropertyChanged(m_groupProperty);
+        }
     }
 }
 #endif
