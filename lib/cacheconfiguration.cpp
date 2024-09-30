@@ -168,7 +168,8 @@ void CacheConfigurationPrivate::onGroupPropertyChanged()
 #endif
 
 #ifdef HAS_QGSETTINGS
-void CacheConfigurationPrivate::onConfigPropertyChanged(const QString &key) {
+void CacheConfigurationPrivate::onConfigPropertyChanged(const QString &key)
+{
     if (key == QLatin1String("display-label-order")) {
         QVariant displayLabelOrder = m_propertyConf->get(QStringLiteral("display-label-order"));
         if (displayLabelOrder.isValid() && displayLabelOrder.toInt() != m_displayLabelOrder) {
