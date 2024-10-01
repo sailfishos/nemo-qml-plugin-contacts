@@ -36,10 +36,12 @@
 #include "contactcacheexport.h"
 #include "cacheconfiguration.h"
 
+// qtcontacts-sqlite-extensions
 #include <qtcontacts-extensions.h>
 #include <qcontactclearchangeflagsrequest.h>
 #include <QContactStatusFlags>
 
+// qtcontacts
 #include <QContact>
 #include <QContactManager>
 #include <QContactFetchRequest>
@@ -293,7 +295,8 @@ public:
     static quint32 internalId(const QContact &contact);
     static quint32 internalId(const QContactId &id);
 
-    static void registerModel(ListModel *model, FilterType type, FetchDataType requiredTypes = FetchNone, FetchDataType extraTypes = FetchNone);
+    static void registerModel(ListModel *model, FilterType type, FetchDataType requiredTypes = FetchNone,
+                              FetchDataType extraTypes = FetchNone);
     static void unregisterModel(ListModel *model);
 
     static void registerUser(QObject *user);
@@ -302,7 +305,8 @@ public:
     static void registerDisplayLabelGroupChangeListener(SeasideDisplayLabelGroupChangeListener *listener);
     static void unregisterDisplayLabelGroupChangeListener(SeasideDisplayLabelGroupChangeListener *listener);
 
-    static void registerChangeListener(ChangeListener *listener, FetchDataType requiredTypes = FetchNone, FetchDataType extraTypes = FetchNone);
+    static void registerChangeListener(ChangeListener *listener, FetchDataType requiredTypes = FetchNone,
+                                       FetchDataType extraTypes = FetchNone);
     static void unregisterChangeListener(ChangeListener *listener);
 
     static void unregisterResolveListener(ResolveListener *listener);
@@ -330,11 +334,15 @@ public:
 
     static CacheItem *itemByPhoneNumber(const QString &number, bool requireComplete = true);
     static CacheItem *itemByEmailAddress(const QString &address, bool requireComplete = true);
-    static CacheItem *itemByOnlineAccount(const QString &localUid, const QString &remoteUid, bool requireComplete = true);
+    static CacheItem *itemByOnlineAccount(const QString &localUid, const QString &remoteUid,
+                                          bool requireComplete = true);
 
-    static CacheItem *resolvePhoneNumber(ResolveListener *listener, const QString &number, bool requireComplete = true);
-    static CacheItem *resolveEmailAddress(ResolveListener *listener, const QString &address, bool requireComplete = true);
-    static CacheItem *resolveOnlineAccount(ResolveListener *listener, const QString &localUid, const QString &remoteUid, bool requireComplete = true);
+    static CacheItem *resolvePhoneNumber(ResolveListener *listener, const QString &number,
+                                         bool requireComplete = true);
+    static CacheItem *resolveEmailAddress(ResolveListener *listener, const QString &address,
+                                          bool requireComplete = true);
+    static CacheItem *resolveOnlineAccount(ResolveListener *listener, const QString &localUid,
+                                           const QString &remoteUid, bool requireComplete = true);
 
     static bool saveContact(const QContact &contact);
     static bool saveContacts(const QList<QContact> &contacts);
@@ -361,7 +369,8 @@ public:
 
     static QString placeholderDisplayLabel();
     static void decomposeDisplayLabel(const QString &formattedDisplayLabel, QContactName *nameDetail);
-    static QString generateDisplayLabel(const QContact &contact, DisplayLabelOrder order = FirstNameFirst, bool fallbackToNonNameDetails = true);
+    static QString generateDisplayLabel(const QContact &contact, DisplayLabelOrder order = FirstNameFirst,
+                                        bool fallbackToNonNameDetails = true);
     static QString generateDisplayLabelFromNonNameDetails(const QContact &contact);
     static QUrl filteredAvatarUrl(const QContact &contact, const QStringList &metadataFragments = QStringList());
     static bool removeLocalAvatarFile(const QContact &contact, const QContactAvatar &avatar);
@@ -376,8 +385,15 @@ public:
     bool event(QEvent *event);
 
     // For synchronizeLists()
-    int insertRange(int index, int count, const QList<quint32> &source, int sourceIndex) { return insertRange(m_syncFilter, index, count, source, sourceIndex); }
-    int removeRange(int index, int count) { removeRange(m_syncFilter, index, count); return 0; }
+    int insertRange(int index, int count, const QList<quint32> &source, int sourceIndex)
+    {
+        return insertRange(m_syncFilter, index, count, source, sourceIndex);
+    }
+    int removeRange(int index, int count)
+    {
+        removeRange(m_syncFilter, index, count);
+        return 0;
+    }
 
 protected:
     void timerEvent(QTimerEvent *event);
@@ -416,15 +432,18 @@ private:
     void keepPopulated(quint32 requiredTypes, quint32 extraTypes);
 
     void requestUpdate();
-    void appendContacts(const QList<QContact> &contacts, FilterType filterType, bool partialFetch, const QSet<QContactDetail::DetailType> &queryDetailTypes);
+    void appendContacts(const QList<QContact> &contacts, FilterType filterType, bool partialFetch,
+                        const QSet<QContactDetail::DetailType> &queryDetailTypes);
     void fetchContacts();
     void updateContacts(const QList<QContactId> &contactIds, QList<QContactId> *updateList);
     void applyPendingContactUpdates();
-    void applyContactUpdates(const QList<QContact> &contacts, const QSet<QContactDetail::DetailType> &queryDetailTypes);
+    void applyContactUpdates(const QList<QContact> &contacts,
+                             const QSet<QContactDetail::DetailType> &queryDetailTypes);
     void updateSectionBucketIndexCaches();
 
     void resolveUnknownAddresses(const QString &first, const QString &second, CacheItem *item);
-    bool updateContactIndexing(const QContact &oldContact, const QContact &contact, quint32 iid, const QSet<QContactDetail::DetailType> &queryDetailTypes, CacheItem *item);
+    bool updateContactIndexing(const QContact &oldContact, const QContact &contact, quint32 iid,
+                               const QSet<QContactDetail::DetailType> &queryDetailTypes, CacheItem *item);
     void updateCache(CacheItem *item, const QContact &contact, bool partialFetch, bool initialInsert);
     void reportItemUpdated(CacheItem *item);
 

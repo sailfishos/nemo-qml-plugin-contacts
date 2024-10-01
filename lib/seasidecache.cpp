@@ -366,7 +366,8 @@ StringPair addressPair(const QContactEmailAddress &emailAddress)
 
 StringPair addressPair(const QContactOnlineAccount &account)
 {
-    StringPair address = qMakePair(account.value<QString>(QContactOnlineAccount__FieldAccountPath), account.accountUri().toLower());
+    StringPair address = qMakePair(account.value<QString>(QContactOnlineAccount__FieldAccountPath),
+                                   account.accountUri().toLower());
     return !address.first.isEmpty() && !address.second.isEmpty() ? address : StringPair();
 }
 
@@ -467,7 +468,8 @@ int bestPhoneNumberMatchLength(const QContact &contact, const QString &match)
     int bestMatchLength = 0;
 
     foreach (const QContactPhoneNumber& phone, contact.details<QContactPhoneNumber>()) {
-        bestMatchLength = qMax(bestMatchLength, matchLength(SeasideCache::normalizePhoneNumber(phone.number()), match));
+        bestMatchLength = qMax(bestMatchLength,
+                               matchLength(SeasideCache::normalizePhoneNumber(phone.number()), match));
         if (bestMatchLength == ExactMatch) {
             return ExactMatch;
         }
@@ -709,7 +711,8 @@ void SeasideCache::unregisterDisplayLabelGroupChangeListener(SeasideDisplayLabel
     instancePtr->m_displayLabelGroupChangeListeners.removeAll(listener);
 }
 
-void SeasideCache::registerChangeListener(ChangeListener *listener, FetchDataType requiredTypes, FetchDataType extraTypes)
+void SeasideCache::registerChangeListener(ChangeListener *listener, FetchDataType requiredTypes,
+                                          FetchDataType extraTypes)
 {
     // Ensure the cache has been instantiated
     instance();
@@ -822,14 +825,14 @@ int SeasideCache::contactId(const QContactId &contactId)
 SeasideCache::CacheItem *SeasideCache::itemById(const QContactId &id, bool requireComplete)
 {
     if (!validId(id))
-        return 0;
+        return nullptr;
 
     // Ensure the cache has been instantiated
     instance();
 
     quint32 iid = internalId(id);
 
-    CacheItem *item = 0;
+    CacheItem *item = nullptr;
 
     QHash<quint32, CacheItem>::iterator it = instancePtr->m_people.find(iid);
     if (it != instancePtr->m_people.end()) {
@@ -858,7 +861,7 @@ SeasideCache::CacheItem *SeasideCache::itemById(int id, bool requireComplete)
         }
     }
 
-    return 0;
+    return nullptr;
 }
 
 SeasideCache::CacheItem *SeasideCache::existingItem(const QContactId &id)
@@ -874,7 +877,7 @@ SeasideCache::CacheItem *SeasideCache::existingItem(quint32 iid)
     QHash<quint32, CacheItem>::iterator it = instancePtr->m_people.find(iid);
     return it != instancePtr->m_people.end()
             ? &(*it)
-            : 0;
+            : nullptr;
 }
 
 QContact SeasideCache::contactById(const QContactId &id)
@@ -990,7 +993,8 @@ SeasideCache::CacheItem *SeasideCache::resolvePhoneNumber(ResolveListener *liste
     return item;
 }
 
-SeasideCache::CacheItem *SeasideCache::resolveEmailAddress(ResolveListener *listener, const QString &address, bool requireComplete)
+SeasideCache::CacheItem *SeasideCache::resolveEmailAddress(ResolveListener *listener, const QString &address,
+                                                           bool requireComplete)
 {
     // Ensure the cache has been instantiated
     instance();
@@ -1004,7 +1008,8 @@ SeasideCache::CacheItem *SeasideCache::resolveEmailAddress(ResolveListener *list
     return item;
 }
 
-SeasideCache::CacheItem *SeasideCache::resolveOnlineAccount(ResolveListener *listener, const QString &localUid, const QString &remoteUid, bool requireComplete)
+SeasideCache::CacheItem *SeasideCache::resolveOnlineAccount(ResolveListener *listener, const QString &localUid,
+                                                            const QString &remoteUid, bool requireComplete)
 {
     // Ensure the cache has been instantiated
     instance();
@@ -1236,10 +1241,12 @@ void SeasideCache::decomposeDisplayLabel(const QString &formattedDisplayLabel, Q
 {
     if (!translator) {
         engEnTranslator = new QTranslator(qApp);
-        engEnTranslator->load(QString::fromLatin1("nemo-qml-plugin-contacts_eng_en"), QString::fromLatin1("/usr/share/translations"));
+        engEnTranslator->load(QString::fromLatin1("nemo-qml-plugin-contacts_eng_en"),
+                              QString::fromLatin1("/usr/share/translations"));
         qApp->installTranslator(engEnTranslator);
         translator = new QTranslator(qApp);
-        translator->load(QLocale(), QString::fromLatin1("nemo-qml-plugin-contacts"), QString::fromLatin1("-"), QString::fromLatin1("/usr/share/translations"));
+        translator->load(QLocale(), QString::fromLatin1("nemo-qml-plugin-contacts"), QString::fromLatin1("-"),
+                         QString::fromLatin1("/usr/share/translations"));
         qApp->installTranslator(translator);
     }
 
@@ -1271,7 +1278,9 @@ void SeasideCache::decomposeDisplayLabel(const QString &formattedDisplayLabel, Q
                 QString first(tokens.takeFirst());
                 while (--excess >= 0) {
                     QString nextNamePart = tokens.takeFirst();
-                    first += (needsSpaceBetweenNames(first, nextNamePart) ? QChar::fromLatin1(' ') : QString()) + nextNamePart;
+                    first += (needsSpaceBetweenNames(first, nextNamePart) ? QChar::fromLatin1(' ')
+                                                                          : QString())
+                            + nextNamePart;
                 }
                 tokens.prepend(first);
             }
@@ -1283,13 +1292,23 @@ void SeasideCache::decomposeDisplayLabel(const QString &formattedDisplayLabel, Q
             foreach (const QChar &part, format) {
                 const QString token(tokens.takeFirst());
                 switch (part.toUpper().toLatin1()) {
-                    case 'F': updateNameDetail(&QContactName::firstName, &QContactName::setFirstName, nameDetail, token); break;
-                    case 'M': updateNameDetail(&QContactName::middleName, &QContactName::setMiddleName, nameDetail, token); break;
-                    case 'L': updateNameDetail(&QContactName::lastName, &QContactName::setLastName, nameDetail, token); break;
-                    case 'P': updateNameDetail(&QContactName::prefix, &QContactName::setPrefix, nameDetail, token); break;
-                    case 'S': updateNameDetail(&QContactName::suffix, &QContactName::setSuffix, nameDetail, token); break;
-                    default:
-                        qWarning() << "Invalid structure format character:" << part;
+                case 'F':
+                    updateNameDetail(&QContactName::firstName, &QContactName::setFirstName, nameDetail, token);
+                    break;
+                case 'M':
+                    updateNameDetail(&QContactName::middleName, &QContactName::setMiddleName, nameDetail, token);
+                    break;
+                case 'L':
+                    updateNameDetail(&QContactName::lastName, &QContactName::setLastName, nameDetail, token);
+                    break;
+                case 'P':
+                    updateNameDetail(&QContactName::prefix, &QContactName::setPrefix, nameDetail, token);
+                    break;
+                case 'S':
+                    updateNameDetail(&QContactName::suffix, &QContactName::setSuffix, nameDetail, token);
+                    break;
+                default:
+                    qWarning() << "Invalid structure format character:" << part;
                 }
             }
         }
@@ -1297,7 +1316,8 @@ void SeasideCache::decomposeDisplayLabel(const QString &formattedDisplayLabel, Q
 }
 
 // small helper to avoid inconvenience
-QString SeasideCache::generateDisplayLabel(const QContact &contact, DisplayLabelOrder order, bool fallbackToNonNameDetails)
+QString SeasideCache::generateDisplayLabel(const QContact &contact, DisplayLabelOrder order,
+                                           bool fallbackToNonNameDetails)
 {
     QString displayLabel = contact.detail<QContactDisplayLabel>().label();
     if (!displayLabel.isEmpty()) {
@@ -1637,7 +1657,8 @@ QContactFilter SeasideCache::filterForMergeCandidates(const QContact &contact) c
 
         QContactDetailFilter filter;
         setDetailType<QContactEmailAddress>(filter, QContactEmailAddress::FieldEmailAddress);
-        filter.setMatchFlags((index > 0 ? QContactFilter::MatchStartsWith : QContactFilter::MatchExactly) | QContactFilter::MatchFixedString);
+        filter.setMatchFlags((index > 0 ? QContactFilter::MatchStartsWith
+                                        : QContactFilter::MatchExactly) | QContactFilter::MatchFixedString);
         filter.setValue(address);
         rv = rv | filter;
     }
@@ -1656,7 +1677,8 @@ QContactFilter SeasideCache::filterForMergeCandidates(const QContact &contact) c
 
         QContactDetailFilter filter;
         setDetailType<QContactOnlineAccount>(filter, QContactOnlineAccount::FieldAccountUri);
-        filter.setMatchFlags((index > 0 ? QContactFilter::MatchStartsWith : QContactFilter::MatchExactly) | QContactFilter::MatchFixedString);
+        filter.setMatchFlags((index > 0 ? QContactFilter::MatchStartsWith
+                                        : QContactFilter::MatchExactly) | QContactFilter::MatchFixedString);
         filter.setValue(uri);
         rv = rv | filter;
     }
@@ -1916,11 +1938,14 @@ void SeasideCache::startRequest(bool *idleProcessing)
                 // Fetch the missing data types for whichever contacts need them
                 m_fetchRequest.setSorting(m_sortOrder);
                 if (unfetchedTypes == SeasideCache::FetchPhoneNumber) {
-                    m_fetchRequest.setFilter(QContactStatusFlags::matchFlag(QContactStatusFlags::HasPhoneNumber, QContactFilter::MatchContains));
+                    m_fetchRequest.setFilter(QContactStatusFlags::matchFlag(QContactStatusFlags::HasPhoneNumber,
+                                                                            QContactFilter::MatchContains));
                 } else if (unfetchedTypes == SeasideCache::FetchEmailAddress) {
-                    m_fetchRequest.setFilter(QContactStatusFlags::matchFlag(QContactStatusFlags::HasEmailAddress, QContactFilter::MatchContains));
+                    m_fetchRequest.setFilter(QContactStatusFlags::matchFlag(QContactStatusFlags::HasEmailAddress,
+                                                                            QContactFilter::MatchContains));
                 } else if (unfetchedTypes == SeasideCache::FetchAccountUri) {
-                    m_fetchRequest.setFilter(QContactStatusFlags::matchFlag(QContactStatusFlags::HasOnlineAccount, QContactFilter::MatchContains));
+                    m_fetchRequest.setFilter(QContactStatusFlags::matchFlag(QContactStatusFlags::HasOnlineAccount,
+                                                                            QContactFilter::MatchContains));
                     m_fetchRequest.setSorting(m_onlineSortOrder);
                 } else {
                     m_fetchRequest.setFilter(allFilter());
@@ -2009,13 +2034,16 @@ void SeasideCache::startRequest(bool *idleProcessing)
                     m_fetchRequest.setFilter(allFilter());
                 } else if (unfetchedTypes & SeasideCache::FetchPhoneNumber) {
                     fetchType = SeasideCache::FetchPhoneNumber;
-                    m_fetchRequest.setFilter(QContactStatusFlags::matchFlag(QContactStatusFlags::HasPhoneNumber, QContactFilter::MatchContains));
+                    m_fetchRequest.setFilter(QContactStatusFlags::matchFlag(QContactStatusFlags::HasPhoneNumber,
+                                                                            QContactFilter::MatchContains));
                 } else if (unfetchedTypes & SeasideCache::FetchEmailAddress) {
                     fetchType = SeasideCache::FetchEmailAddress;
-                    m_fetchRequest.setFilter(QContactStatusFlags::matchFlag(QContactStatusFlags::HasEmailAddress, QContactFilter::MatchContains));
+                    m_fetchRequest.setFilter(QContactStatusFlags::matchFlag(QContactStatusFlags::HasEmailAddress,
+                                                                            QContactFilter::MatchContains));
                 } else {
                     fetchType = SeasideCache::FetchAccountUri;
-                    m_fetchRequest.setFilter(QContactStatusFlags::matchFlag(QContactStatusFlags::HasOnlineAccount, QContactFilter::MatchContains));
+                    m_fetchRequest.setFilter(QContactStatusFlags::matchFlag(QContactStatusFlags::HasOnlineAccount,
+                                                                            QContactFilter::MatchContains));
                 }
 
                 m_fetchRequest.setFetchHint(extendedMetadataFetchHint(fetchType));
@@ -2061,7 +2089,8 @@ bool SeasideCache::event(QEvent *event)
         if (!m_expiredContacts.isEmpty()) {
             QList<quint32> removeIds;
 
-            QHash<QContactId, int>::const_iterator it = m_expiredContacts.constBegin(), end = m_expiredContacts.constEnd();
+            QHash<QContactId, int>::const_iterator it = m_expiredContacts.constBegin(),
+                    end = m_expiredContacts.constEnd();
             for ( ; it != end; ++it) {
                 if (it.value() < 0) {
                     quint32 iid = internalId(it.key());
@@ -2366,7 +2395,8 @@ void SeasideCache::resolveUnknownAddresses(const QString &first, const QString &
     }
 }
 
-bool SeasideCache::updateContactIndexing(const QContact &oldContact, const QContact &contact, quint32 iid, const QSet<QContactDetail::DetailType> &queryDetailTypes, CacheItem *item)
+bool SeasideCache::updateContactIndexing(const QContact &oldContact, const QContact &contact, quint32 iid,
+                                         const QSet<QContactDetail::DetailType> &queryDetailTypes, CacheItem *item)
 {
     if (oldContact.collectionId() != aggregateCollectionId()
             && contact.collectionId() != aggregateCollectionId()) {
@@ -2492,7 +2522,8 @@ bool SeasideCache::updateContactIndexing(const QContact &oldContact, const QCont
     return modified;
 }
 
-void updateDetailsFromCache(QContact &contact, SeasideCache::CacheItem *item, const QSet<QContactDetail::DetailType> &queryDetailTypes)
+void updateDetailsFromCache(QContact &contact, SeasideCache::CacheItem *item,
+                            const QSet<QContactDetail::DetailType> &queryDetailTypes)
 {
     // Copy any existing detail types that are in the current record to the new instance
     foreach (const QContactDetail &existing, item->contact.details()) {
@@ -2534,7 +2565,8 @@ void SeasideCache::contactsAvailable()
         return;
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    QSet<QContactDetail::DetailType> queryDetailTypes = QSet<QContactDetail::DetailType>(detailTypesHint(fetchHint).begin(), detailTypesHint(fetchHint).end());
+    QSet<QContactDetail::DetailType> queryDetailTypes
+            = QSet<QContactDetail::DetailType>(detailTypesHint(fetchHint).begin(), detailTypesHint(fetchHint).end());
 #else
     QSet<QContactDetail::DetailType> queryDetailTypes = detailTypesHint(fetchHint).toSet();
 #endif
@@ -2555,10 +2587,12 @@ void SeasideCache::contactsAvailable()
         if (contacts.count() == 1 || request == &m_fetchByIdRequest) {
             // Process these results immediately
             applyContactUpdates(contacts, queryDetailTypes);
-            updateSectionBucketIndexCaches(); // note: can cause out-of-order since this doesn't result in refresh request.  TODO: remove this line?
+            // note: can cause out-of-order since this doesn't result in refresh request.  TODO: remove this line?
+            updateSectionBucketIndexCaches();
         } else {
             // Add these contacts to the list to be progressively appended
-            QList<QPair<QSet<QContactDetail::DetailType>, QList<QContact> > >::iterator it = m_contactsToUpdate.begin(), end = m_contactsToUpdate.end();
+            QList<QPair<QSet<QContactDetail::DetailType>, QList<QContact> > >::iterator it = m_contactsToUpdate.begin(),
+                    end = m_contactsToUpdate.end();
             for ( ; it != end; ++it) {
                 if ((*it).first == queryDetailTypes) {
                     (*it).second.append(contacts);
@@ -2578,7 +2612,8 @@ void SeasideCache::applyPendingContactUpdates()
 {
     if (!m_contactsToAppend.isEmpty()) {
         // Insert the contacts in the order they're requested
-        QHash<FilterType, QPair<QSet<QContactDetail::DetailType>, QList<QContact> > >::iterator end = m_contactsToAppend.end(), it = end;
+        QHash<FilterType, QPair<QSet<QContactDetail::DetailType>, QList<QContact> > >::iterator end = m_contactsToAppend.end(),
+                it = end;
         if ((it = m_contactsToAppend.find(FilterFavorites)) != end) {
         } else if ((it = m_contactsToAppend.find(FilterAll)) != end) {
         }
@@ -2644,7 +2679,8 @@ void SeasideCache::updateSectionBucketIndexCaches()
     }
 }
 
-void SeasideCache::applyContactUpdates(const QList<QContact> &contacts, const QSet<QContactDetail::DetailType> &queryDetailTypes)
+void SeasideCache::applyContactUpdates(const QList<QContact> &contacts,
+                                       const QSet<QContactDetail::DetailType> &queryDetailTypes)
 {
     QSet<QString> modifiedGroups;
     const bool partialFetch = !queryDetailTypes.isEmpty();
@@ -2818,7 +2854,8 @@ int SeasideCache::insertRange(FilterType filter, int index, int count, const QLi
     return end - index + 1;
 }
 
-void SeasideCache::appendContacts(const QList<QContact> &contacts, FilterType filterType, bool partialFetch, const QSet<QContactDetail::DetailType> &queryDetailTypes)
+void SeasideCache::appendContacts(const QList<QContact> &contacts, FilterType filterType, bool partialFetch,
+                                  const QSet<QContactDetail::DetailType> &queryDetailTypes)
 {
     if (!contacts.isEmpty()) {
         QList<quint32> &cacheIds = m_contacts[filterType];
@@ -2933,7 +2970,8 @@ void SeasideCache::requestStateChanged(QContactAbstractRequest::State state)
     } else if (request == &m_contactIdRequest) {
         if (m_syncFilter != FilterNone) {
             // We have completed fetching this filter set
-            completeSynchronizeList(this, m_contacts[m_syncFilter], m_cacheIndex, internalIds(m_contactIdRequest.ids()), m_queryIndex);
+            completeSynchronizeList(this, m_contacts[m_syncFilter], m_cacheIndex,
+                                    internalIds(m_contactIdRequest.ids()), m_queryIndex);
 
             // Notify models of completed updates
             QList<ListModel *> &models = m_models[m_syncFilter];
@@ -3065,8 +3103,9 @@ void SeasideCache::addressRequestStateChanged(QContactAbstractRequest::State sta
     // results are complete, so record them in the cache
     QContactFetchRequest *request = static_cast<QContactFetchRequest *>(sender());
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    QSet<QContactDetail::DetailType> queryDetailTypes = QSet<QContactDetail::DetailType>(detailTypesHint(request->fetchHint()).begin()
-                                                                                         , detailTypesHint(request->fetchHint()).end());
+    QSet<QContactDetail::DetailType> queryDetailTypes
+            = QSet<QContactDetail::DetailType>(detailTypesHint(request->fetchHint()).begin(),
+                                               detailTypesHint(request->fetchHint()).end());
 #else
     QSet<QContactDetail::DetailType> queryDetailTypes = detailTypesHint(request->fetchHint()).toSet();
 #endif
@@ -3090,7 +3129,8 @@ void SeasideCache::addressRequestStateChanged(QContactAbstractRequest::State sta
 
     if (!resolvedContacts.isEmpty()) {
         if (resolvedContacts.count() == 1 && data.first != QString()) {
-            // Return the result because it is the only resolved contact; however still filter out false positive phone number matches
+            // Return the result because it is the only resolved contact; however still filter out
+            // false positive phone number matches
             item = itemById(apiId(resolvedContacts.first()), false);
         } else {
             // Lookup the result in our updated indexes
@@ -3424,7 +3464,8 @@ void SeasideCache::completeContactAggregation(const QContactId &contact1Id, cons
         requestUpdate();
 }
 
-void SeasideCache::resolveAddress(ResolveListener *listener, const QString &first, const QString &second, bool requireComplete)
+void SeasideCache::resolveAddress(ResolveListener *listener, const QString &first, const QString &second,
+                                  bool requireComplete)
 {
     ResolveData data;
     data.first = first;
@@ -3479,8 +3520,11 @@ void SeasideCache::resolveAddress(ResolveListener *listener, const QString &firs
         }
 
         // If completion is not required, at least include the contact endpoint details (since resolving is obviously being used)
-        const quint32 detailFetchTypes(SeasideCache::FetchAccountUri | SeasideCache::FetchPhoneNumber | SeasideCache::FetchEmailAddress);
-        request->setFetchHint(requireComplete ? basicFetchHint() : onlineFetchHint(m_fetchTypes | m_extraFetchTypes | detailFetchTypes));
+        const quint32 detailFetchTypes(SeasideCache::FetchAccountUri
+                                       | SeasideCache::FetchPhoneNumber
+                                       | SeasideCache::FetchEmailAddress);
+        request->setFetchHint(requireComplete ? basicFetchHint()
+                                              : onlineFetchHint(m_fetchTypes | m_extraFetchTypes | detailFetchTypes));
         connect(request, SIGNAL(stateChanged(QContactAbstractRequest::State)),
             this, SLOT(addressRequestStateChanged(QContactAbstractRequest::State)));
         m_resolveAddresses[request] = data;
@@ -3491,9 +3535,11 @@ void SeasideCache::resolveAddress(ResolveListener *listener, const QString &firs
     }
 }
 
-SeasideCache::CacheItem *SeasideCache::itemMatchingPhoneNumber(const QString &number, const QString &normalized, bool requireComplete)
+SeasideCache::CacheItem *SeasideCache::itemMatchingPhoneNumber(const QString &number, const QString &normalized,
+                                                               bool requireComplete)
 {
-    QMultiHash<QString, CachedPhoneNumber>::const_iterator it = m_phoneNumberIds.find(number), end = m_phoneNumberIds.constEnd();
+    QMultiHash<QString, CachedPhoneNumber>::const_iterator it = m_phoneNumberIds.find(number),
+            end = m_phoneNumberIds.constEnd();
     if (it == end)
         return 0;
 
@@ -3533,7 +3579,9 @@ SeasideCache::CacheItem *SeasideCache::itemMatchingPhoneNumber(const QString &nu
     // Choose the best match from these contacts
     int bestMatchLength = 0;
     CacheItem *matchItem = 0;
-    for (QHash<QString, quint32>::const_iterator matchingIt = possibleMatches.begin(); matchingIt != possibleMatches.end(); ++matchingIt) {
+    for (QHash<QString, quint32>::const_iterator matchingIt = possibleMatches.begin();
+         matchingIt != possibleMatches.end();
+         ++matchingIt) {
         if (CacheItem *item = existingItem(*matchingIt)) {
             if (item->contact.collectionId() != aggregateCollectionId()) {
                 continue;

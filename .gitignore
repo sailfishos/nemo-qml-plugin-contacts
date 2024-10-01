@@ -3,6 +3,7 @@ Makefile
 documentation.list
 *.o
 *.so
+*.so.*
 *.moc
 moc_*
 /translations/nemo-qml-plugin-contacts.ts
