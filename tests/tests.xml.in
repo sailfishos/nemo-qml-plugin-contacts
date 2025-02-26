@@ -5,22 +5,22 @@
        <set name="nemo-qml-plugin-contacts-test0" feature="nemo-qml-plugin-contacts">
            <description>nemo-qml-plugin-contacts automatic tests</description>
            <case manual="false" name="synchronizelists">
-               <step>/opt/tests/@BASENAME@/contacts/run_test.sh @BASENAME@ tst_synchronizelists</step>
+               <step>/opt/tests/@TESTDIR@/run_test.sh @TESTDIR@ tst_synchronizelists</step>
            </case>
            <case manual="false" name="seasideimport">
-               <step>/opt/tests/@BASENAME@/contacts/run_test.sh @BASENAME@ tst_seasideimport</step>
+               <step>/opt/tests/@TESTDIR@/run_test.sh @TESTDIR@ tst_seasideimport</step>
            </case>
            <case manual="false" name="resolve">
-               <step>/opt/tests/@BASENAME@/contacts/run_test.sh @BASENAME@ tst_resolve</step>
+               <step>/opt/tests/@TESTDIR@/run_test.sh @TESTDIR@ tst_resolve</step>
            </case>
            <case manual="false" name="seasidestringlistcompressor">
-               <step>/opt/tests/@BASENAME@/contacts/run_test.sh @BASENAME@ tst_seasidestringlistcompressor</step>
+               <step>/opt/tests/@TESTDIR@/run_test.sh @TESTDIR@ tst_seasidestringlistcompressor</step>
            </case>
            <case manual="false" name="seasideperson" timeout="600">
-               <step>/opt/tests/@BASENAME@/contacts/run_test.sh @BASENAME@ tst_seasideperson</step>
+               <step>/opt/tests/@TESTDIR@/run_test.sh @TESTDIR@ tst_seasideperson</step>
            </case>
            <case manual="false" name="seasidefilteredmodel">
-               <step>/opt/tests/@BASENAME@/contacts/run_test.sh @BASENAME@ tst_seasidefilteredmodel</step>
+               <step>/opt/tests/@TESTDIR@/run_test.sh @TESTDIR@ tst_seasidefilteredmodel</step>
            </case>
        </set>
    </suite>
