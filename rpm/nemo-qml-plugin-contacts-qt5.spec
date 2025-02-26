@@ -102,4 +102,4 @@ install -m 644 doc/nemo-qml-plugin-contacts.qch %{buildroot}/%{_docdir}/nemo-qml
 %{_bindir}/contacts-tool
 
 %files tests
-/opt/tests/nemo-qml-plugins-qt5/contacts/*
+/opt/tests/nemo-qml-plugin-contacts-qt5/*
