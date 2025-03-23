@@ -725,6 +725,7 @@ void SeasideCache::unregisterChangeListener(ChangeListener *listener)
 {
     if (!instancePtr)
         return;
+
     instancePtr->m_changeListeners.removeAll(listener);
 }
 
@@ -1098,17 +1099,25 @@ bool SeasideCache::removeContacts(const QList<QContact> &contacts)
             continue;
         }
 
+        quint32 iid = internalId(id);
+
         if (contact.collectionId() == localCollectionId()) {
             instancePtr->m_localContactsToRemove.append(id);
+            qDebug() << "local contact" << internalId(contact.id()) << "cache id:" << SeasideCache::contactId(contact);
+            // TODO: this is not correct, but the issue is with id's, internalId = requestedId -1, not sure why this happens.
+            // And as a result, the internalId being one less it has no CacheItem later on when contactsRemoved() is called.
+            instancePtr->m_contactsWaitingNotify.insert(iid + 1);
         }
         instancePtr->m_contactsToRemove[contact.collectionId()].append(id);
 
-        quint32 iid = internalId(id);
         instancePtr->removeContactData(iid, FilterFavorites);
         instancePtr->removeContactData(iid, FilterAll);
 
         const QString group(displayLabelGroup(existingItem(iid)));
         instancePtr->removeFromContactDisplayLabelGroup(iid, group, &modifiedDisplayLabelGroups);
+
+        qDebug() << "add QContactId with internal id" << iid << "to notify wait, cid:" << SeasideCache::contactId(id);
+        instancePtr->m_contactsWaitingNotify.insert(iid);
     }
 
     instancePtr->notifyDisplayLabelGroupsChanged(modifiedDisplayLabelGroups);
@@ -2068,6 +2077,7 @@ bool SeasideCache::event(QEvent *event)
 
     m_updatesPending = false;
     bool idleProcessing = false;
+
     startRequest(&idleProcessing);
 
     // Report any unknown addresses
@@ -2094,7 +2104,14 @@ bool SeasideCache::event(QEvent *event)
             for ( ; it != end; ++it) {
                 if (it.value() < 0) {
                     quint32 iid = internalId(it.key());
-                    removeIds.append(iid);
+
+                     // Don't add the contact to the removed ones if it is still waiting for notify to be triggered
+                    if (m_contactsWaitingNotify.contains(iid)) {
+                        qDebug() << "not removing" << iid << "yet, waiting for notify";
+                    } else {
+                        qDebug() << "add" << iid << "to removeIds";
+                        removeIds.append(iid);
+                    }
                 }
             }
             m_expiredContacts.clear();
@@ -2114,6 +2131,7 @@ bool SeasideCache::event(QEvent *event)
             foreach (quint32 iid, removeIds) {
                 QHash<quint32, CacheItem>::iterator cacheItem = m_people.find(iid);
                 if (cacheItem != m_people.end()) {
+                    qDebug() << "erasing" << iid;
                     delete cacheItem->itemData;
                     m_people.erase(cacheItem);
                 }
@@ -2189,6 +2207,8 @@ void SeasideCache::contactsRemoved(const QList<QContactId> &ids)
     QList<QContactId> presentIds;
 
     foreach (const QContactId &id, ids) {
+        quint32 iid = internalId(id);
+
         if (CacheItem *item = existingItem(id)) {
             // Report this item is about to be removed
             foreach (ChangeListener *listener, m_changeListeners) {
@@ -2203,6 +2223,11 @@ void SeasideCache::contactsRemoved(const QList<QContactId> &ids)
             }
             item->listeners = 0;
 
+            if (m_contactsWaitingNotify.contains(iid)) {
+                qDebug() << "found matching id " << iid << " from notify wait list, removing";
+                m_contactsWaitingNotify.remove(iid);
+            }
+
             // Remove the links to addressible details
             updateContactIndexing(item->contact, QContact(), item->iid, QSet<QContactDetail::DetailType>(), item);
 
@@ -2214,6 +2239,8 @@ void SeasideCache::contactsRemoved(const QList<QContactId> &ids)
             if (!m_keepPopulated) {
                 presentIds.append(id);
             }
+        } else {
+            qDebug() << "Removed notify failed, no cacheitem for id" << iid;
         }
     }
 
