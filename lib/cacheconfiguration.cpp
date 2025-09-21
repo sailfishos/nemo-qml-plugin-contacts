@@ -109,15 +109,15 @@ CacheConfigurationPrivate::CacheConfigurationPrivate(CacheConfiguration *q)
     connect(m_propertyConf, &QGSettings::changed, this,
             &CacheConfigurationPrivate::onConfigPropertyChanged);
 
-    QVariant displayLabelOrder = m_propertyConf->get(QStringLiteral("display-label-order"));
+    QVariant displayLabelOrder = m_propertyConf->get(QStringLiteral("displayLabelOrder"));
     if (displayLabelOrder.isValid())
         m_displayLabelOrder = static_cast<CacheConfiguration::DisplayLabelOrder>(displayLabelOrder.toInt());
 
-    QVariant sortPropertyConf = m_propertyConf->get(QStringLiteral("sort-property"));
+    QVariant sortPropertyConf = m_propertyConf->get(QStringLiteral("sortProperty"));
     if (sortPropertyConf.isValid())
         m_sortProperty = sortPropertyConf.toString();
 
-    QVariant groupPropertyConf = m_propertyConf->get(QStringLiteral("group-property"));
+    QVariant groupPropertyConf = m_propertyConf->get(QStringLiteral("groupProperty"));
     if (groupPropertyConf.isValid())
         m_groupProperty = groupPropertyConf.toString();
 
@@ -170,14 +170,14 @@ void CacheConfigurationPrivate::onGroupPropertyChanged()
 #ifdef HAS_QGSETTINGS
 void CacheConfigurationPrivate::onConfigPropertyChanged(const QString &key)
 {
-    if (key == QLatin1String("display-label-order")) {
-        QVariant displayLabelOrder = m_propertyConf->get(QStringLiteral("display-label-order"));
+    if (key == QLatin1String("displayLabelOrder")) {
+        QVariant displayLabelOrder = m_propertyConf->get(key);
         if (displayLabelOrder.isValid() && displayLabelOrder.toInt() != m_displayLabelOrder) {
             m_displayLabelOrder = static_cast<CacheConfiguration::DisplayLabelOrder>(displayLabelOrder.toInt());
             emit q_ptr->displayLabelOrderChanged(m_displayLabelOrder);
         }
-    } else if (key == QLatin1String("sort-property")) {
-        QVariant sortProperty = m_propertyConf->get(QStringLiteral("sort-property"));
+    } else if (key == QLatin1String("sortProperty")) {
+        QVariant sortProperty = m_propertyConf->get(key);
         if (sortProperty.isValid() && sortProperty.toString() != m_sortProperty) {
             const QString newProperty(sortProperty.toString());
             if ((newProperty != QString::fromLatin1("firstName")) &&
@@ -189,9 +189,9 @@ void CacheConfigurationPrivate::onConfigPropertyChanged(const QString &key)
             m_sortProperty = newProperty;
             emit q_ptr->sortPropertyChanged(m_sortProperty);
         }
-    } else if (key == QLatin1String("group-property")) {
+    } else if (key == QLatin1String("groupProperty")) {
 
-        QVariant groupProperty = m_propertyConf->get(QStringLiteral("group-property"));
+        QVariant groupProperty = m_propertyConf->get(key);
         if (groupProperty.isValid() && groupProperty.toString() != m_groupProperty) {
             const QString newProperty(groupProperty.toString());
             if ((newProperty != QString::fromLatin1("firstName")) &&
