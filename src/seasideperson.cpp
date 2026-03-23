@@ -910,10 +910,10 @@ void setPhoneNumberSubTypes(QContactPhoneNumber &number, const QVariantList &typ
     number.setSubTypes(subTypes);
 }
 
-const QString phoneDetailNumber(QStringLiteral("number"));
-const QString phoneDetailNormalizedNumber(QStringLiteral("normalizedNumber"));
-const QString phoneDetailMinimizedNumber(QStringLiteral("minimizedNumber"));
-const QString phoneDetailSubTypes(QStringLiteral("subTypes"));
+const QString PhoneDetailNumber(QStringLiteral("number"));
+const QString PhoneDetailNormalizedNumber(QStringLiteral("normalizedNumber"));
+const QString PhoneDetailMinimizedNumber(QStringLiteral("minimizedNumber"));
+const QString PhoneDetailSubTypes(QStringLiteral("subTypes"));
 
 }
 
@@ -931,9 +931,9 @@ QVariantList SeasidePerson::phoneDetails(const QContact &contact)
         const QString minimized(SeasideCache::minimizePhoneNumber(normalized));
 
         QVariantMap item(detailProperties(detail));
-        item.insert(phoneDetailNumber, number);
-        item.insert(phoneDetailNormalizedNumber, normalized);
-        item.insert(phoneDetailMinimizedNumber, minimized);
+        item.insert(PhoneDetailNumber, number);
+        item.insert(PhoneDetailNormalizedNumber, normalized);
+        item.insert(PhoneDetailMinimizedNumber, minimized);
         item.insert(detailType, PhoneNumberType);
         item.insert(detailSubTypes, ::phoneNumberSubTypes(detail));
         item.insert(detailLabel, ::detailLabelType(detail));
@@ -981,7 +981,7 @@ void SeasidePerson::setPhoneDetails(const QVariantList &phoneDetails)
             continue;
         }
 
-        const QVariant numberValue = detail[phoneDetailNumber];
+        const QVariant numberValue = detail[PhoneDetailNumber];
         const QString updatedNumber(numberValue.value<QString>());
         if (updatedNumber.trimmed().isEmpty()) {
             // Remove this number from the list
@@ -2403,7 +2403,7 @@ QVariantList SeasidePerson::removeDuplicatePhoneNumbers(const QVariantList &phon
 
     foreach (const QVariant &item, phoneNumbers) {
         const QVariantMap detail(item.value<QVariantMap>());
-        const QString &normalized = detail.value(phoneDetailNormalizedNumber).toString();
+        const QString &normalized = detail.value(PhoneDetailNormalizedNumber).toString();
 
         const QChar plus(QChar::fromLatin1('+'));
         const bool initialPlus = (!normalized.isEmpty() && normalized[0] == plus);
@@ -2419,28 +2419,28 @@ QVariantList SeasidePerson::removeDuplicatePhoneNumbers(const QVariantList &phon
 
             if (initialPlus) {
                 // Only suppress this number if the entire number is a match
-                const QString priorNormalized = prior.value(phoneDetailNormalizedNumber).toString();
+                const QString priorNormalized = prior.value(PhoneDetailNormalizedNumber).toString();
 
                 if (priorNormalized != normalized) {
                     append = true;
                 } else {
                     // If this number is longer (more formatting) than the previous, replace it
-                    const QString number = detail.value(phoneDetailNumber).toString();
-                    const QString priorNumber = prior.value(phoneDetailNumber).toString();
+                    const QString number = detail.value(PhoneDetailNumber).toString();
+                    const QString priorNumber = prior.value(PhoneDetailNumber).toString();
 
                     replace = (number.length() > priorNumber.length());
                 }
             } else {
                 // Suppress this number if it is a minimized match to a preceding number
-                const QString minimized = detail.value(phoneDetailMinimizedNumber).toString();
-                const QString priorMinimized = prior.value(phoneDetailMinimizedNumber).toString();
+                const QString minimized = detail.value(PhoneDetailMinimizedNumber).toString();
+                const QString priorMinimized = prior.value(PhoneDetailMinimizedNumber).toString();
 
                 if (priorMinimized == minimized) {
                     // This number is already present in minimized form - which is preferred?
-                    const QString priorNormalized = prior.value(phoneDetailNormalizedNumber).toString();
+                    const QString priorNormalized = prior.value(PhoneDetailNormalizedNumber).toString();
 
-                    const QString number = detail.value(phoneDetailNumber).toString();
-                    const QString priorNumber = prior.value(phoneDetailNumber).toString();
+                    const QString number = detail.value(PhoneDetailNumber).toString();
+                    const QString priorNumber = prior.value(PhoneDetailNumber).toString();
 
                     // We will allow up to two forms: the longest-formatted initial-plus variant, and
                     // the longest non-initial-plus variant, but only if that exceeds the length of
