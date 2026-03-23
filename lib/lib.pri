@@ -31,7 +31,7 @@ LIBS += -lphonenumber
 QT += contacts-private
 
 # We need the moc output for ContactManagerEngine from sqlite-extensions
-extensionsIncludePath = $$system(pkg-config --cflags-only-I qtcontacts-sqlite-qt$${QT_MAJOR_VERSION}-extensions)
+extensionsIncludePath = $$system($$PKG_CONFIG --cflags-only-I qtcontacts-sqlite-qt$${QT_MAJOR_VERSION}-extensions)
 VPATH += $$replace(extensionsIncludePath, -I, )
 HEADERS += \
     contactmanagerengine.h \
