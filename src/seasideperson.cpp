@@ -595,9 +595,9 @@ void setDetailLabelType(QContactDetail &detail, int label)
     bool modified = false;
     bool replace = (label != SeasidePerson::NoLabel);
     for (QList<int>::iterator it = contexts.begin(); it != contexts.end(); ) {
-        if (*it == QContactDetail::ContextHome ||
-            *it == QContactDetail::ContextWork ||
-            *it == QContactDetail::ContextOther) {
+        if (*it == QContactDetail::ContextHome
+                || *it == QContactDetail::ContextWork
+                || *it == QContactDetail::ContextOther) {
             if (replace) {
                 replace = false;
                 (*it) = contextType(label);
@@ -2141,9 +2141,9 @@ void SeasidePerson::updateContactDetails(const QContact &oldContact)
         QList<QContactPresence>::const_iterator newIt = newPresences.constBegin();
 
         for ( ; oldIt != oldPresences.constEnd(); ++oldIt, ++newIt) {
-            if ((*oldIt).detailUri() != (*newIt).detailUri() ||
-                (*oldIt).presenceState() != (*newIt).presenceState() ||
-                (*oldIt).customMessage() != (*newIt).customMessage()) {
+            if ((*oldIt).detailUri() != (*newIt).detailUri()
+                    || (*oldIt).presenceState() != (*newIt).presenceState()
+                    || (*oldIt).customMessage() != (*newIt).customMessage()) {
                 presenceInfoChanged = true;
                 break;
             }
@@ -2162,8 +2162,8 @@ void SeasidePerson::updateContactDetails(const QContact &oldContact)
     if (oldContact.details<QContactAddress>() != mContact->details<QContactAddress>()) {
         emitChangeSignal(&SeasidePerson::addressDetailsChanged);
     }
-    if (presenceInfoChanged ||
-        oldContact.details<QContactOnlineAccount>() != mContact->details<QContactOnlineAccount>()) {
+    if (presenceInfoChanged
+            || oldContact.details<QContactOnlineAccount>() != mContact->details<QContactOnlineAccount>()) {
         emitChangeSignal(&SeasidePerson::accountDetailsChanged);
     }
     if (oldContact.details<QContactUrl>() != mContact->details<QContactUrl>()) {
@@ -2445,9 +2445,9 @@ QVariantList SeasidePerson::removeDuplicatePhoneNumbers(const QVariantList &phon
                     // We will allow up to two forms: the longest-formatted initial-plus variant, and
                     // the longest non-initial-plus variant, but only if that exceeds the length of
                     // the initial-plus form, where present
-                    if (normalized.length() > priorNormalized.length() ||
-                        (normalized.length() == priorNormalized.length() &&
-                         number.length() > priorNumber.length())) {
+                    if (normalized.length() > priorNormalized.length()
+                            || (normalized.length() == priorNormalized.length()
+                                && number.length() > priorNumber.length())) {
                         if (priorNormalized.length() && priorNormalized[0] == plus) {
                             append = true;
                         } else {
@@ -2713,4 +2713,3 @@ SeasidePersonAttached *SeasidePerson::qmlAttachedProperties(QObject *object)
 {
     return new SeasidePersonAttached(object);
 }
-

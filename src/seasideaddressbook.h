@@ -32,11 +32,9 @@
 #ifndef SEASIDEADDRESSBOOK_H
 #define SEASIDEADDRESSBOOK_H
 
-// Qt
 #include <QObject>
 #include <QColor>
 
-// Mobility
 #include <QContactCollection>
 
 QTCONTACTS_USE_NAMESPACE
@@ -81,4 +79,3 @@ public:
 Q_DECLARE_METATYPE(SeasideAddressBook)
 
 #endif // SEASIDEADDRESSBOOK_H
-

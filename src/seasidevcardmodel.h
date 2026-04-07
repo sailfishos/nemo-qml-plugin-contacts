@@ -34,8 +34,10 @@
 
 #include <QAbstractListModel>
 #include <QtQml>
+
 #include <seasidecache.h>
 #include <seasideperson.h>
+
 #include <QContact>
 
 #ifdef HAS_MLITE

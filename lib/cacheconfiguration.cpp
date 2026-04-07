@@ -180,8 +180,8 @@ void CacheConfigurationPrivate::onConfigPropertyChanged(const QString &key)
         QVariant sortProperty = m_propertyConf->get(key);
         if (sortProperty.isValid() && sortProperty.toString() != m_sortProperty) {
             const QString newProperty(sortProperty.toString());
-            if ((newProperty != QString::fromLatin1("firstName")) &&
-                (newProperty != QString::fromLatin1("lastName"))) {
+            if ((newProperty != QString::fromLatin1("firstName"))
+                    && (newProperty != QString::fromLatin1("lastName"))) {
                 qWarning() << "Invalid sort property configuration:" << newProperty;
                 return;
             }
@@ -194,8 +194,8 @@ void CacheConfigurationPrivate::onConfigPropertyChanged(const QString &key)
         QVariant groupProperty = m_propertyConf->get(key);
         if (groupProperty.isValid() && groupProperty.toString() != m_groupProperty) {
             const QString newProperty(groupProperty.toString());
-            if ((newProperty != QString::fromLatin1("firstName")) &&
-                (newProperty != QString::fromLatin1("lastName"))) {
+            if ((newProperty != QString::fromLatin1("firstName"))
+                    && (newProperty != QString::fromLatin1("lastName"))) {
                 qWarning() << "Invalid group property configuration:" << newProperty;
                 return;
             }

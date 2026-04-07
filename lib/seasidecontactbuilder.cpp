@@ -79,9 +79,9 @@ QContactFetchHint basicFetchHint()
 {
     QContactFetchHint fetchHint;
 
-    fetchHint.setOptimizationHints(QContactFetchHint::NoRelationships |
-                                   QContactFetchHint::NoActionPreferences |
-                                   QContactFetchHint::NoBinaryBlobs);
+    fetchHint.setOptimizationHints(QContactFetchHint::NoRelationships
+                                   | QContactFetchHint::NoActionPreferences
+                                   | QContactFetchHint::NoBinaryBlobs);
 
     return fetchHint;
 }
@@ -131,11 +131,11 @@ bool nameIsEmpty(const QContactName &name)
     if (name.isEmpty())
         return true;
 
-    return (name.prefix().isEmpty() &&
-            name.firstName().isEmpty() &&
-            name.middleName().isEmpty() &&
-            name.lastName().isEmpty() &&
-            name.suffix().isEmpty());
+    return (name.prefix().isEmpty()
+            && name.firstName().isEmpty()
+            && name.middleName().isEmpty()
+            && name.lastName().isEmpty()
+            && name.suffix().isEmpty());
 }
 
 QString contactNameString(const QContact &contact)
@@ -324,7 +324,8 @@ SeasideContactBuilder::SeasideContactBuilder()
     // defaults.  override in the ctor of your derived type.
     d->manager = 0;
     d->propertyHandler = 0;
-    d->unimportableDetailTypes = (QSet<QContactDetail::DetailType>() << QContactDetail::TypeGlobalPresence << QContactDetail::TypeVersion);
+    d->unimportableDetailTypes = (QSet<QContactDetail::DetailType>()
+                                  << QContactDetail::TypeGlobalPresence << QContactDetail::TypeVersion);
 }
 
 SeasideContactBuilder::~SeasideContactBuilder()
@@ -574,7 +575,8 @@ void SeasideContactBuilder::buildLocalDeviceContactIndexes()
 {
     // Find all names and GUIDs for local contacts that might match these contacts
     QContactFetchHint fetchHint(basicFetchHint());
-    fetchHint.setDetailTypesHint(QList<QContactDetail::DetailType>() << QContactName::Type << QContactNickname::Type << QContactGuid::Type);
+    fetchHint.setDetailTypesHint(QList<QContactDetail::DetailType>()
+                                 << QContactName::Type << QContactNickname::Type << QContactGuid::Type);
 
     QContactManager *mgr(manager());
 

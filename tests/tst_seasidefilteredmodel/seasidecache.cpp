@@ -206,8 +206,8 @@ QList<quint32> SeasideCache::getContactsForFilterType(FilterType filterType)
     QList<quint32> ids;
 
     for (uint i = 0; i < sizeof(contactsData) / sizeof(Contact); ++i) {
-        if ((filterType == FilterAll) ||
-            (filterType == FilterFavorites && contactsData[i].isFavorite)) {
+        if ((filterType == FilterAll)
+                || (filterType == FilterFavorites && contactsData[i].isFavorite)) {
             ids.append(internalId(instancePtr->m_cache[i].contact.id()));
         }
     }

@@ -378,8 +378,9 @@ struct FilterData : public SeasideCache::ItemListener
     bool prepareFilter(SeasideCache::CacheItem *item, const QString &sortProperty = QString())
     {
         static const QChar atSymbol(QChar::fromLatin1('@'));
-        static const QtContactsSqliteExtensions::NormalizePhoneNumberFlags normalizeFlags(QtContactsSqliteExtensions::KeepPhoneNumberDialString |
-                                                                                          QtContactsSqliteExtensions::ValidatePhoneNumber);
+        static const QtContactsSqliteExtensions::NormalizePhoneNumberFlags normalizeFlags(
+                    QtContactsSqliteExtensions::KeepPhoneNumberDialString
+                    | QtContactsSqliteExtensions::ValidatePhoneNumber);
 
         const bool sortByLastNameFirst = sortProperty.compare(QStringLiteral("lastName"), Qt::CaseInsensitive) == 0;
         if (sortLastNameFirst != sortByLastNameFirst) {
@@ -593,7 +594,9 @@ struct FilterData : public SeasideCache::ItemListener
 
         // Find which subset of presence-match keys the value might match
         typedef QVector<const QString *>::const_iterator VectorIterator;
-        std::pair<VectorIterator, VectorIterator> bounds = std::equal_range(presenceMatchKeys.cbegin(), presenceMatchKeys.cend(), vbegin, FirstElementLessThanIndirect());
+        std::pair<VectorIterator, VectorIterator> bounds = std::equal_range(presenceMatchKeys.cbegin(),
+                                                                            presenceMatchKeys.cend(), vbegin,
+                                                                            FirstElementLessThanIndirect());
         for ( ; bounds.first != bounds.second; ++bounds.first) {
             const QString &key(*(*bounds.first));
             if (partialMatch(key, vbegin, vend)) {
@@ -750,14 +753,16 @@ void SeasideFilteredModel::setFilterType(FilterType type)
 
         // FilterNone == FilterAll when there is a filter pattern.
         const bool filtered = !m_filterPattern.isEmpty();
-        const bool equivalentFilter = (type == FilterAll || type == FilterNone) &&
-                                      (m_filterType == FilterAll || m_filterType == FilterNone) &&
-                                      filtered;
+        const bool equivalentFilter = (type == FilterAll || type == FilterNone)
+                && (m_filterType == FilterAll || m_filterType == FilterNone)
+                && filtered;
 
         m_filterType = type;
 
         if (!equivalentFilter) {
-            m_effectiveFilterType = (m_filterType != FilterNone || m_filterPattern.isEmpty()) ? m_filterType : FilterAll;
+            m_effectiveFilterType = (m_filterType != FilterNone || m_filterPattern.isEmpty())
+                    ? m_filterType
+                    : FilterAll;
             updateRegistration();
 
             if (!filtered) {
@@ -854,9 +859,12 @@ int SeasideFilteredModel::filterId(quint32 iid) const
         return NoMatchPriority;
 
     if (m_requiredProperty != NoPropertyRequired) {
-        bool haveMatch = (m_requiredProperty & AccountUriRequired) && (item->statusFlags & SeasideCache::HasValidOnlineAccount);
-        haveMatch |= (m_requiredProperty & PhoneNumberRequired) && (item->statusFlags & QContactStatusFlags::HasPhoneNumber);
-        haveMatch |= (m_requiredProperty & EmailAddressRequired) && (item->statusFlags & QContactStatusFlags::HasEmailAddress);
+        bool haveMatch = (m_requiredProperty & AccountUriRequired)
+                && (item->statusFlags & SeasideCache::HasValidOnlineAccount);
+        haveMatch |= (m_requiredProperty & PhoneNumberRequired)
+                && (item->statusFlags & QContactStatusFlags::HasPhoneNumber);
+        haveMatch |= (m_requiredProperty & EmailAddressRequired)
+                && (item->statusFlags & QContactStatusFlags::HasEmailAddress);
         if (!haveMatch)
             return NoMatchPriority;
         if (m_filterParts.isEmpty())
@@ -1157,7 +1165,8 @@ SeasidePerson *SeasideFilteredModel::personByEmailAddress(const QString &email, 
 /*!
   \qmlmethod Person PeopleModel::personByOnlineAccount(string localUid, string remoteUid, bool requireComplete)
 */
-SeasidePerson *SeasideFilteredModel::personByOnlineAccount(const QString &localUid, const QString &remoteUid, bool requireComplete) const
+SeasidePerson *SeasideFilteredModel::personByOnlineAccount(const QString &localUid, const QString &remoteUid,
+                                                           bool requireComplete) const
 {
     return personFromItem(SeasideCache::itemByOnlineAccount(localUid, remoteUid, requireComplete));
 }
@@ -1233,7 +1242,8 @@ QVariant SeasideFilteredModel::data(SeasideCache::CacheItem *cacheItem, int role
     } else if (role == PrimaryNameRole || role == SecondaryNameRole) {
         const QContactName nameDetail = contact.detail<QContactName>();
 
-        QString (*fn)(const QString &, const QString &) = (role == PrimaryNameRole ? &SeasideCache::primaryName : &SeasideCache::secondaryName);
+        QString (*fn)(const QString &, const QString &) = (role == PrimaryNameRole ? &SeasideCache::primaryName
+                                                                                   : &SeasideCache::secondaryName);
         const QString name((*fn)(nameDetail.firstName(), nameDetail.lastName()));
 
         if (role == PrimaryNameRole && name.isEmpty()) {
@@ -1271,7 +1281,10 @@ QVariant SeasideFilteredModel::data(SeasideCache::CacheItem *cacheItem, int role
         return SeasidePerson::accountDetails(contact);
     } else if (role == NoteDetailsRole) {
         return SeasidePerson::noteDetails(contact);
-    } else if (role == PhoneNumbersRole || role == EmailAddressesRole || role == AccountUrisRole || role == AccountPathsRole) {
+    } else if (role == PhoneNumbersRole
+               || role == EmailAddressesRole
+               || role == AccountUrisRole
+               || role == AccountPathsRole) {
         QStringList rv;
         if (role == PhoneNumbersRole) {
             for (const QContactPhoneNumber &number : contact.details<QContactPhoneNumber>()) {
@@ -1543,10 +1556,12 @@ int SeasideFilteredModel::firstIndexInGroup(const QString &sectionBucket)
 SeasidePerson *SeasideFilteredModel::personFromItem(SeasideCache::CacheItem *item) const
 {
     if (!item)
-        return 0;
+        return nullptr;
 
     if (!item->itemData) {
-        item->itemData = new SeasidePerson(&item->contact, (item->contactState == SeasideCache::ContactComplete), SeasideCache::instance());
+        item->itemData = new SeasidePerson(&item->contact,
+                                           (item->contactState == SeasideCache::ContactComplete),
+                                           SeasideCache::instance());
     }
 
     return static_cast<SeasidePerson *>(item->itemData);
@@ -1554,7 +1569,8 @@ SeasidePerson *SeasideFilteredModel::personFromItem(SeasideCache::CacheItem *ite
 
 bool SeasideFilteredModel::isFiltered() const
 {
-    return m_effectiveFilterType != FilterNone && (!m_filterPattern.isEmpty() || (m_requiredProperty != NoPropertyRequired));
+    return m_effectiveFilterType != FilterNone
+            && (!m_filterPattern.isEmpty() || (m_requiredProperty != NoPropertyRequired));
 }
 
 void SeasideFilteredModel::updateFilters(const QString &pattern, int property)
@@ -1564,8 +1580,8 @@ void SeasideFilteredModel::updateFilters(const QString &pattern, int property)
 
     const bool filtered = isFiltered();
     const bool removeFilter = pattern.isEmpty() && property == NoPropertyRequired;
-    const bool refinement = (pattern == m_filterPattern || pattern.startsWith(m_filterPattern, Qt::CaseInsensitive)) &&
-                            (property == m_requiredProperty || m_requiredProperty == NoPropertyRequired);
+    const bool refinement = (pattern == m_filterPattern || pattern.startsWith(m_filterPattern, Qt::CaseInsensitive))
+            && (property == m_requiredProperty || m_requiredProperty == NoPropertyRequired);
 
     const int prevCount = rowCount();
 
@@ -1649,7 +1665,11 @@ void SeasideFilteredModel::updateRegistration()
 {
     const SeasideCache::FetchDataType requiredTypes(static_cast<SeasideCache::FetchDataType>(m_requiredProperty));
     const SeasideCache::FetchDataType extraTypes(static_cast<SeasideCache::FetchDataType>(m_searchableProperty));
-    SeasideCache::registerModel(this, static_cast<SeasideCache::FilterType>(m_effectiveFilterType), requiredTypes, extraTypes);
+
+    SeasideCache::registerModel(this,
+                                static_cast<SeasideCache::FilterType>(m_effectiveFilterType),
+                                requiredTypes,
+                                extraTypes);
 }
 
 void SeasideFilteredModel::invalidateRows(int begin, int count, bool filteredIndex, bool removeFromModel)

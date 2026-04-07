@@ -42,9 +42,9 @@ namespace {
     QContactFetchHint basicFetchHint()
     {
         QContactFetchHint fetchHint;
-        fetchHint.setOptimizationHints(QContactFetchHint::NoRelationships |
-                                       QContactFetchHint::NoActionPreferences |
-                                       QContactFetchHint::NoBinaryBlobs);
+        fetchHint.setOptimizationHints(QContactFetchHint::NoRelationships
+                                       | QContactFetchHint::NoActionPreferences
+                                       | QContactFetchHint::NoBinaryBlobs);
         return fetchHint;
     }
 }
@@ -131,7 +131,8 @@ QList<QContact> SeasideImport::buildImportContacts(
             QSet<QContactId> unmodifiedContacts;
             QHash<QContactId, bool> unmodifiedErase;
 
-            foreach (const QContact &contact, builder->manager()->contacts(idFilter & builder->mergeSubsetFilter(), QList<QContactSortOrder>(), basicFetchHint())) {
+            foreach (const QContact &contact, builder->manager()->contacts(idFilter & builder->mergeSubsetFilter(),
+                                                                           QList<QContactSortOrder>(), basicFetchHint())) {
                 QMap<QContactId, int>::const_iterator it = existingIds.find(contact.id());
                 if (it != existingIds.end()) {
                     // Update the existing version of the contact with any new details
@@ -154,7 +155,9 @@ QList<QContact> SeasideImport::buildImportContacts(
                     const QContact &importContact(*it);
                     const QContactId contactId(importContact.id());
 
-                    if (!modifiedContacts.contains(contactId) && unmodifiedContacts.contains(contactId) && unmodifiedErase.value(contactId, false) == true) {
+                    if (!modifiedContacts.contains(contactId)
+                            && unmodifiedContacts.contains(contactId)
+                            && unmodifiedErase.value(contactId, false) == true) {
                         // This contact was not modified by import and should be erased from the import list - don't update it
                         it = importedContacts.erase(it);
                         --existingCount;
@@ -175,4 +178,3 @@ QList<QContact> SeasideImport::buildImportContacts(
 
     return importedContacts;
 }
-

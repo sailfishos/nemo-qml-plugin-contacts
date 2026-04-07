@@ -34,13 +34,11 @@
 #ifndef SEASIDEPERSON_H
 #define SEASIDEPERSON_H
 
-// Qt
 #include <QObject>
 #include <QUrl>
 
 #include <qqml.h>
 
-// Mobility
 #include <QContact>
 #include <QContactPresence>
 

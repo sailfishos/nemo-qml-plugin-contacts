@@ -323,4 +323,3 @@ int SeasideStringListCompressor::minimumCompressionInputCount()
 {
     return MinimumCompressionInputCount;
 }
-

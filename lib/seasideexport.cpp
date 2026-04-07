@@ -46,4 +46,3 @@ QList<QVersitDocument> SeasideExport::buildExportContacts(const QList<QContact> 
 
     return exporter.documents();
 }
-
