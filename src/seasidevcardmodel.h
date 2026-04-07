@@ -41,7 +41,7 @@
 #include <QContact>
 
 #ifdef HAS_MLITE
-#include <mgconfitem.h>
+#include <mdconfitem.h>
 #endif
 
 QTCONTACTS_USE_NAMESPACE
@@ -111,7 +111,7 @@ private:
     QList<QContact> mContacts;
     mutable QList<SeasidePerson*> mPeople;
 #ifdef HAS_MLITE
-    MGConfItem mDisplayLabelOrderConf;
+    MDConfItem mDisplayLabelOrderConf;
 #endif
     QString mDefaultCodec;
 };

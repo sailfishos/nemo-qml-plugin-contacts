@@ -35,7 +35,7 @@
 #include <QtDebug>
 
 #ifdef HAS_MLITE
-#include <mgconfitem.h>
+#include <mdconfitem.h>
 #endif
 
 #ifdef HAS_QGSETTINGS
@@ -54,9 +54,9 @@ public:
     QString m_groupProperty;
 
 #ifdef HAS_MLITE
-    MGConfItem m_displayLabelOrderConf;
-    MGConfItem m_sortPropertyConf;
-    MGConfItem m_groupPropertyConf;
+    MDConfItem m_displayLabelOrderConf;
+    MDConfItem m_sortPropertyConf;
+    MDConfItem m_groupPropertyConf;
 
     void onDisplayLabelOrderChanged();
     void onSortPropertyChanged();
@@ -86,19 +86,19 @@ CacheConfigurationPrivate::CacheConfigurationPrivate(CacheConfiguration *q)
 
 {
 #ifdef HAS_MLITE
-    connect(&m_displayLabelOrderConf, &MGConfItem::valueChanged,
+    connect(&m_displayLabelOrderConf, &MDConfItem::valueChanged,
             this, &CacheConfigurationPrivate::onDisplayLabelOrderChanged);
     QVariant displayLabelOrder = m_displayLabelOrderConf.value();
     if (displayLabelOrder.isValid())
         m_displayLabelOrder = static_cast<CacheConfiguration::DisplayLabelOrder>(displayLabelOrder.toInt());
 
-    connect(&m_sortPropertyConf, &MGConfItem::valueChanged,
+    connect(&m_sortPropertyConf, &MDConfItem::valueChanged,
             this, &CacheConfigurationPrivate::onSortPropertyChanged);
     QVariant sortPropertyConf = m_sortPropertyConf.value();
     if (sortPropertyConf.isValid())
         m_sortProperty = sortPropertyConf.toString();
 
-    connect(&m_groupPropertyConf, &MGConfItem::valueChanged,
+    connect(&m_groupPropertyConf, &MDConfItem::valueChanged,
             this, &CacheConfigurationPrivate::onGroupPropertyChanged);
     QVariant groupPropertyConf = m_groupPropertyConf.value();
     if (groupPropertyConf.isValid())
