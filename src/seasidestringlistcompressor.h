@@ -56,8 +56,10 @@ private:
         int countMinSized = 0;
     };
 
-    static QStringList minimalCompress(const QStringList &strings, int desiredSize, CompressedContent *compressedSections);
-    static QStringList accordionCompress(const QStringList &strings, int desiredSize, CompressedContent *compressedSections);
+    static QStringList minimalCompress(const QStringList &strings, int desiredSize,
+                                       CompressedContent *compressedSections);
+    static QStringList accordionCompress(const QStringList &strings, int desiredSize,
+                                         CompressedContent *compressedSections);
     static QStringList performCompression(const QStringList &strings,
                                           SectionsInfo uncompressedSectionsInfo,
                                           SectionsInfo compressedSectionsInfo,

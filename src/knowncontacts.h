@@ -57,6 +57,7 @@ private:
 
     static quint32 getRandomNumber();
     static QString getRandomPath(int accountId);
+
     const QString &getPath(int accountId);
     bool synchronize();
 

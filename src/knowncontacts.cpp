@@ -79,7 +79,7 @@ bool KnownContacts::storeContacts(const QVariantList &contacts)
 {
     QMap<int, QList<QVariantMap> > accountContacts;
 
-    for (const auto variant : contacts) {
+    for (const auto &variant : contacts) {
         const QVariantMap contact = variant.toMap();
         if (contact.isEmpty()) {
             qWarning() << "Cannot store contacts: a contact is not a mapping";

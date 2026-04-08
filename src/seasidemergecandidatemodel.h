@@ -55,14 +55,14 @@ public:
     SeasidePerson* person() const;
     void setPerson(SeasidePerson *person);
 
-    virtual void itemUpdated(SeasideCache::CacheItem *item) override;
-    virtual void itemAboutToBeRemoved(SeasideCache::CacheItem *item) override;
+    void itemUpdated(SeasideCache::CacheItem *item) override;
+    void itemAboutToBeRemoved(SeasideCache::CacheItem *item) override;
 
 Q_SIGNALS:
     void personChanged();
 
 protected:
-    virtual void reset() override;
+    void reset() override;
 
 private:
     void personMergeCandidatesChanged();
@@ -70,6 +70,7 @@ private:
     SeasidePerson *m_person = nullptr;
     SeasideCache::CacheItem *m_cacheItem = nullptr;
 };
+
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 Q_MOC_INCLUDE("seasideperson.h")
 #endif

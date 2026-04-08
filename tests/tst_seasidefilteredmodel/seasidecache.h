@@ -36,10 +36,10 @@ public:
         FetchPhoneNumber = (1 << 1),
         FetchEmailAddress = (1 << 2),
         FetchOrganization = (1 << 3),
-        FetchTypesMask = (FetchAccountUri |
-                          FetchPhoneNumber |
-                          FetchEmailAddress |
-                          FetchOrganization)
+        FetchTypesMask = (FetchAccountUri
+                          | FetchPhoneNumber
+                          | FetchEmailAddress
+                          | FetchOrganization)
     };
 
     enum DisplayLabelOrder {

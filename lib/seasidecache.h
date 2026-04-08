@@ -97,13 +97,13 @@ public:
         FetchAvatar = (1 << 4),
         FetchFavorite = (1 << 5),
         FetchGender = (1 << 6),
-        FetchTypesMask = (FetchAccountUri |
-                          FetchPhoneNumber |
-                          FetchEmailAddress |
-                          FetchOrganization |
-                          FetchAvatar |
-                          FetchFavorite |
-                          FetchGender)
+        FetchTypesMask = (FetchAccountUri
+                          | FetchPhoneNumber
+                          | FetchEmailAddress
+                          | FetchOrganization
+                          | FetchAvatar
+                          | FetchFavorite
+                          | FetchGender)
     };
 
     enum DisplayLabelOrder {
@@ -143,7 +143,10 @@ public:
     struct CacheItem;
     struct ItemListener
     {
-        ItemListener() : next(0), key(0) {}
+        ItemListener()
+            : next(nullptr), key(nullptr)
+        {}
+
         virtual ~ItemListener() {}
 
         virtual void itemUpdated(CacheItem *item) = 0;
@@ -155,9 +158,16 @@ public:
 
     struct CachedPhoneNumber
     {
-        CachedPhoneNumber() {}
-        CachedPhoneNumber(const QString &n, quint32 i) : normalizedNumber(n), iid(i) {}
-        CachedPhoneNumber(const CachedPhoneNumber &other) : normalizedNumber(other.normalizedNumber), iid(other.iid) {}
+        CachedPhoneNumber()
+        {}
+
+        CachedPhoneNumber(const QString &n, quint32 i)
+            : normalizedNumber(n), iid(i)
+        {}
+
+        CachedPhoneNumber(const CachedPhoneNumber &other)
+            : normalizedNumber(other.normalizedNumber), iid(other.iid)
+        {}
 
         bool operator==(const CachedPhoneNumber &other) const
         {
@@ -170,11 +180,16 @@ public:
 
     struct CacheItem
     {
-        CacheItem() : itemData(0), iid(0), statusFlags(0), contactState(ContactAbsent), listeners(0), filterMatchRole(-1) {}
+        CacheItem()
+            : itemData(nullptr), iid(0), statusFlags(0), contactState(ContactAbsent),
+              listeners(nullptr), filterMatchRole(-1)
+        {}
+
         CacheItem(const QContact &contact)
-            : contact(contact), itemData(0), iid(internalId(contact)),
-              statusFlags(contact.detail<QContactStatusFlags>().flagsValue()), contactState(ContactAbsent), listeners(0),
-              filterMatchRole(-1) {}
+            : contact(contact), itemData(nullptr), iid(internalId(contact)),
+              statusFlags(contact.detail<QContactStatusFlags>().flagsValue()), contactState(ContactAbsent),
+              listeners(nullptr), filterMatchRole(-1)
+        {}
 
         QContactId apiId() const { return SeasideCache::apiId(contact); }
 
@@ -190,7 +205,7 @@ public:
                 listeners = listener;
             }
 
-            listener->next = 0;
+            listener->next = nullptr;
             listener->key = key;
             return listener;
         }
@@ -220,7 +235,7 @@ public:
             while (existing && (existing->key != key) && (existing->next)) {
                 existing = existing->next;
             }
-            return (existing && (existing->key == key)) ? existing : 0;
+            return (existing && (existing->key == key)) ? existing : nullptr;
         }
 
         QContact contact;
@@ -236,8 +251,13 @@ public:
 
     struct ContactLinkRequest
     {
-        ContactLinkRequest(const QContactId &id) : contactId(id), constituentsFetched(false) {}
-        ContactLinkRequest(const ContactLinkRequest &req) : contactId(req.contactId), constituentsFetched(req.constituentsFetched) {}
+        ContactLinkRequest(const QContactId &id)
+            : contactId(id), constituentsFetched(false)
+        {}
+
+        ContactLinkRequest(const ContactLinkRequest &req)
+            : contactId(req.contactId), constituentsFetched(req.constituentsFetched)
+        {}
 
         QContactId contactId;
         bool constituentsFetched;

@@ -66,12 +66,12 @@ public:
 
     bool isPopulated() const;
 
-    virtual QHash<int, QByteArray> roleNames() const override;
-    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    virtual QVariant data(const QModelIndex &index, int role) const override;
+    QHash<int, QByteArray> roleNames() const override;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role) const override;
 
-    virtual void classBegin() override;
-    virtual void componentComplete() override;
+    void classBegin() override;
+    void componentComplete() override;
 
 Q_SIGNALS:
     void populatedChanged();

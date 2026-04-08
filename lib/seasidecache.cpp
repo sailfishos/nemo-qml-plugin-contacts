@@ -204,9 +204,9 @@ QContactFetchHint basicFetchHint()
     QContactFetchHint fetchHint;
 
     // We generally have no use for these things:
-    fetchHint.setOptimizationHints(QContactFetchHint::NoRelationships |
-                                   QContactFetchHint::NoActionPreferences |
-                                   QContactFetchHint::NoBinaryBlobs);
+    fetchHint.setOptimizationHints(QContactFetchHint::NoRelationships
+                                   | QContactFetchHint::NoActionPreferences
+                                   | QContactFetchHint::NoBinaryBlobs);
 
     return fetchHint;
 }
@@ -448,8 +448,8 @@ int matchLength(const QString &lhs, const QString &rhs)
     }
 
     // Have we got a match?
-    if ((matchLength >= QtContactsSqliteExtensions::DefaultMaximumPhoneNumberCharacters) ||
-        processDtmf) {
+    if ((matchLength >= QtContactsSqliteExtensions::DefaultMaximumPhoneNumberCharacters)
+            || processDtmf) {
         // See if the match continues into the DTMF area
         QString::const_iterator lit = ldtmf;
         QString::const_iterator rit = rdtmf;
@@ -480,11 +480,11 @@ int bestPhoneNumberMatchLength(const QContact &contact, const QString &match)
 
 }
 
-SeasideCache *SeasideCache::instancePtr = 0;
+SeasideCache *SeasideCache::instancePtr = nullptr;
 int SeasideCache::contactDisplayLabelGroupCount = 0;
 QStringList SeasideCache::allContactDisplayLabelGroups = QStringList();
-QTranslator *SeasideCache::engEnTranslator = 0;
-QTranslator *SeasideCache::translator = 0;
+QTranslator *SeasideCache::engEnTranslator = nullptr;
+QTranslator *SeasideCache::translator = nullptr;
 
 QContactManager* SeasideCache::manager()
 {
@@ -629,7 +629,7 @@ SeasideCache::SeasideCache()
 SeasideCache::~SeasideCache()
 {
     if (instancePtr == this)
-        instancePtr = 0;
+        instancePtr = nullptr;
 }
 
 void SeasideCache::checkForExpiry()
@@ -910,7 +910,7 @@ SeasideCache::CacheItem *SeasideCache::itemByPhoneNumber(const QString &number, 
 {
     const QString normalized(normalizePhoneNumber(number));
     if (normalized.isEmpty())
-        return 0;
+        return nullptr;
 
     // Ensure the cache has been instantiated
     instance();
@@ -924,11 +924,11 @@ SeasideCache::CacheItem *SeasideCache::itemByPhoneNumber(const QString &number, 
     }
 
     const QString minimized(minimizePhoneNumber(normalized));
-    if (((instancePtr->m_fetchTypes & SeasideCache::FetchPhoneNumber) == 0) &&
-        !instancePtr->m_resolvedPhoneNumbers.contains(minimized)) {
+    if (((instancePtr->m_fetchTypes & SeasideCache::FetchPhoneNumber) == 0)
+            && !instancePtr->m_resolvedPhoneNumbers.contains(minimized)) {
         // We haven't previously queried this number, so there may be more matches than any
         // that we already have cached; return 0 to force a query
-        return 0;
+        return nullptr;
     }
 
     return instancePtr->itemMatchingPhoneNumber(minimized, normalized, requireComplete);
@@ -937,7 +937,7 @@ SeasideCache::CacheItem *SeasideCache::itemByPhoneNumber(const QString &number, 
 SeasideCache::CacheItem *SeasideCache::itemByEmailAddress(const QString &email, bool requireComplete)
 {
     if (email.trimmed().isEmpty())
-        return 0;
+        return nullptr;
 
     // Ensure the cache has been instantiated
     instance();
@@ -946,13 +946,13 @@ SeasideCache::CacheItem *SeasideCache::itemByEmailAddress(const QString &email, 
     if (it != instancePtr->m_emailAddressIds.end())
         return itemById(*it, requireComplete);
 
-    return 0;
+    return nullptr;
 }
 
 SeasideCache::CacheItem *SeasideCache::itemByOnlineAccount(const QString &localUid, const QString &remoteUid, bool requireComplete)
 {
     if (localUid.trimmed().isEmpty() || remoteUid.trimmed().isEmpty())
-        return 0;
+        return nullptr;
 
     // Ensure the cache has been instantiated
     instance();
@@ -963,7 +963,7 @@ SeasideCache::CacheItem *SeasideCache::itemByOnlineAccount(const QString &localU
     if (it != instancePtr->m_onlineAccountIds.end())
         return itemById(*it, requireComplete);
 
-    return 0;
+    return nullptr;
 }
 
 SeasideCache::CacheItem *SeasideCache::resolvePhoneNumber(ResolveListener *listener, const QString &number, bool requireComplete)
@@ -1199,15 +1199,15 @@ QString SeasideCache::primaryName(const QString &firstName, const QString &lastN
         return QString();
     }
 
-    const bool familyNameFirst(displayLabelOrder() == LastNameFirst ||
-                               nameScriptImpliesFamilyFirst(firstName, lastName));
+    const bool familyNameFirst(displayLabelOrder() == LastNameFirst
+                               || nameScriptImpliesFamilyFirst(firstName, lastName));
     return familyNameFirst ? lastName : firstName;
 }
 
 QString SeasideCache::secondaryName(const QString &firstName, const QString &lastName)
 {
-    const bool familyNameFirst(displayLabelOrder() == LastNameFirst ||
-                               nameScriptImpliesFamilyFirst(firstName, lastName));
+    const bool familyNameFirst(displayLabelOrder() == LastNameFirst
+                               || nameScriptImpliesFamilyFirst(firstName, lastName));
     return familyNameFirst ? firstName : lastName;
 }
 
@@ -2201,7 +2201,7 @@ void SeasideCache::contactsRemoved(const QList<QContactId> &ids)
                 listener->itemAboutToBeRemoved(item);
                 listener = next;
             }
-            item->listeners = 0;
+            item->listeners = nullptr;
 
             // Remove the links to addressible details
             updateContactIndexing(item->contact, QContact(), item->iid, QSet<QContactDetail::DetailType>(), item);
@@ -3541,7 +3541,7 @@ SeasideCache::CacheItem *SeasideCache::itemMatchingPhoneNumber(const QString &nu
     QMultiHash<QString, CachedPhoneNumber>::const_iterator it = m_phoneNumberIds.find(number),
             end = m_phoneNumberIds.constEnd();
     if (it == end)
-        return 0;
+        return nullptr;
 
     QHash<QString, quint32> possibleMatches;
     ::i18n::phonenumbers::PhoneNumberUtil *util = ::i18n::phonenumbers::PhoneNumberUtil::GetInstance();
@@ -3578,7 +3578,7 @@ SeasideCache::CacheItem *SeasideCache::itemMatchingPhoneNumber(const QString &nu
 
     // Choose the best match from these contacts
     int bestMatchLength = 0;
-    CacheItem *matchItem = 0;
+    CacheItem *matchItem = nullptr;
     for (QHash<QString, quint32>::const_iterator matchingIt = possibleMatches.begin();
          matchingIt != possibleMatches.end();
          ++matchingIt) {
@@ -3596,14 +3596,14 @@ SeasideCache::CacheItem *SeasideCache::itemMatchingPhoneNumber(const QString &nu
         }
     }
 
-    if (matchItem != 0) {
+    if (matchItem != nullptr) {
         if (requireComplete) {
             ensureCompletion(matchItem);
         }
         return matchItem;
     }
 
-    return 0;
+    return nullptr;
 
 }
 

@@ -77,7 +77,9 @@ public:
     // QVersitContactExporterDetailHandlerV2
     void contactProcessed(const QContact &, QVersitDocument *);
     void detailProcessed(const QContact &, const QContactDetail &detail,
-                         const QVersitDocument &, QSet<int> * processedFields, QList<QVersitProperty> * toBeRemoved, QList<QVersitProperty> * toBeAdded);
+                         const QVersitDocument &, QSet<int> *processedFields,
+                         QList<QVersitProperty> *toBeRemoved,
+                         QList<QVersitProperty> *toBeAdded);
 
     static QContactAvatar avatarFromPhotoProperty(const QVersitProperty &property);
 
