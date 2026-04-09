@@ -358,6 +358,8 @@ public:
     static int importContacts(const QString &path);
     static QString exportContacts();
 
+    static void initialize(FetchDataType requiredTypes = FetchNone,
+                           FetchDataType extraTypes = FetchNone);
     static const QList<quint32> *contacts(FilterType filterType);
     static bool isPopulated(FilterType filterType);
 
@@ -394,6 +396,9 @@ public:
         removeRange(m_syncFilter, index, count);
         return 0;
     }
+
+signals:
+    void populatedChanged();
 
 protected:
     void timerEvent(QTimerEvent *event);
