@@ -728,6 +728,15 @@ void SeasideCache::unregisterChangeListener(ChangeListener *listener)
     instancePtr->m_changeListeners.removeAll(listener);
 }
 
+void SeasideCache::initialize(FetchDataType requiredTypes, FetchDataType extraTypes)
+{
+    // Ensure the cache has been instantiated
+    instance();
+
+    instancePtr->keepPopulated(requiredTypes & SeasideCache::FetchTypesMask,
+                               extraTypes & SeasideCache::FetchTypesMask);
+}
+
 void SeasideCache::unregisterResolveListener(ResolveListener *listener)
 {
     if (!instancePtr)
@@ -3165,11 +3174,16 @@ void SeasideCache::addressRequestStateChanged(QContactAbstractRequest::State sta
 
 void SeasideCache::makePopulated(FilterType filter)
 {
+    int oldPopulated = m_populated;
     m_populated |= (1 << filter);
 
     QList<ListModel *> &models = m_models[filter];
     for (int i = 0; i < models.count(); ++i)
         models.at(i)->makePopulated();
+
+    if (m_populated != oldPopulated) {
+        emit populatedChanged();
+    }
 }
 
 void SeasideCache::setSortOrder(const QString &property)
