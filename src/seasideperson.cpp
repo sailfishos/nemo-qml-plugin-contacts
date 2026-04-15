@@ -846,6 +846,7 @@ QList<QPair<QContactPhoneNumber::SubType, SeasidePerson::DetailSubType> > getPho
     rv.append(qMakePair(QContactPhoneNumber::SubTypeMessagingCapable, SeasidePerson::PhoneSubTypeMessagingCapable));
     rv.append(qMakePair(QContactPhoneNumber::SubTypeAssistant, SeasidePerson::PhoneSubTypeAssistant));
     rv.append(qMakePair(QContactPhoneNumber::SubTypeDtmfMenu, SeasidePerson::PhoneSubTypeDtmfMenu));
+    rv.append(qMakePair(QContactPhoneNumber::SubTypeIsdn, SeasidePerson::PhoneSubTypeIsdn));
 
     return rv;
 }

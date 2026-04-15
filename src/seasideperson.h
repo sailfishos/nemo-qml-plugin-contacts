@@ -165,6 +165,7 @@ public:
         PhoneSubTypeMessagingCapable,
         PhoneSubTypeAssistant,
         PhoneSubTypeDtmfMenu,
+        PhoneSubTypeIsdn,
         AddressSubTypeParcel,
         AddressSubTypePostal,
         AddressSubTypeDomestic,
