@@ -486,6 +486,8 @@ void SeasideContactBuilder::preprocessContact(QContact &contact)
             setNickname(contact, label);
         }
     }
+
+    // TODO: apply uniqueness constraint for REV (QContactTimestamp) details.
 }
 
 /*
