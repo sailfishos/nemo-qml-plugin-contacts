@@ -834,7 +834,7 @@ QString localFilePathWithoutScheme(const QString &filePath)
             : QString();
 }
 
-void removeStaleAvatars(QContactManager *manager, const QString &avatarDirPath)
+bool collectAvatarPaths(QContactManager &mgr, bool privileged, QSet<QString> &avatarImageUrls)
 {
     QContactFetchHint fetchHint;
     fetchHint.setOptimizationHints(QContactFetchHint::NoRelationships);
@@ -843,8 +843,32 @@ void removeStaleAvatars(QContactManager *manager, const QString &avatarDirPath)
     QContactDetailFilter hasAvatarFilter;
     hasAvatarFilter.setDetailType(QContactDetail::TypeAvatar);
 
-    QSet<QString> avatarImageUrls;
-    const QList<QContact> contacts = manager->contacts(hasAvatarFilter, QList<QContactSortOrder>(), fetchHint);
+    // Include source contacts as well as aggregates and the user's own contact.
+    QSet<QContactCollectionId> collectionIds;
+    const QList<QContactCollection> collections = mgr.collections();
+    for (const QContactCollection &collection : collections) {
+        collectionIds.insert(collection.id());
+    }
+    if (mgr.error() != QContactManager::NoError || collectionIds.isEmpty()) {
+        return false;
+    }
+    if (privileged && !collectionIds.contains(SeasideCache::aggregateCollectionId())) {
+        // The SQLite backend can fall back to the nonprivileged database.
+        return false;
+    }
+
+    QContactCollectionFilter allCollections;
+    allCollections.setCollectionIds(collectionIds);
+    QContactIdFilter self;
+    self.setIds(QList<QContactId>() << mgr.selfContactId());
+    if (mgr.error() != QContactManager::NoError) {
+        return false;
+    }
+    const QList<QContact> contacts = mgr.contacts((allCollections | self) & hasAvatarFilter,
+                                                  QList<QContactSortOrder>(), fetchHint);
+    if (mgr.error() != QContactManager::NoError) {
+        return false;
+    }
     for (const QContact &contact : contacts) {
         const QList<QContactAvatar> avatars = contact.details<QContactAvatar>();
         for (const QContactAvatar &avatar : avatars) {
@@ -855,12 +879,17 @@ void removeStaleAvatars(QContactManager *manager, const QString &avatarDirPath)
         }
     }
 
+    return true;
+}
+
+void removeStaleAvatars(const QSet<QString> &avatarImageUrls, const QString &avatarDirPath)
+{
     QDir avatarDir(avatarDirPath);
     QStringList removedFiles;
     const QStringList avatarFileNames = avatarDir.entryList(QDir::Files);
     for (const QString &avatarFileName : avatarFileNames) {
         const QString avatarFilePath = localFilePathWithoutScheme(avatarDir.absoluteFilePath(avatarFileName));
-        if (!avatarImageUrls.remove(avatarFilePath)) {
+        if (!avatarImageUrls.contains(avatarFilePath)) {
             removedFiles.append(avatarFilePath);
             QFile::remove(avatarFilePath);
         }
@@ -882,10 +911,14 @@ int removeStaleFiles()
     QMap<QString, QString> parameters;
     parameters.insert(QString::fromLatin1("nonprivileged"), QString::fromLatin1("true"));
     QContactManager mgr(QString::fromLatin1("org.nemomobile.contacts.sqlite"), parameters);
-    removeStaleAvatars(&mgr, QString("%1/system/Contacts/avatars").arg(dataPath));
+    QSet<QString> avatarImageUrls;
+    if (!collectAvatarPaths(manager(), true, avatarImageUrls) || !collectAvatarPaths(mgr, false, avatarImageUrls)) {
+        errorMessage(QStringLiteral("Unable to read both contacts databases for avatar cleanup"));
+        return 3;
+    }
 
-    // For privileged contact manager
-    removeStaleAvatars(&manager(), QString("%1/data/avatars").arg(dataPath));
+    removeStaleAvatars(avatarImageUrls, QString("%1/system/Contacts/avatars").arg(dataPath));
+    removeStaleAvatars(avatarImageUrls, QString("%1/data/avatars").arg(dataPath));
 
     return 0;
 }
